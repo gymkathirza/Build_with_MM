@@ -29,6 +29,9 @@ export type Order =
   | { t: "build"; building: number }
   | { t: "attack"; target: number }
   | { t: "attackMove"; x: number; y: number }
+  | { t: "defend"; x: number; y: number }
+
+export type Fauna = "deer" | "boar" | "bear" | "wolf"
 
 export type Unit = {
   id: number
@@ -59,6 +62,7 @@ export type Building = {
   constructMax: number
   queue: { type: UnitType; t: number; max: number }[]
   aging: number
+  tier: 0 | 1
 }
 
 export type Node = {
@@ -68,6 +72,7 @@ export type Node = {
   x: number
   y: number
   amount: number
+  fauna: Fauna | null
 }
 
 export type Entity = Unit | Building | Node
@@ -121,6 +126,7 @@ export type SimEvent =
   | { k: "built"; type: BuildingType; owner: Owner }
   | { k: "trained"; type: UnitType; owner: Owner }
   | { k: "aged"; owner: Owner; age: Age }
+  | { k: "upgraded"; type: BuildingType; owner: Owner }
   | { k: "failed"; owner: Owner; why: string }
 
 function clamp(v: number, a: number, b: number) {
@@ -214,12 +220,13 @@ function addBuilding(
     constructMax: time,
     queue: [],
     aging: 0,
+    tier: 0,
   }
   w.buildings.push(b)
   return b
 }
 
-function node(w: World, type: Res, x: number, y: number, amount: number) {
+function node(w: World, type: Res, x: number, y: number, amount: number, fauna: Fauna | null = null) {
   w.nodes.push({
     id: nid(w),
     kind: "node",
@@ -227,6 +234,7 @@ function node(w: World, type: Res, x: number, y: number, amount: number) {
     x: clamp(x, 3, w.size - 3),
     y: clamp(y, 3, w.size - 3),
     amount,
+    fauna,
   })
 }
 
@@ -280,11 +288,11 @@ export function createWorld(
   for (const seed of localNodes(spec.size)) {
     const x = clamp(halls.p0.x + seed.ox, 4, spec.size - 4)
     const y = clamp(halls.p0.y + seed.oy, 4, spec.size - 4)
-    node(w, seed.type, x, y, seed.amount)
-    node(w, seed.type, spec.size - x, spec.size - y, seed.amount)
+    node(w, seed.type, x, y, seed.amount, seed.fauna ?? null)
+    node(w, seed.type, spec.size - x, spec.size - y, seed.amount, seed.fauna ?? null)
   }
   for (const seed of contestNodes(spec.size)) {
-    node(w, seed.type, seed.ox, seed.oy, seed.amount)
+    node(w, seed.type, seed.ox, seed.oy, seed.amount, seed.fauna ?? null)
   }
   return w
 }
@@ -330,6 +338,15 @@ export function issueGather(w: World, ids: number[], nodeId: number) {
 export function issueHalt(w: World, ids: number[]) {
   for (const u of w.units) {
     if (ids.includes(u.id)) u.order = { t: "idle" }
+  }
+}
+
+export function issueDefend(w: World, ids: number[], x: number, y: number) {
+  const px = clamp(x, 1, w.size - 1)
+  const py = clamp(y, 1, w.size - 1)
+  for (const u of w.units) {
+    if (!ids.includes(u.id)) continue
+    u.order = { t: "defend", x: px, y: py }
   }
 }
 
@@ -418,6 +435,32 @@ export function startAge(w: World, owner: Owner): boolean {
     return false
   }
   hall.aging = COSTS.age1.time
+  return true
+}
+
+export function upgradeBuilding(w: World, buildingId: number): boolean {
+  const b = w.buildings.find((x) => x.id === buildingId)
+  if (!b || !b.done) return false
+  if (b.tier >= 1) {
+    w.events.push({ k: "failed", owner: b.owner, why: "That hall is already shored up." })
+    return false
+  }
+  const p = w.players[b.owner]
+  if (b.type === "hearth") {
+    return startAge(w, b.owner)
+  }
+  if (p.age < COSTS.upgrade.age) {
+    w.events.push({ k: "failed", owner: b.owner, why: "Forge Age is required to shore that hall." })
+    return false
+  }
+  if (!spend(p, COSTS.upgrade)) {
+    w.events.push({ k: "failed", owner: b.owner, why: "Not enough stores to shore that hall." })
+    return false
+  }
+  b.tier = 1
+  b.hpMax = Math.floor(b.hpMax * 1.35)
+  b.hp = b.hpMax
+  w.events.push({ k: "upgraded", type: b.type, owner: b.owner })
   return true
 }
 
@@ -521,6 +564,18 @@ function tickUnit(w: World, u: Unit) {
       if (dist(u.x, u.y, foe.x, foe.y) > reach) steer(u, foe.x, foe.y, speed, w.buildings, w.size)
       else hit(w, u, foe)
     } else if (steer(u, o.x, o.y, speed, w.buildings, w.size)) u.order = { t: "idle" }
+    return
+  }
+  if (o.t === "defend") {
+    const foe = nearestEnemy(w, u, 8)
+    if (foe) {
+      const r = UNIT_STATS[u.type].range
+      const reach = foe.kind === "building" ? r + BUILDING_STATS[foe.type].radius : r
+      if (dist(u.x, u.y, foe.x, foe.y) > reach) steer(u, foe.x, foe.y, speed, w.buildings, w.size)
+      else hit(w, u, foe)
+    } else if (dist(u.x, u.y, o.x, o.y) > 1.8) {
+      steer(u, o.x, o.y, speed, w.buildings, w.size)
+    }
     return
   }
   if (o.t === "attack") {
@@ -630,6 +685,9 @@ function tickBuildings(w: World) {
         const p = w.players[b.owner]
         p.age = 1
         b.aging = 0
+        b.tier = 1
+        b.hpMax = Math.floor(BUILDING_STATS.hearth.hp * 1.28)
+        b.hp = b.hpMax
         w.events.push({ k: "aged", owner: b.owner, age: 1 })
       }
     }

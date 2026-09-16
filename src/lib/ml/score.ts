@@ -104,7 +104,7 @@ export function scoreTelemetry(
 export function improveFromScore(
   prev: Tuned,
   score: LoopScore,
-  games: { winner: 0 | 1 | null; ticks: number; southWon?: boolean; swap?: boolean }[],
+  games: { winner: 0 | 1 | null; ticks: number; southWon?: boolean; swap?: boolean; p0Age?: number }[],
   live?: LiveObs | null,
 ): Tuned {
   const next: Tuned = {
@@ -128,6 +128,7 @@ export function improveFromScore(
   const p0Wins = games.filter((g) => g.winner === 0).length
   const p1Wins = games.filter((g) => g.winner === 1).length
   const unfinished = games.filter((g) => g.winner === null).length
+  const aged = games.filter((g) => (g as { p0Age?: number }).p0Age).length
   const southKnown = games.filter((g) => typeof g.southWon === "boolean" && g.winner !== null)
   const southWins = southKnown.filter((g) => g.southWon).length
   const mapBiased = southKnown.length >= 4 && Math.abs(southWins / southKnown.length - 0.5) > 0.18
@@ -135,6 +136,10 @@ export function improveFromScore(
   if (unfinished > games.length / 2) {
     next.ai.attackAtArmy = Math.max(3, prev.ai.attackAtArmy - 1)
     next.ai.militaryRatio = Math.min(0.8, prev.ai.militaryRatio + 0.05)
+    next.ai.agePriority = Math.min(0.9, prev.ai.agePriority + 0.04)
+  } else if (aged < games.length / 3) {
+    next.ai.agePriority = Math.min(0.9, prev.ai.agePriority + 0.05)
+    next.ai.gatherBias = Math.min(0.8, prev.ai.gatherBias + 0.02)
   } else if (mapBiased) {
     next.ai.kite = Math.min(0.7, prev.ai.kite + 0.04)
   } else if (p0Wins > p1Wins + games.length * 0.25) {

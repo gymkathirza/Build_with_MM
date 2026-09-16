@@ -27,6 +27,7 @@ import {
   entityAt,
   issueAttack,
   issueAttackMove,
+  issueDefend,
   issueGather,
   issueHalt,
   issueMove,
@@ -35,6 +36,7 @@ import {
   queueTrain,
   startAge,
   tick,
+  upgradeBuilding,
 } from "@/lib/sim/engine"
 import { tickAi } from "@/lib/sim/ai"
 import { type Cam, drawWorld, screenToWorld } from "@/lib/sim/draw"
@@ -112,6 +114,7 @@ export function MatchView({
   const [pending, setPending] = useState<Pending>(null)
   const [winner, setWinner] = useState<0 | 1 | null>(null)
   const [endPearl, setEndPearl] = useState(false)
+  const [hudPulse, setHudPulse] = useState(0)
 
   useEffect(() => {
     pausedRef.current = paused
@@ -138,12 +141,15 @@ export function MatchView({
         ? `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms\nsim ${simMs.toFixed(2)} ms · in ${tel.lastInputMs.toFixed(0)} ms\nclicks ${tel.clicks} · fail ${tel.failedOrders} · deaths ${tel.deaths}\npan ${tel.cameraMoves} · lod ${qualityRef.current}`
         : "warming…"
     }
+    setHudPulse((n) => n + 1)
   }, [world])
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true })
+    const ctx =
+      canvas.getContext("2d", { alpha: false, desynchronized: true }) ||
+      canvas.getContext("2d", { alpha: false })
     if (!ctx) return
     let raf = 0
     let last = performance.now()
@@ -233,7 +239,11 @@ export function MatchView({
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       const t0 = performance.now()
-      drawWorld(ctx, world, cam, selectedDrawRef.current, qualityRef.current, tuned.lodDistance, now, w, h)
+      try {
+        drawWorld(ctx, world, cam, selectedDrawRef.current, qualityRef.current, tuned.lodDistance, now, w, h)
+      } catch (err) {
+        console.error(err)
+      }
       const drag = dragRef.current
       if (drag) {
         ctx.strokeStyle = "rgba(243,212,138,0.9)"
@@ -457,7 +467,7 @@ export function MatchView({
       </div>
 
       <footer className="relative z-20 border-t border-primary/25 bg-black/75">
-        <div className="grid gap-2 p-2 lg:grid-cols-[minmax(0,1.1fr)_14rem_13rem]">
+        <div className="grid gap-2 p-2 lg:grid-cols-[minmax(0,1.1fr)_14rem_13rem]" data-hud={hudPulse}>
           <Selection selectedUnits={selUnits} building={selBuild} />
           <div className="rounded-sm border border-primary/20 bg-card/50 p-2">
             <p className="mb-2 font-heading text-xs tracking-widest text-primary uppercase">Orders</p>
@@ -472,8 +482,43 @@ export function MatchView({
               >
                 Strike-move
               </Button>
-              <Button size="sm" variant="secondary" onClick={() => startAge(world, 0)}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  const h = world.buildings.find((b) => b.owner === 0 && b.type === "hearth" && b.done)
+                  if (h) issueDefend(world, selected.length ? selected : [...selectedDrawRef.current], h.x, h.y)
+                }}
+              >
+                Defend
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={
+                  p.age >= 1 ||
+                  !canAfford(p, "age1") ||
+                  !world.buildings.some((b) => b.owner === 0 && b.type === "yard" && b.done)
+                }
+                onClick={() => startAge(world, 0)}
+              >
                 Advance Age
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={
+                  !selBuild ||
+                  selBuild.owner !== 0 ||
+                  !selBuild.done ||
+                  selBuild.tier >= 1 ||
+                  (selBuild.type === "hearth" ? p.age >= 1 || !canAfford(p, "age1") : p.age < 1 || !canAfford(p, "upgrade"))
+                }
+                onClick={() => {
+                  if (selBuild) upgradeBuilding(world, selBuild.id)
+                }}
+              >
+                Shore hall
               </Button>
               {(["yard", "camp", "pit", "lodge", "granary"] as const).map((type) => (
                 <Button
@@ -552,7 +597,9 @@ function Selection({
           {building.done
             ? building.aging > 0
               ? "Age rite in progress"
-              : "Standing"
+              : building.tier >= 1
+                ? "Shored"
+                : "Standing"
             : `Raising ${((building.construct / building.constructMax) * 100).toFixed(0)}%`}
         </p>
         <Progress value={(building.hp / building.hpMax) * 100} className="mt-2" />
@@ -575,7 +622,7 @@ function Selection({
         <Badge variant="outline">{selectedUnits.length} selected</Badge>
       </div>
       <p className="text-xs text-muted-foreground">
-        {u.order.t === "gather" ? "Gathering" : u.order.t === "build" ? "Raising" : u.order.t}
+        {u.order.t === "gather" ? "Gathering" : u.order.t === "build" ? "Raising" : u.order.t === "defend" ? "Holding the hearth" : u.order.t}
       </p>
       <Progress value={(u.hp / u.hpMax) * 100} className="mt-2" />
     </div>
@@ -591,27 +638,34 @@ function TrainPanel({
   selected?: Building
   onTrain: () => void
 }) {
+  const owned = world.buildings.filter((x) => x.owner === 0 && x.done)
   const b =
     selected && selected.owner === 0 && selected.done
       ? selected
-      : world.buildings.find((x) => x.owner === 0 && x.type === "hearth" && x.done)
-  const options: UnitType[] =
-    b?.type === "hearth" ? ["levy"] : b?.type === "yard" ? ["guard", "warden"] : b?.type === "lodge" ? ["ashrider"] : []
+      : owned.find((x) => x.type === "hearth")
+  const options: { type: UnitType; buildingId: number }[] = []
+  for (const hall of owned) {
+    if (hall.type === "hearth") options.push({ type: "levy", buildingId: hall.id })
+    if (hall.type === "yard") {
+      options.push({ type: "guard", buildingId: hall.id }, { type: "warden", buildingId: hall.id })
+    }
+    if (hall.type === "lodge") options.push({ type: "ashrider", buildingId: hall.id })
+  }
   return (
     <div className="rounded-sm border border-primary/20 bg-card/50 p-2">
       <p className="mb-2 font-heading text-xs tracking-widest text-primary uppercase">Hall queue</p>
       <div className="flex flex-wrap gap-1.5">
-        {options.map((type) => (
+        {options.map((opt) => (
           <Button
-            key={type}
+            key={`${opt.buildingId}-${opt.type}`}
             size="sm"
             variant="outline"
             onClick={() => {
-              if (b) queueTrain(world, b.id, type)
+              queueTrain(world, opt.buildingId, opt.type)
               onTrain()
             }}
           >
-            {UNIT_LABEL[type]}
+            {UNIT_LABEL[opt.type]}
           </Button>
         ))}
       </div>

@@ -1,4 +1,4 @@
-import type { Res } from "./engine"
+import type { Fauna, Res } from "./engine"
 
 export const HUGE_MAP_ID = "vast-mere"
 
@@ -23,7 +23,7 @@ export function specFor(mapId: string): MapSpec {
   return MAP_SPECS[mapId] ?? MAP_SPECS[HUGE_MAP_ID]
 }
 
-export type NodeSeed = { type: Res; ox: number; oy: number; amount: number }
+export type NodeSeed = { type: Res; ox: number; oy: number; amount: number; fauna?: Fauna }
 
 /** Offsets from the south-west hall, biased inward so 180° copies stay on the plate. */
 export function localNodes(size: number): NodeSeed[] {
@@ -34,8 +34,10 @@ export function localNodes(size: number): NodeSeed[] {
           { type: "grain", ox: 14 * s, oy: -4 * s, amount: 1400 },
           { type: "timber", ox: 4 * s, oy: -16 * s, amount: 1200 },
           { type: "ore", ox: 18 * s, oy: 6 * s, amount: 820 },
+          { type: "grain", ox: 20 * s, oy: -12 * s, amount: 520, fauna: "deer" },
+          { type: "grain", ox: 8 * s, oy: 14 * s, amount: 480, fauna: "boar" },
         ]
-      : []
+      : [{ type: "grain", ox: 12 * s, oy: -6 * s, amount: 360, fauna: "deer" }]
   return [
     { type: "grain", ox: 6 * s, oy: -10 * s, amount: 1100 },
     { type: "grain", ox: 10 * s, oy: 8 * s, amount: 1100 },
@@ -43,6 +45,8 @@ export function localNodes(size: number): NodeSeed[] {
     { type: "timber", ox: 12 * s, oy: 6 * s, amount: 980 },
     { type: "ore", ox: 16 * s, oy: -4 * s, amount: 640 },
     { type: "relics", ox: 8 * s, oy: -18 * s, amount: 8 },
+    { type: "grain", ox: 2 * s, oy: -14 * s, amount: 420, fauna: "deer" },
+    { type: "grain", ox: 15 * s, oy: 10 * s, amount: 380, fauna: "boar" },
     ...extra,
   ]
 }
@@ -50,25 +54,29 @@ export function localNodes(size: number): NodeSeed[] {
 /** Center contest nodes, 180° symmetric pairs. */
 export function contestNodes(size: number): NodeSeed[] {
   const c = size / 2
-  const pairs: [number, number, Res, number][] = [
-    [0, -6, "ore", 900],
-    [4, 5, "relics", 10],
-    [-14, 12, "grain", 700],
-    [14, -12, "timber", 700],
+  const pairs: NodeSeed[] = [
+    { type: "ore", ox: c, oy: c - 6, amount: 900 },
+    { type: "relics", ox: c + 4, oy: c + 5, amount: 10 },
+    { type: "grain", ox: c - 14, oy: c + 12, amount: 700 },
+    { type: "timber", ox: c + 14, oy: c - 12, amount: 700 },
+    { type: "grain", ox: c - 8, oy: c - 16, amount: 280, fauna: "wolf" },
+    { type: "grain", ox: c + 8, oy: c + 16, amount: 280, fauna: "wolf" },
   ]
   if (size >= 200) {
     pairs.push(
-      [-32, -22, "ore", 860],
-      [32, 22, "ore", 860],
-      [-28, 26, "timber", 920],
-      [28, -26, "timber", 920],
-      [22, 34, "grain", 840],
-      [-22, -34, "grain", 840],
-      [-10, 28, "relics", 12],
-      [10, -28, "relics", 12],
+      { type: "ore", ox: c - 32, oy: c - 22, amount: 860 },
+      { type: "ore", ox: c + 32, oy: c + 22, amount: 860 },
+      { type: "timber", ox: c - 28, oy: c + 26, amount: 920 },
+      { type: "timber", ox: c + 28, oy: c - 26, amount: 920 },
+      { type: "grain", ox: c + 22, oy: c + 34, amount: 840 },
+      { type: "grain", ox: c - 22, oy: c - 34, amount: 840 },
+      { type: "relics", ox: c - 10, oy: c + 28, amount: 12 },
+      { type: "relics", ox: c + 10, oy: c - 28, amount: 12 },
+      { type: "grain", ox: c - 18, oy: c + 6, amount: 360, fauna: "bear" },
+      { type: "grain", ox: c + 18, oy: c - 6, amount: 360, fauna: "bear" },
     )
   }
-  return pairs.map(([dx, dy, type, amount]) => ({ type, ox: c + dx, oy: c + dy, amount }))
+  return pairs
 }
 
 export type HallAxis = "w-e" | "e-w"

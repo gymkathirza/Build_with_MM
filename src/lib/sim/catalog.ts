@@ -34,6 +34,7 @@ export const COSTS = {
   pit: { grain: 0, timber: 60, ore: 15, relics: 0, time: 14, pop: 0, age: 0 },
   granary: { grain: 0, timber: 45, ore: 0, relics: 0, time: 12, pop: 0, age: 0 },
   age1: { grain: 280, timber: 0, ore: 140, relics: 0, time: 22, pop: 0, age: 0 },
+  upgrade: { grain: 60, timber: 50, ore: 30, relics: 0, time: 0, pop: 0, age: 1 },
 } as const
 
 export const GATHER = {
