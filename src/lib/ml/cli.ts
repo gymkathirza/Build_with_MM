@@ -22,15 +22,14 @@ if (hour) {
   const ms = Math.max(60_000, minutes * 60_000)
   console.log(`Hour benchmark: ${minutes} min wall-clock, seed round ${seed.round}`)
   const result = runHourBenchmark(ms, seed, 8, 180, (rec, tuned) => {
-    if (rec.round % 3 === 0 || rec.round === 1) {
-      const p0 = rec.games.filter((g) => g.winner === 0).length
-      const p1 = rec.games.filter((g) => g.winner === 1).length
-      const d = rec.games.filter((g) => g.winner === null).length
+    if (rec.round === 1 || rec.round % 40 === 0) {
       console.log(
-        `t+${(rec.elapsedMs / 60000).toFixed(1)}m round ${rec.round} P0/P1/draw ${p0}/${p1}/${d} sim ${rec.score.simMs.toFixed(3)}ms q=${tuned.quality} lod=${tuned.lodDistance} atk=${tuned.ai.attackAtArmy} mil=${tuned.ai.militaryRatio}`,
+        `t+${(rec.elapsedMs / 60000).toFixed(1)}m round ${rec.round} P0/P1/draw ${rec.p0}/${rec.p1}/${rec.draw} sim ${rec.simMs.toFixed(3)}ms q=${tuned.quality} lod=${tuned.lodDistance} atk=${tuned.ai.attackAtArmy} mil=${tuned.ai.militaryRatio}`,
       )
     }
-    writeFileSync(tunedPath, JSON.stringify(tuned, null, 2))
+    if (rec.round === 1 || rec.round % 80 === 0) {
+      writeFileSync(tunedPath, JSON.stringify(tuned, null, 2))
+    }
   })
   const summary = summarizeBenchmark(result)
   writeFileSync(tunedPath, JSON.stringify(result.tuned, null, 2))

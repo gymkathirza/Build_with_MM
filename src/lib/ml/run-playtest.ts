@@ -97,79 +97,126 @@ function closeRound(round: number, games: GameResult[], tuned: Tuned, started: n
   return { round, games, score, tunedAfter, elapsedMs: Date.now() - started }
 }
 
+export type CompactRound = {
+  round: number
+  p0: number
+  p1: number
+  draw: number
+  n: number
+  avgSec: number
+  simMs: number
+  peak: number
+  deaths: number
+  score: number
+  quality: number
+  lod: number
+  attackAtArmy: number
+  gather: number
+  military: number
+  age: number
+  elapsedMs: number
+}
+
+function jitterAi(base: Tuned["ai"], salt: number) {
+  const n = ((salt * 17) % 100) / 100
+  return {
+    ...base,
+    gatherBias: Math.max(0.5, Math.min(0.88, base.gatherBias + (n - 0.5) * 0.1)),
+    attackAtArmy: Math.max(3, base.attackAtArmy + (n > 0.7 ? 1 : n < 0.3 ? -1 : 0)),
+  }
+}
+
 export function runHourBenchmark(
   minMs: number,
   seed: Tuned = DEFAULT_TUNED,
   gamesPerRound = 8,
   maxSeconds = 180,
-  onRound?: (rec: RoundRecord, tuned: Tuned) => void,
+  onRound?: (rec: CompactRound, tuned: Tuned) => void,
 ): {
   tuned: Tuned
-  history: RoundRecord[]
+  history: CompactRound[]
   wallMs: number
   games: number
+  rounds: number
+  totals: {
+    p0: number
+    p1: number
+    draw: number
+    sec: number
+    sim: number
+    wall: number
+    peak: number
+    deaths: number
+  }
 } {
   let tuned: Tuned = { ...seed, ai: { ...seed.ai } }
-  const history: RoundRecord[] = []
+  const history: CompactRound[] = []
+  const totals = { p0: 0, p1: 0, draw: 0, sec: 0, sim: 0, wall: 0, peak: 0, deaths: 0 }
   const t0 = Date.now()
   let round = 0
+  let gamesN = 0
   while (Date.now() - t0 < minMs) {
     round++
     const games: GameResult[] = []
     for (let g = 0; g < gamesPerRound; g++) {
-      games.push(runGame(tuned, maxSeconds, true, g % 2 === 1))
+      const slice: Tuned = { ...tuned, ai: g % 2 ? jitterAi(tuned.ai, round + g) : tuned.ai }
+      games.push(runGame(slice, maxSeconds, true, g % 2 === 1))
     }
     const rec = closeRound(round, games, tuned, t0)
-    history.push(rec)
     tuned = rec.tunedAfter
-    onRound?.(rec, tuned)
+    const compact: CompactRound = {
+      round,
+      p0: games.filter((g) => g.winner === 0).length,
+      p1: games.filter((g) => g.winner === 1).length,
+      draw: games.filter((g) => g.winner === null).length,
+      n: games.length,
+      avgSec: games.reduce((s, g) => s + g.seconds, 0) / games.length,
+      simMs: rec.score.simMs,
+      peak: Math.max(...games.map((g) => g.peakEntities)),
+      deaths: games.reduce((s, g) => s + g.deaths, 0) / games.length,
+      score: rec.score.total,
+      quality: tuned.quality,
+      lod: tuned.lodDistance,
+      attackAtArmy: tuned.ai.attackAtArmy,
+      gather: tuned.ai.gatherBias,
+      military: tuned.ai.militaryRatio,
+      age: tuned.ai.agePriority,
+      elapsedMs: rec.elapsedMs,
+    }
+    totals.p0 += compact.p0
+    totals.p1 += compact.p1
+    totals.draw += compact.draw
+    totals.sec += compact.avgSec * compact.n
+    totals.sim += compact.simMs * compact.n
+    totals.wall += games.reduce((s, g) => s + g.wallMs, 0)
+    totals.peak += compact.peak
+    totals.deaths += compact.deaths * compact.n
+    gamesN += compact.n
+    if (round % 15 === 1 || Date.now() - t0 > minMs - 1000) history.push(compact)
+    onRound?.(compact, tuned)
   }
-  return { tuned, history, wallMs: Date.now() - t0, games: history.reduce((s, h) => s + h.games.length, 0) }
+  return { tuned, history, wallMs: Date.now() - t0, games: gamesN, rounds: round, totals }
 }
 
 export function summarizeBenchmark(data: ReturnType<typeof runHourBenchmark>) {
-  const all = data.history.flatMap((h) => h.games)
-  const p0 = all.filter((g) => g.winner === 0).length
-  const p1 = all.filter((g) => g.winner === 1).length
-  const draw = all.filter((g) => g.winner === null).length
-  const avgSec = all.reduce((s, g) => s + g.seconds, 0) / Math.max(1, all.length)
-  const avgSim = all.reduce((s, g) => s + g.simMsAvg, 0) / Math.max(1, all.length)
-  const avgWall = all.reduce((s, g) => s + g.wallMs, 0) / Math.max(1, all.length)
-  const avgPeak = all.reduce((s, g) => s + g.peakEntities, 0) / Math.max(1, all.length)
-  const avgDeaths = all.reduce((s, g) => s + g.deaths, 0) / Math.max(1, all.length)
-  const trajectory = data.history.map((h) => ({
-    round: h.round,
-    elapsedMin: h.elapsedMs / 60000,
-    p0: h.games.filter((g) => g.winner === 0).length,
-    p1: h.games.filter((g) => g.winner === 1).length,
-    draw: h.games.filter((g) => g.winner === null).length,
-    avgSec: h.games.reduce((s, g) => s + g.seconds, 0) / h.games.length,
-    simMs: h.score.simMs,
-    quality: h.tunedAfter.quality,
-    lod: h.tunedAfter.lodDistance,
-    attackAtArmy: h.tunedAfter.ai.attackAtArmy,
-    gather: h.tunedAfter.ai.gatherBias,
-    military: h.tunedAfter.ai.militaryRatio,
-    age: h.tunedAfter.ai.agePriority,
-    score: h.score.total,
-  }))
+  const n = Math.max(1, data.games)
   return {
     wallMinutes: data.wallMs / 60000,
     games: data.games,
-    finished: p0 + p1,
-    unfinished: draw,
-    p0Wins: p0,
-    p1Wins: p1,
-    p0Rate: p0 / Math.max(1, all.length),
-    p1Rate: p1 / Math.max(1, all.length),
-    drawRate: draw / Math.max(1, all.length),
-    avgDurationSec: avgSec,
-    avgSimMs: avgSim,
-    avgGameWallMs: avgWall,
-    avgPeakEntities: avgPeak,
-    avgDeaths,
+    finished: data.totals.p0 + data.totals.p1,
+    unfinished: data.totals.draw,
+    p0Wins: data.totals.p0,
+    p1Wins: data.totals.p1,
+    p0Rate: data.totals.p0 / n,
+    p1Rate: data.totals.p1 / n,
+    drawRate: data.totals.draw / n,
+    avgDurationSec: data.totals.sec / n,
+    avgSimMs: data.totals.sim / n,
+    avgGameWallMs: data.totals.wall / n,
+    avgPeakEntities: data.totals.peak / Math.max(1, data.rounds),
+    avgDeaths: data.totals.deaths / n,
     final: data.tuned,
-    trajectory,
+    trajectory: data.history,
   }
 }
 
