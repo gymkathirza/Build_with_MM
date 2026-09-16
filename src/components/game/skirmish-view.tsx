@@ -52,7 +52,7 @@ export function SkirmishView() {
             </h1>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
               Pick a survey plate, a banner to steward, and how sharp the rival marshals should be.
-              Nothing here simulates combat — the March button opens the HUD mock.
+              March opens a local 1v1 against the AI on that plate.
             </p>
           </div>
           <Button variant="outline" render={<Link href="/" />}>
@@ -167,7 +167,7 @@ export function SkirmishView() {
             render={
               canMarch ? (
                 <Link
-                  href={`/match?source=skirmish&faction=${factionId}&map=${mapId}&difficulty=${difficulty}&age=${startingAge}`}
+                  href={`/match?source=skirmish&faction=${factionId}&enemy=${factionId === "gilded" ? "ashen" : "gilded"}&map=${mapId}&difficulty=${difficulty}&age=${startingAge}`}
                 />
               ) : undefined
             }

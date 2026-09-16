@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
-import { MatchHud } from "@/components/game/match-hud"
+import { MatchView } from "@/components/game/match-view"
 
-export const metadata: Metadata = { title: "The field" }
+export const metadata: Metadata = { title: "Skirmish" }
 
 export default async function MatchPage({
   searchParams,
@@ -13,13 +13,11 @@ export default async function MatchPage({
     (Array.isArray(v) ? v[0] : v) || fallback
 
   return (
-    <MatchHud
+    <MatchView
       factionId={one(q.faction, "ashen")}
-      mapId={one(q.map, "hollowmere")}
-      difficultyId={one(q.difficulty, "marshal")}
-      chapterId={typeof q.chapter === "string" ? q.chapter : undefined}
-      source={one(q.source, "skirmish")}
-      ageId={one(q.age, "forge")}
+      enemyFaction={one(q.enemy, "gilded")}
+      bot={one(q.bot, "") === "1"}
+      difficulty={one(q.difficulty, "marshal")}
     />
   )
 }

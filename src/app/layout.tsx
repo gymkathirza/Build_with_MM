@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     default: GAME_TITLE,
     template: `%s · ${GAME_TITLE}`,
   },
-  description: `${GAME_TITLE} — ${GAME_TAGLINE} A sample RTS interface mock. No game engine.`,
+  description: `${GAME_TITLE} — ${GAME_TAGLINE} Local 1v1 skirmish vs AI.`,
   icons: { icon: "/icon.svg" },
 }
 

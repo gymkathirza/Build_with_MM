@@ -1,4 +1,5 @@
-export const GAME_TITLE = "Manon Mani"
+export const GAME_TITLE = "Build with Manon Mani"
+export const GAME_SHORT = "Manon Mani"
 export const GAME_TAGLINE = "Four banners. Four epochs. One treaty left to break."
 
 export const AGES = [
