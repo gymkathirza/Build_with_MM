@@ -16,16 +16,6 @@ import {
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -35,6 +25,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { EmptyState, ErrorState, LoadingState } from "@/components/game/screen-states"
+import { Overlay } from "@/components/game/overlay"
 import {
   AGES,
   BUILDINGS,
@@ -105,11 +96,15 @@ export function MatchHud({
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key !== "Escape") return
-      if (!paused && ageRite === "idle") setPaused(true)
+      if (ageRite !== "idle") {
+        setAgeRite("idle")
+        return
+      }
+      setPaused((open) => !open)
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [paused, ageRite])
+  }, [ageRite])
 
   const selected = START_TOKENS.find((t) => t.id === selectedId) ?? null
   const catalog = selected
@@ -148,7 +143,6 @@ export function MatchHud({
   }
 
   return (
-    <Dialog open={paused} onOpenChange={setPaused}>
     <div className="relative flex min-h-dvh flex-col cinematic-bg text-foreground">
       <div className="grain-overlay opacity-10" />
 
@@ -166,11 +160,14 @@ export function MatchHud({
         <span className="text-xs tabular-nums text-muted-foreground">
           Banners {pop.used}/{pop.cap}
         </span>
-        <DialogTrigger
-          render={<Button size="icon-sm" variant="outline" aria-label="Pause" />}
+        <Button
+          size="icon-sm"
+          variant="outline"
+          aria-label="Pause"
+          onClick={() => setPaused(true)}
         >
           <Pause />
-        </DialogTrigger>
+        </Button>
       </header>
 
       <div className="relative z-10 grid min-h-0 flex-1 grid-cols-1 grid-rows-[1fr_auto] lg:grid-cols-[1fr_11rem]">
@@ -254,26 +251,23 @@ export function MatchHud({
         </div>
       </footer>
 
-      <DialogContent className="gold-trim z-[100] border-primary/30 bg-card sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="font-heading text-primary">The field is held</DialogTitle>
-          <DialogDescription>
-            Pause does not freeze a simulation — there is none. Use it as a steward would: to read
-            the map, open settings, or resign the banner.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="flex-col bg-transparent sm:flex-col">
-          <DialogClose render={<Button className="w-full" />}>Resume</DialogClose>
+      {paused ? (
+        <Overlay
+          title="The field is held"
+          description="Pause does not freeze a simulation — there is none. Use it as a steward would: to read the map, open settings, or resign the banner."
+        >
+          <Button className="w-full" onClick={() => setPaused(false)}>
+            Resume
+          </Button>
           <Button className="w-full" variant="outline" render={<Link href="/settings" />}>
             Settings
           </Button>
           <Button className="w-full" variant="destructive" render={<Link href="/" />}>
             Resign to menu
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        </Overlay>
+      ) : null}
     </div>
-    </Dialog>
   )
 }
 

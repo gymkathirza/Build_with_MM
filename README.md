@@ -25,10 +25,11 @@ npm run start -- --port 43147
 | Route | What it is |
 | --- | --- |
 | `/` | Main menu — Campaign, Skirmish, Settings, Exit |
+| `/exit` | Confirm leaving the hall |
 | `/campaign` | Chapter select with locked/unlocked plates and save-slot empty/error states |
-| `/skirmish` | Map, difficulty, and banner setup, plus map preview loading/error |
+| `/skirmish` | Map, difficulty, and banner setup, plus map preview empty/error states |
 | `/match` | HUD mock (query: `faction`, `map`, `difficulty`, `chapter`, `age`, `source`) |
 | `/settings` | Banners, horns, and table options |
-| `/farewell` | Exit confirmation destination |
+| `/farewell` | Banners furled |
 
 This repository is interface only: clicking March, Train, or Advance Age updates the mock chrome, not a simulation.

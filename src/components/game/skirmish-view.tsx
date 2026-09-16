@@ -1,10 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useState, type ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import { CinematicShell } from "@/components/game/cinematic-shell"
-import { EmptyState, ErrorState, LoadingState } from "@/components/game/screen-states"
+import { EmptyState, ErrorState } from "@/components/game/screen-states"
 import {
   AGES,
   DIFFICULTIES,
@@ -26,29 +26,19 @@ export function SkirmishView() {
   const [factionId, setFactionId] = useState<FactionId>("ashen")
   const [difficulty, setDifficulty] = useState<DifficultyId>("marshal")
   const [startingAge, setStartingAge] = useState("ember")
-  const [inking, setInking] = useState(false)
-
-  useEffect(() => {
-    if (!mapId || !inking) return
-    const t = window.setTimeout(() => setInking(false), 700)
-    return () => window.clearTimeout(t)
-  }, [mapId, inking])
 
   const faction = factionById(factionId)
   const map = mapId ? mapById(mapId) : null
   const diff = difficultyById(difficulty)
   const preview = !mapId
     ? "idle"
-    : inking
-      ? "loading"
-      : map?.status === "error"
-        ? "error"
-        : "ready"
+    : map?.status === "error"
+      ? "error"
+      : "ready"
   const canMarch = preview === "ready" && map && map.status === "ready"
 
   function chooseMap(id: MapId) {
     setMapId(id)
-    setInking(true)
   }
 
   return (
@@ -145,13 +135,6 @@ export function SkirmishView() {
                 title="No plate selected"
                 detail="The cartographer will not ink a blank table. Choose a map to see its fords, groves, and relic stands."
               />
-            ) : preview === "loading" ? (
-              <div className="gold-trim flex h-full min-h-72 items-center justify-center bg-card/40">
-                <LoadingState
-                  title="Inking the plate"
-                  detail="Rivers, seams, and relic stands are being ruled onto the table."
-                />
-              </div>
             ) : preview === "error" ? (
               <ErrorState
                 className="h-full min-h-72"
