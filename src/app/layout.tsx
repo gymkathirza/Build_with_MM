@@ -1,5 +1,6 @@
 import { Cinzel, Source_Sans_3 } from "next/font/google"
 import type { Metadata } from "next"
+import type { ReactNode } from "react"
 import { Providers } from "@/components/providers"
 import { GAME_CHANNEL, GAME_TAGLINE, GAME_TITLE, GAME_VERSION } from "@/lib/game-data"
 import "./globals.css"
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
   icons: { icon: "/icon.svg" },
 }
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
