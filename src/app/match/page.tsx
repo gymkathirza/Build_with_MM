@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { MatchView } from "@/components/game/match-view"
+import { MatchClient } from "@/components/game/match-client"
 
 export const metadata: Metadata = { title: "Skirmish" }
 
@@ -13,7 +13,7 @@ export default async function MatchPage({
     (Array.isArray(v) ? v[0] : v) || fallback
 
   return (
-    <MatchView
+    <MatchClient
       factionId={one(q.faction, "ashen")}
       enemyFaction={one(q.enemy, "gilded")}
       bot={one(q.bot, "") === "1"}

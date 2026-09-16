@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react"
 import { Anvil, Hammer, Pause, Trees, Wheat } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -82,7 +82,7 @@ export function MatchView({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const spec = specFor(mapId)
   const halls = hallPositions(spec)
-  const camRef = useRef<Cam>({ x: halls.p0.x, y: halls.p0.y, z: spec.size >= 200 ? 11 : 16, w: 800, h: 480 })
+  const camRef = useRef<Cam>({ x: halls.p0.x, y: halls.p0.y, z: spec.size >= 200 ? 14 : 18, w: 800, h: 480 })
   const keysRef = useRef<Set<string>>(new Set())
   const telRef = useRef(createTelemetry())
   const pendingRef = useRef<Pending>(null)
@@ -150,10 +150,10 @@ export function MatchView({
     setHudPulse((n) => n + 1)
   }, [world])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx = canvas.getContext("2d", { alpha: false })
+    const ctx = canvas.getContext("2d")
     if (!ctx) return
     let raf = 0
     let last = performance.now()
@@ -161,7 +161,7 @@ export function MatchView({
     let frames = 0
     let fpsT = last
     let fps = 60
-    let hudAt = 0
+    let hudAt = performance.now()
     let postedWin = false
     let sampleN = 0
     let lastObsPost = 0
@@ -304,8 +304,14 @@ export function MatchView({
       }
       raf = requestAnimationFrame(loop)
     }
-    raf = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(raf)
+    loop(performance.now())
+    const watchdog = window.setInterval(() => {
+      if (performance.now() - last > 250) loop(performance.now())
+    }, 100)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.clearInterval(watchdog)
+    }
   }, [bot, paintHud, personaId, tuned, world])
 
   useEffect(() => {
