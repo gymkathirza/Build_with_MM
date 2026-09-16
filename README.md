@@ -1,4 +1,4 @@
-# Ages of Accord
+# Manon Mani
 
 A **sample UI mock** for an original RTS in the spirit of classic age-advancement strategy games. It is **not** Age of Empires, does not use Microsoft IP, and does **not** include a game engine or combat simulation.
 
