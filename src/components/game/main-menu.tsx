@@ -6,11 +6,13 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 import { CinematicShell } from "@/components/game/cinematic-shell"
 import { GAME_TAGLINE, GAME_TITLE } from "@/lib/game-data"
@@ -35,7 +37,6 @@ const ITEMS = [
 
 export function MainMenu() {
   const router = useRouter()
-  const [exitOpen, setExitOpen] = useState(false)
   const [hovered, setHovered] = useState<string | null>(ITEMS[0].hint)
 
   return (
@@ -62,19 +63,34 @@ export function MainMenu() {
                 {item.label}
               </Link>
             ))}
-            <button
-              type="button"
-              className="menu-link py-2.5 text-left font-heading text-xl text-foreground/90 sm:text-2xl"
-              onMouseEnter={() =>
-                setHovered("Furl the banners. The chronicle stays on this device.")
-              }
-              onFocus={() =>
-                setHovered("Furl the banners. The chronicle stays on this device.")
-              }
-              onClick={() => setExitOpen(true)}
-            >
-              Exit
-            </button>
+            <Dialog>
+              <DialogTrigger
+                className="menu-link py-2.5 text-left font-heading text-xl text-foreground/90 sm:text-2xl"
+                onMouseEnter={() =>
+                  setHovered("Furl the banners. The chronicle stays on this device.")
+                }
+                onFocus={() =>
+                  setHovered("Furl the banners. The chronicle stays on this device.")
+                }
+              >
+                Exit
+              </DialogTrigger>
+              <DialogContent className="gold-trim z-[100] border-primary/30 bg-card sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="font-heading tracking-wide text-primary">
+                    Furl the banners?
+                  </DialogTitle>
+                  <DialogDescription>
+                    This is an interface mock, not a running match. Leaving returns you to a quiet hall.
+                    No progress is written beyond this browser.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="bg-transparent">
+                  <DialogClose render={<Button variant="outline" />}>Remain</DialogClose>
+                  <Button onClick={() => router.push("/farewell")}>Exit</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </nav>
 
           <p className="min-h-12 max-w-md text-sm text-muted-foreground/90">{hovered}</p>
@@ -82,26 +98,6 @@ export function MainMenu() {
 
         <WorldPlate />
       </div>
-
-      <Dialog open={exitOpen} onOpenChange={setExitOpen}>
-        <DialogContent className="gold-trim border-primary/30 bg-card sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-heading tracking-wide text-primary">
-              Furl the banners?
-            </DialogTitle>
-            <DialogDescription>
-              This is an interface mock, not a running match. Leaving returns you to a quiet hall.
-              No progress is written beyond this browser.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="bg-transparent">
-            <Button variant="outline" onClick={() => setExitOpen(false)}>
-              Remain
-            </Button>
-            <Button onClick={() => router.push("/farewell")}>Exit</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </CinematicShell>
   )
 }

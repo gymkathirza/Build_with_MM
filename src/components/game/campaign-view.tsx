@@ -53,12 +53,20 @@ export function CampaignView() {
               key={s.id}
               type="button"
               onClick={() => setSlotId(s.id)}
+              aria-pressed={slotId === s.id}
               className={cn(
                 "gold-trim rounded-sm px-4 py-3 text-left transition",
-                slotId === s.id ? "bg-primary/10" : "bg-card/50 hover:bg-card",
+                slotId === s.id
+                  ? "bg-primary/15 ring-1 ring-primary"
+                  : "bg-card/50 hover:bg-card",
               )}
             >
-              <p className="font-heading text-sm tracking-widest text-primary uppercase">{s.label}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-heading text-sm tracking-widest text-primary uppercase">{s.label}</p>
+                {slotId === s.id ? (
+                  <span className="text-[10px] tracking-widest text-primary uppercase">Selected</span>
+                ) : null}
+              </div>
               <p className="mt-1 text-sm">
                 {s.status === "empty"
                   ? "No chronicle inscribed"

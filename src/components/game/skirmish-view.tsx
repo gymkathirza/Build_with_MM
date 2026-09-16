@@ -3,17 +3,10 @@
 import Link from "next/link"
 import { useEffect, useState, type ReactNode } from "react"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { CinematicShell } from "@/components/game/cinematic-shell"
 import { EmptyState, ErrorState, LoadingState } from "@/components/game/screen-states"
 import {
+  AGES,
   DIFFICULTIES,
   FACTIONS,
   MAPS,
@@ -24,6 +17,9 @@ import {
   type FactionId,
   type MapId,
 } from "@/lib/game-data"
+import { cn } from "@/lib/utils"
+
+const OPENING_AGES = AGES.filter((age) => age.id !== "dominion")
 
 export function SkirmishView() {
   const [mapId, setMapId] = useState<MapId | "">("")
@@ -50,6 +46,11 @@ export function SkirmishView() {
         : "ready"
   const canMarch = preview === "ready" && map && map.status === "ready"
 
+  function chooseMap(id: MapId) {
+    setMapId(id)
+    setInking(true)
+  }
+
   return (
     <CinematicShell>
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-10 sm:px-8">
@@ -70,87 +71,64 @@ export function SkirmishView() {
         </header>
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-          <form className="gold-trim space-y-5 rounded-sm bg-card/60 p-4 sm:p-5" onSubmit={(e) => e.preventDefault()}>
-            <Field label="Map plate" htmlFor="map">
-              <Select
-                value={mapId || null}
-                onValueChange={(v) => {
-                  if (!v) return
-                  setMapId(v as MapId)
-                  setInking(true)
-                }}
-              >
-                <SelectTrigger id="map" className="w-full min-w-0">
-                  <SelectValue placeholder="Choose a surveyed map" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MAPS.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
+          <form
+            className="gold-trim space-y-5 rounded-sm bg-card/60 p-4 sm:p-5"
+            onSubmit={(e) => e.preventDefault()}
+          >
+            <Fieldset legend="Map plate">
+              <div className="grid gap-2 sm:grid-cols-2">
+                {MAPS.map((m) => (
+                  <Choice
+                    key={m.id}
+                    selected={mapId === m.id}
+                    title={m.name}
+                    detail={`${m.size} · ${m.players > 0 ? `${m.players} banners` : "unreadable"}`}
+                    onClick={() => chooseMap(m.id)}
+                  />
+                ))}
+              </div>
+            </Fieldset>
 
-            <Field label="Your banner" htmlFor="faction">
-              <Select
-                value={factionId}
-                onValueChange={(v) => {
-                  if (v) setFactionId(v as FactionId)
-                }}
-              >
-                <SelectTrigger id="faction" className="w-full min-w-0">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {FACTIONS.map((f) => (
-                    <SelectItem key={f.id} value={f.id}>
-                      {f.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
+            <Fieldset legend="Your banner">
+              <div className="grid gap-2 sm:grid-cols-2">
+                {FACTIONS.map((f) => (
+                  <Choice
+                    key={f.id}
+                    selected={factionId === f.id}
+                    title={f.name}
+                    detail={f.epithet}
+                    onClick={() => setFactionId(f.id)}
+                  />
+                ))}
+              </div>
+            </Fieldset>
 
-            <Field label="Rival sharpness" htmlFor="diff">
-              <Select
-                value={difficulty}
-                onValueChange={(v) => {
-                  if (v) setDifficulty(v as DifficultyId)
-                }}
-              >
-                <SelectTrigger id="diff" className="w-full min-w-0">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DIFFICULTIES.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <Fieldset legend="Rival sharpness">
+              <div className="flex flex-wrap gap-2">
+                {DIFFICULTIES.map((d) => (
+                  <Choice
+                    key={d.id}
+                    selected={difficulty === d.id}
+                    title={d.name}
+                    onClick={() => setDifficulty(d.id)}
+                  />
+                ))}
+              </div>
               <p className="text-xs text-muted-foreground">{diff.blurb}</p>
-            </Field>
+            </Fieldset>
 
-            <Field label="Opening age" htmlFor="age">
-              <Select
-                value={startingAge}
-                onValueChange={(v) => {
-                  if (v) setStartingAge(v)
-                }}
-              >
-                <SelectTrigger id="age" className="w-full min-w-0">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ember">Ember Age</SelectItem>
-                  <SelectItem value="forge">Forge Age</SelectItem>
-                  <SelectItem value="citadel">Citadel Age</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
+            <Fieldset legend="Opening age">
+              <div className="flex flex-wrap gap-2">
+                {OPENING_AGES.map((age) => (
+                  <Choice
+                    key={age.id}
+                    selected={startingAge === age.id}
+                    title={age.name}
+                    onClick={() => setStartingAge(age.id)}
+                  />
+                ))}
+              </div>
+            </Fieldset>
 
             <div className="rounded-md border border-primary/20 bg-background/40 p-3">
               <p className="font-heading text-sm text-primary">{faction.name}</p>
@@ -179,10 +157,7 @@ export function SkirmishView() {
                 className="h-full min-h-72"
                 title="The Lost Cartograph will not open"
                 detail="Surveyors marked this plate as cursed. Pick Hollowmere, Shattercoast, or any named land instead."
-                onRetry={() => {
-                  setMapId("hollowmere")
-                  setInking(true)
-                }}
+                onRetry={() => chooseMap("hollowmere")}
                 retryLabel="Open Hollowmere Basin"
               />
             ) : map ? (
@@ -222,22 +197,41 @@ export function SkirmishView() {
   )
 }
 
-function Field({
-  label,
-  htmlFor,
-  children,
+function Fieldset({ legend, children }: { legend: string; children: ReactNode }) {
+  return (
+    <fieldset className="space-y-2">
+      <legend className="text-sm font-medium tracking-widest uppercase">{legend}</legend>
+      {children}
+    </fieldset>
+  )
+}
+
+function Choice({
+  selected,
+  title,
+  detail,
+  onClick,
 }: {
-  label: string
-  htmlFor: string
-  children: ReactNode
+  selected: boolean
+  title: string
+  detail?: string
+  onClick: () => void
 }) {
   return (
-    <div className="space-y-2">
-      <Label htmlFor={htmlFor} className="tracking-widest uppercase">
-        {label}
-      </Label>
-      {children}
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={cn(
+        "rounded-sm border px-3 py-2 text-left transition",
+        selected
+          ? "border-primary bg-primary/15 text-primary"
+          : "border-primary/20 bg-background/30 hover:border-primary/50 hover:bg-card",
+      )}
+    >
+      <span className="block text-sm font-medium">{title}</span>
+      {detail ? <span className="mt-0.5 block text-xs text-muted-foreground">{detail}</span> : null}
+    </button>
   )
 }
 
