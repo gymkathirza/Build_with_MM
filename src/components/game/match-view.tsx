@@ -115,6 +115,12 @@ export function MatchView({
   const [winner, setWinner] = useState<0 | 1 | null>(null)
   const [endPearl, setEndPearl] = useState(false)
   const [hudPulse, setHudPulse] = useState(0)
+  const [startPearl, setStartPearl] = useState(true)
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setStartPearl(false), 1900)
+    return () => window.clearTimeout(t)
+  }, [])
 
   useEffect(() => {
     pausedRef.current = paused
@@ -147,9 +153,7 @@ export function MatchView({
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx =
-      canvas.getContext("2d", { alpha: false, desynchronized: true }) ||
-      canvas.getContext("2d", { alpha: false })
+    const ctx = canvas.getContext("2d", { alpha: false })
     if (!ctx) return
     let raf = 0
     let last = performance.now()
@@ -178,13 +182,10 @@ export function MatchView({
       }
       const cam = camRef.current
       const parent = canvas.parentElement
-      const w = parent?.clientWidth ?? 800
-      const h = parent?.clientHeight ?? 480
+      const box = canvas.getBoundingClientRect()
+      const w = Math.max(parent?.clientWidth ?? 0, Math.floor(box.width), 320)
+      const h = Math.max(parent?.clientHeight ?? 0, Math.floor(box.height), 200)
       const dpr = Math.min(1.5, window.devicePixelRatio || 1)
-      if (w < 32 || h < 32) {
-        raf = requestAnimationFrame(loop)
-        return
-      }
       if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
         canvas.width = Math.floor(w * dpr)
         canvas.height = Math.floor(h * dpr)
@@ -242,6 +243,8 @@ export function MatchView({
         if (acc > step * 2) acc = 0
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.fillStyle = "#35502f"
+      ctx.fillRect(0, 0, w, h)
       const t0 = performance.now()
       try {
         drawWorld(ctx, world, cam, selectedDrawRef.current, qualityRef.current, tuned.lodDistance, now, w, h)
@@ -396,7 +399,7 @@ export function MatchView({
       <div className="relative min-h-[50vh] flex-1">
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 h-full w-full cursor-crosshair"
+          className="absolute inset-0 h-full w-full cursor-crosshair bg-[#35502f]"
           onContextMenu={(e) => e.preventDefault()}
           onPointerDown={(e) => {
             const r = e.currentTarget.getBoundingClientRect()
@@ -449,7 +452,7 @@ export function MatchView({
             60 fps
           </p>
         </aside>
-        <PearlFlourish play variant="start" />
+        <PearlFlourish play={startPearl} variant="start" />
         <PearlFlourish play={endPearl} variant="end" />
         {winner !== null ? (
           <Overlay

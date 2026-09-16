@@ -319,7 +319,11 @@ export function drawWorld(
   h: number,
 ) {
   ctx.imageSmoothingEnabled = true
-  ctx.imageSmoothingQuality = "low"
+  try {
+    ctx.imageSmoothingQuality = "low"
+  } catch {
+    /* some 2d contexts reject this setter */
+  }
   drawTerrain(ctx, cam, w, h, quality, world.size)
   for (const n of world.nodes) {
     if (n.amount > 0) drawNode(ctx, n, cam, quality, w, h)
