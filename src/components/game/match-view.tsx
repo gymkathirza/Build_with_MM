@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react"
 import { Anvil, Hammer, Pause, Trees, Wheat } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -27,6 +27,7 @@ import {
   entityAt,
   issueAttack,
   issueAttackMove,
+  issueDefend,
   issueGather,
   issueHalt,
   issueMove,
@@ -35,6 +36,7 @@ import {
   queueTrain,
   startAge,
   tick,
+  upgradeBuilding,
 } from "@/lib/sim/engine"
 import { tickAi } from "@/lib/sim/ai"
 import { type Cam, drawWorld, screenToWorld } from "@/lib/sim/draw"
@@ -80,7 +82,7 @@ export function MatchView({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const spec = specFor(mapId)
   const halls = hallPositions(spec)
-  const camRef = useRef<Cam>({ x: halls.p0.x, y: halls.p0.y, z: spec.size >= 200 ? 11 : 16, w: 800, h: 480 })
+  const camRef = useRef<Cam>({ x: halls.p0.x, y: halls.p0.y, z: spec.size >= 200 ? 14 : 18, w: 800, h: 480 })
   const keysRef = useRef<Set<string>>(new Set())
   const telRef = useRef(createTelemetry())
   const pendingRef = useRef<Pending>(null)
@@ -112,6 +114,13 @@ export function MatchView({
   const [pending, setPending] = useState<Pending>(null)
   const [winner, setWinner] = useState<0 | 1 | null>(null)
   const [endPearl, setEndPearl] = useState(false)
+  const [hudPulse, setHudPulse] = useState(0)
+  const [startPearl, setStartPearl] = useState(true)
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setStartPearl(false), 1900)
+    return () => window.clearTimeout(t)
+  }, [])
 
   useEffect(() => {
     pausedRef.current = paused
@@ -138,12 +147,13 @@ export function MatchView({
         ? `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms\nsim ${simMs.toFixed(2)} ms · in ${tel.lastInputMs.toFixed(0)} ms\nclicks ${tel.clicks} · fail ${tel.failedOrders} · deaths ${tel.deaths}\npan ${tel.cameraMoves} · lod ${qualityRef.current}`
         : "warming…"
     }
+    setHudPulse((n) => n + 1)
   }, [world])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true })
+    const ctx = canvas.getContext("2d")
     if (!ctx) return
     let raf = 0
     let last = performance.now()
@@ -151,7 +161,7 @@ export function MatchView({
     let frames = 0
     let fpsT = last
     let fps = 60
-    let hudAt = 0
+    let hudAt = performance.now()
     let postedWin = false
     let sampleN = 0
     let lastObsPost = 0
@@ -159,6 +169,7 @@ export function MatchView({
       ? { ...tuned.ai, gatherBias: 0.8, attackAtArmy: tuned.ai.attackAtArmy + 2 }
       : null
     const loop = (now: number) => {
+      try {
       const dt = Math.min(0.033, (now - last) / 1000)
       last = now
       frames++
@@ -172,14 +183,14 @@ export function MatchView({
       }
       const cam = camRef.current
       const parent = canvas.parentElement
-      const w = parent?.clientWidth ?? 800
-      const h = parent?.clientHeight ?? 480
+      const w = Math.max(parent?.clientWidth || 0, 320)
+      const h = Math.max(parent?.clientHeight || 0, 200)
       const dpr = Math.min(1.5, window.devicePixelRatio || 1)
-      if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
-        canvas.width = Math.floor(w * dpr)
-        canvas.height = Math.floor(h * dpr)
-        canvas.style.width = `${w}px`
-        canvas.style.height = `${h}px`
+      const bw = Math.floor(w * dpr)
+      const bh = Math.floor(h * dpr)
+      if (canvas.width !== bw || canvas.height !== bh) {
+        canvas.width = bw
+        canvas.height = bh
       }
       cam.w = w
       cam.h = h
@@ -232,8 +243,14 @@ export function MatchView({
         if (acc > step * 2) acc = 0
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.fillStyle = "#3d5a32"
+      ctx.fillRect(0, 0, w, h)
       const t0 = performance.now()
-      drawWorld(ctx, world, cam, selectedDrawRef.current, qualityRef.current, tuned.lodDistance, now, w, h)
+      try {
+        drawWorld(ctx, world, cam, selectedDrawRef.current, qualityRef.current, tuned.lodDistance, now, w, h)
+      } catch (err) {
+        console.error(err)
+      }
       const drag = dragRef.current
       if (drag) {
         ctx.strokeStyle = "rgba(243,212,138,0.9)"
@@ -279,10 +296,22 @@ export function MatchView({
         setWinner(world.winner)
         setEndPearl(true)
       }
+      } catch (err) {
+        console.error(err)
+        ctx.setTransform(1, 0, 0, 1, 0, 0)
+        ctx.fillStyle = "#3d5a32"
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+      }
       raf = requestAnimationFrame(loop)
     }
-    raf = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(raf)
+    loop(performance.now())
+    const watchdog = window.setInterval(() => {
+      if (performance.now() - last > 250) loop(performance.now())
+    }, 100)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.clearInterval(watchdog)
+    }
   }, [bot, paintHud, personaId, tuned, world])
 
   useEffect(() => {
@@ -358,8 +387,8 @@ export function MatchView({
   }
 
   return (
-    <div className="relative flex min-h-dvh flex-col bg-[#140e0a] text-foreground">
-      <header className="relative z-20 flex flex-wrap items-center gap-2 border-b border-primary/25 bg-black/55 px-2 py-1.5">
+    <div className="relative flex h-dvh max-h-dvh flex-col overflow-hidden bg-[#140e0a] text-foreground">
+      <header className="relative z-20 flex shrink-0 flex-wrap items-center gap-2 border-b border-primary/25 bg-black/55 px-2 py-1.5">
         <PearlLogo size={28} className="hidden shrink-0 sm:block" />
         <p className="font-heading hidden text-[11px] tracking-[0.28em] text-primary uppercase sm:block">
           {faction.name}
@@ -379,10 +408,10 @@ export function MatchView({
         </Button>
       </header>
 
-      <div className="relative min-h-0 flex-1">
+      <div className="relative min-h-0 flex-1 overflow-hidden bg-[#3d5a32]">
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 h-full w-full cursor-crosshair"
+          className="absolute inset-0 block h-full w-full cursor-crosshair bg-[#3d5a32]"
           onContextMenu={(e) => e.preventDefault()}
           onPointerDown={(e) => {
             const r = e.currentTarget.getBoundingClientRect()
@@ -435,7 +464,7 @@ export function MatchView({
             60 fps
           </p>
         </aside>
-        <PearlFlourish play variant="start" />
+        <PearlFlourish play={startPearl} variant="start" />
         <PearlFlourish play={endPearl} variant="end" />
         {winner !== null ? (
           <Overlay
@@ -456,8 +485,8 @@ export function MatchView({
         ) : null}
       </div>
 
-      <footer className="relative z-20 border-t border-primary/25 bg-black/75">
-        <div className="grid gap-2 p-2 lg:grid-cols-[minmax(0,1.1fr)_14rem_13rem]">
+      <footer className="relative z-20 shrink-0 border-t border-primary/25 bg-black/75">
+        <div className="grid gap-2 p-2 lg:grid-cols-[minmax(0,1.1fr)_14rem_13rem]" data-hud={hudPulse}>
           <Selection selectedUnits={selUnits} building={selBuild} />
           <div className="rounded-sm border border-primary/20 bg-card/50 p-2">
             <p className="mb-2 font-heading text-xs tracking-widest text-primary uppercase">Orders</p>
@@ -472,8 +501,43 @@ export function MatchView({
               >
                 Strike-move
               </Button>
-              <Button size="sm" variant="secondary" onClick={() => startAge(world, 0)}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  const h = world.buildings.find((b) => b.owner === 0 && b.type === "hearth" && b.done)
+                  if (h) issueDefend(world, selected.length ? selected : [...selectedDrawRef.current], h.x, h.y)
+                }}
+              >
+                Defend
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={
+                  p.age >= 1 ||
+                  !canAfford(p, "age1") ||
+                  !world.buildings.some((b) => b.owner === 0 && b.type === "yard" && b.done)
+                }
+                onClick={() => startAge(world, 0)}
+              >
                 Advance Age
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={
+                  !selBuild ||
+                  selBuild.owner !== 0 ||
+                  !selBuild.done ||
+                  selBuild.tier >= 1 ||
+                  (selBuild.type === "hearth" ? p.age >= 1 || !canAfford(p, "age1") : p.age < 1 || !canAfford(p, "upgrade"))
+                }
+                onClick={() => {
+                  if (selBuild) upgradeBuilding(world, selBuild.id)
+                }}
+              >
+                Shore hall
               </Button>
               {(["yard", "camp", "pit", "lodge", "granary"] as const).map((type) => (
                 <Button
@@ -552,7 +616,9 @@ function Selection({
           {building.done
             ? building.aging > 0
               ? "Age rite in progress"
-              : "Standing"
+              : building.tier >= 1
+                ? "Shored"
+                : "Standing"
             : `Raising ${((building.construct / building.constructMax) * 100).toFixed(0)}%`}
         </p>
         <Progress value={(building.hp / building.hpMax) * 100} className="mt-2" />
@@ -575,7 +641,7 @@ function Selection({
         <Badge variant="outline">{selectedUnits.length} selected</Badge>
       </div>
       <p className="text-xs text-muted-foreground">
-        {u.order.t === "gather" ? "Gathering" : u.order.t === "build" ? "Raising" : u.order.t}
+        {u.order.t === "gather" ? "Gathering" : u.order.t === "build" ? "Raising" : u.order.t === "defend" ? "Holding the hearth" : u.order.t}
       </p>
       <Progress value={(u.hp / u.hpMax) * 100} className="mt-2" />
     </div>
@@ -591,27 +657,34 @@ function TrainPanel({
   selected?: Building
   onTrain: () => void
 }) {
+  const owned = world.buildings.filter((x) => x.owner === 0 && x.done)
   const b =
     selected && selected.owner === 0 && selected.done
       ? selected
-      : world.buildings.find((x) => x.owner === 0 && x.type === "hearth" && x.done)
-  const options: UnitType[] =
-    b?.type === "hearth" ? ["levy"] : b?.type === "yard" ? ["guard", "warden"] : b?.type === "lodge" ? ["ashrider"] : []
+      : owned.find((x) => x.type === "hearth")
+  const options: { type: UnitType; buildingId: number }[] = []
+  for (const hall of owned) {
+    if (hall.type === "hearth") options.push({ type: "levy", buildingId: hall.id })
+    if (hall.type === "yard") {
+      options.push({ type: "guard", buildingId: hall.id }, { type: "warden", buildingId: hall.id })
+    }
+    if (hall.type === "lodge") options.push({ type: "ashrider", buildingId: hall.id })
+  }
   return (
     <div className="rounded-sm border border-primary/20 bg-card/50 p-2">
       <p className="mb-2 font-heading text-xs tracking-widest text-primary uppercase">Hall queue</p>
       <div className="flex flex-wrap gap-1.5">
-        {options.map((type) => (
+        {options.map((opt) => (
           <Button
-            key={type}
+            key={`${opt.buildingId}-${opt.type}`}
             size="sm"
             variant="outline"
             onClick={() => {
-              if (b) queueTrain(world, b.id, type)
+              queueTrain(world, opt.buildingId, opt.type)
               onTrain()
             }}
           >
-            {UNIT_LABEL[type]}
+            {UNIT_LABEL[opt.type]}
           </Button>
         ))}
       </div>

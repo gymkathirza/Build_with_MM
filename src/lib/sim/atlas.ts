@@ -24,6 +24,12 @@ export const SPR = {
   palm: 16,
   rock: 17,
   grass: 18,
+  pine: 19,
+  oreGold: 20,
+  deer: 21,
+  boar: 22,
+  bear: 23,
+  wolf: 24,
 } as const
 
 const SKIN = "#f0c09a"
@@ -47,11 +53,19 @@ let atlas: HTMLCanvasElement | OffscreenCanvas | null = null
 let moss: HTMLCanvasElement | OffscreenCanvas | null = null
 
 function makeCanvas(w: number, h: number) {
+  if (typeof document !== "undefined") {
+    const c = document.createElement("canvas")
+    c.width = w
+    c.height = h
+    return c
+  }
   if (typeof OffscreenCanvas !== "undefined") return new OffscreenCanvas(w, h)
-  const c = document.createElement("canvas")
-  c.width = w
-  c.height = h
-  return c
+  throw new Error("no canvas")
+}
+
+function rr(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  if (typeof ctx.roundRect === "function") ctx.roundRect(x, y, w, h, r)
+  else ctx.rect(x, y, w, h)
 }
 
 function ctx2d(c: HTMLCanvasElement | OffscreenCanvas) {
@@ -320,6 +334,198 @@ function mossDots(ctx: CanvasRenderingContext2D, x: number, y: number, n: number
   }
 }
 
+function drawLegs(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  feet: number,
+  span: number,
+  thick: number,
+  color: string,
+) {
+  ctx.strokeStyle = color
+  ctx.lineCap = "round"
+  ctx.lineWidth = thick
+  ctx.beginPath()
+  ctx.moveTo(cx - span, feet - 10)
+  ctx.lineTo(cx - span - 1, feet)
+  ctx.moveTo(cx - span * 0.35, feet - 10)
+  ctx.lineTo(cx - span * 0.35 + 1, feet)
+  ctx.moveTo(cx + span * 0.35, feet - 10)
+  ctx.lineTo(cx + span * 0.35 - 1, feet)
+  ctx.moveTo(cx + span, feet - 10)
+  ctx.lineTo(cx + span + 1, feet)
+  ctx.stroke()
+}
+
+function animalShadow(ctx: CanvasRenderingContext2D, cx: number, feet: number, rx: number) {
+  ctx.fillStyle = "rgba(20,12,8,0.28)"
+  ctx.beginPath()
+  ctx.ellipse(cx, feet + 1, rx, 4, 0, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+function drawDeer(ctx: CanvasRenderingContext2D, ox: number, oy: number) {
+  const cx = ox + 32
+  const feet = oy + 56
+  animalShadow(ctx, cx, feet, 16)
+  const body = "#c47a3a"
+  const dark = "#8a4a22"
+  drawLegs(ctx, cx, feet, 10, 3.2, dark)
+  ellipse(ctx, cx, feet - 16, 16, 10, body)
+  ellipse(ctx, cx + 14, feet - 22, 7, 6, body)
+  ctx.strokeStyle = dark
+  ctx.lineWidth = 1.8
+  ctx.beginPath()
+  ctx.moveTo(cx + 16, feet - 28)
+  ctx.lineTo(cx + 14, feet - 36)
+  ctx.lineTo(cx + 10, feet - 32)
+  ctx.moveTo(cx + 16, feet - 28)
+  ctx.lineTo(cx + 20, feet - 36)
+  ctx.lineTo(cx + 23, feet - 31)
+  ctx.stroke()
+  ctx.fillStyle = WHITE
+  ctx.beginPath()
+  ctx.arc(cx + 16, feet - 23, 1.2, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = PUPIL
+  ctx.beginPath()
+  ctx.arc(cx + 16.4, feet - 23, 0.6, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = body
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.moveTo(cx - 14, feet - 16)
+  ctx.quadraticCurveTo(cx - 20, feet - 10, cx - 16, feet - 8)
+  ctx.stroke()
+}
+
+function drawBoar(ctx: CanvasRenderingContext2D, ox: number, oy: number) {
+  const cx = ox + 32
+  const feet = oy + 56
+  animalShadow(ctx, cx, feet, 15)
+  const body = "#6a4428"
+  drawLegs(ctx, cx, feet, 9, 3.6, "#4a2e18")
+  ellipse(ctx, cx, feet - 14, 16, 9, body)
+  ellipse(ctx, cx + 14, feet - 16, 8, 6, "#8a5a32")
+  ctx.fillStyle = WHITE
+  ctx.beginPath()
+  ctx.moveTo(cx + 20, feet - 14)
+  ctx.lineTo(cx + 26, feet - 12)
+  ctx.lineTo(cx + 20, feet - 11)
+  ctx.fill()
+  ctx.fillStyle = PUPIL
+  ctx.beginPath()
+  ctx.arc(cx + 16, feet - 18, 1.1, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = "#3a2414"
+  for (let i = 0; i < 5; i++) {
+    ctx.fillRect(cx - 8 + i * 3, feet - 24, 2, 5)
+  }
+}
+
+function drawBear(ctx: CanvasRenderingContext2D, ox: number, oy: number) {
+  const cx = ox + 32
+  const feet = oy + 56
+  animalShadow(ctx, cx, feet, 17)
+  const body = "#6b3d1c"
+  drawLegs(ctx, cx, feet, 9, 4.2, "#4a2810")
+  ellipse(ctx, cx, feet - 16, 17, 12, body)
+  ellipse(ctx, cx + 12, feet - 22, 9, 8, body)
+  ellipse(ctx, cx + 8, feet - 30, 3.2, 2.6, body)
+  ellipse(ctx, cx + 16, feet - 30, 3.2, 2.6, body)
+  ctx.fillStyle = PUPIL
+  ctx.beginPath()
+  ctx.arc(cx + 14, feet - 23, 1.3, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = "#d4a07a"
+  ctx.beginPath()
+  ctx.ellipse(cx + 18, feet - 18, 3.5, 2.4, 0, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+function drawWolf(ctx: CanvasRenderingContext2D, ox: number, oy: number) {
+  const cx = ox + 32
+  const feet = oy + 56
+  animalShadow(ctx, cx, feet, 15)
+  const body = "#8a8f9a"
+  drawLegs(ctx, cx, feet, 10, 2.8, "#5a6068")
+  ellipse(ctx, cx, feet - 16, 15, 8, body)
+  ellipse(ctx, cx + 14, feet - 22, 7, 5.5, body)
+  ctx.fillStyle = body
+  ctx.beginPath()
+  ctx.moveTo(cx + 10, feet - 26)
+  ctx.lineTo(cx + 8, feet - 34)
+  ctx.lineTo(cx + 14, feet - 26)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.moveTo(cx + 16, feet - 26)
+  ctx.lineTo(cx + 20, feet - 34)
+  ctx.lineTo(cx + 20, feet - 24)
+  ctx.fill()
+  ctx.fillStyle = PUPIL
+  ctx.beginPath()
+  ctx.arc(cx + 16, feet - 22, 1.1, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = body
+  ctx.lineWidth = 2.4
+  ctx.beginPath()
+  ctx.moveTo(cx - 14, feet - 16)
+  ctx.quadraticCurveTo(cx - 22, feet - 8, cx - 10, feet - 10)
+  ctx.stroke()
+}
+
+function drawPine(ctx: CanvasRenderingContext2D, ox: number, oy: number) {
+  ctx.fillStyle = WOOD
+  ctx.fillRect(ox + 29, oy + 44, 6, 14)
+  ctx.fillStyle = "#1f4a28"
+  for (const [y, w] of [
+    [18, 22],
+    [28, 26],
+    [38, 22],
+  ] as const) {
+    ctx.beginPath()
+    ctx.moveTo(ox + 32, oy + y)
+    ctx.lineTo(ox + 32 + w / 2, oy + y + 16)
+    ctx.lineTo(ox + 32 - w / 2, oy + y + 16)
+    ctx.closePath()
+    ctx.fill()
+  }
+  ctx.fillStyle = "#3d6a32"
+  ctx.beginPath()
+  ctx.moveTo(ox + 32, oy + 12)
+  ctx.lineTo(ox + 44, oy + 30)
+  ctx.lineTo(ox + 20, oy + 30)
+  ctx.closePath()
+  ctx.fill()
+}
+
+function drawOreGold(ctx: CanvasRenderingContext2D, ox: number, oy: number) {
+  ctx.fillStyle = ROCK
+  ctx.beginPath()
+  ctx.moveTo(ox + 16, oy + 50)
+  ctx.lineTo(ox + 12, oy + 30)
+  ctx.lineTo(ox + 30, oy + 18)
+  ctx.lineTo(ox + 52, oy + 28)
+  ctx.lineTo(ox + 50, oy + 50)
+  ctx.closePath()
+  ctx.fill()
+  ctx.fillStyle = "#e0c36a"
+  ctx.beginPath()
+  ctx.moveTo(ox + 24, oy + 36)
+  ctx.lineTo(ox + 30, oy + 22)
+  ctx.lineTo(ox + 42, oy + 28)
+  ctx.lineTo(ox + 38, oy + 42)
+  ctx.closePath()
+  ctx.fill()
+  ctx.fillStyle = "#fff6d4"
+  ctx.beginPath()
+  ctx.moveTo(ox + 28, oy + 30)
+  ctx.lineTo(ox + 32, oy + 24)
+  ctx.lineTo(ox + 36, oy + 30)
+  ctx.closePath()
+  ctx.fill()
+}
+
 function caveHall(ctx: CanvasRenderingContext2D, ox: number, oy: number, variant: number) {
   const cx = ox + 32
   const base = oy + 56
@@ -335,7 +541,7 @@ function caveHall(ctx: CanvasRenderingContext2D, ox: number, oy: number, variant
     ctx.quadraticCurveTo(cx, oy + 4, cx + 10, oy + 12)
     ctx.quadraticCurveTo(cx + 30, oy + 16, cx + 26, base)
   } else if (variant === 1) {
-    ctx.roundRect(cx - 24, oy + 14, 48, 42, 8)
+    rr(ctx, cx - 24, oy + 14, 48, 42, 8)
   } else {
     ctx.moveTo(cx - 20, base)
     ctx.lineTo(cx - 16, oy + 12)
@@ -359,7 +565,7 @@ function caveHall(ctx: CanvasRenderingContext2D, ox: number, oy: number, variant
   ctx.fill()
   ctx.fillStyle = DOOR
   ctx.beginPath()
-  ctx.roundRect(cx - 6, base - 22, 12, 20, 4)
+  rr(ctx, cx - 6, base - 22, 12, 20, 4)
   ctx.fill()
   ctx.strokeStyle = LINE
   ctx.stroke()
@@ -439,39 +645,44 @@ function bakeAtlas() {
     ctx.fillRect(x + 28, y + 46, 8, 8)
   })
   put(SPR.timber, (x, y) => {
+    ctx.fillStyle = WOOD
+    ctx.fillRect(x + 29, y + 46, 6, 12)
     ctx.fillStyle = "#2f5a28"
     ctx.beginPath()
-    ctx.moveTo(x + 32, y + 8)
-    ctx.lineTo(x + 52, y + 48)
-    ctx.lineTo(x + 12, y + 48)
-    ctx.closePath()
+    ctx.ellipse(x + 32, y + 28, 18, 16, 0, 0, Math.PI * 2)
     ctx.fill()
     ctx.fillStyle = "#3d6a3a"
     ctx.beginPath()
-    ctx.moveTo(x + 32, y + 16)
-    ctx.lineTo(x + 46, y + 46)
-    ctx.lineTo(x + 18, y + 46)
-    ctx.closePath()
+    ctx.ellipse(x + 26, y + 24, 12, 11, 0, 0, Math.PI * 2)
     ctx.fill()
-    ctx.fillStyle = WOOD
-    ctx.fillRect(x + 29, y + 46, 6, 10)
+    ctx.fillStyle = "#4a8a38"
+    ctx.beginPath()
+    ctx.ellipse(x + 38, y + 26, 10, 9, 0, 0, Math.PI * 2)
+    ctx.fill()
   })
   put(SPR.ore, (x, y) => {
     ctx.fillStyle = ROCK
     ctx.beginPath()
-    ctx.moveTo(x + 18, y + 48)
-    ctx.lineTo(x + 14, y + 28)
-    ctx.lineTo(x + 28, y + 16)
+    ctx.moveTo(x + 18, y + 50)
+    ctx.lineTo(x + 12, y + 28)
+    ctx.lineTo(x + 26, y + 14)
     ctx.lineTo(x + 50, y + 22)
-    ctx.lineTo(x + 52, y + 48)
+    ctx.lineTo(x + 54, y + 50)
     ctx.closePath()
     ctx.fill()
     ctx.fillStyle = ROCK_L
     ctx.beginPath()
-    ctx.moveTo(x + 24, y + 30)
-    ctx.lineTo(x + 32, y + 20)
-    ctx.lineTo(x + 42, y + 28)
-    ctx.lineTo(x + 38, y + 40)
+    ctx.moveTo(x + 22, y + 32)
+    ctx.lineTo(x + 30, y + 18)
+    ctx.lineTo(x + 42, y + 26)
+    ctx.lineTo(x + 36, y + 40)
+    ctx.closePath()
+    ctx.fill()
+    ctx.fillStyle = "#9aa8b8"
+    ctx.beginPath()
+    ctx.moveTo(x + 28, y + 28)
+    ctx.lineTo(x + 34, y + 20)
+    ctx.lineTo(x + 38, y + 28)
     ctx.closePath()
     ctx.fill()
   })
@@ -532,6 +743,12 @@ function bakeAtlas() {
       ctx.fill()
     }
   })
+  put(SPR.pine, (x, y) => drawPine(ctx, x, y))
+  put(SPR.oreGold, (x, y) => drawOreGold(ctx, x, y))
+  put(SPR.deer, (x, y) => drawDeer(ctx, x, y))
+  put(SPR.boar, (x, y) => drawBoar(ctx, x, y))
+  put(SPR.bear, (x, y) => drawBear(ctx, x, y))
+  put(SPR.wolf, (x, y) => drawWolf(ctx, x, y))
   return c
 }
 
@@ -579,8 +796,13 @@ export function blit(
   dw: number,
   dh: number,
 ) {
-  const a = getAtlas()
-  const sx = (id % COLS) * CELL
-  const sy = Math.floor(id / COLS) * CELL
-  ctx.drawImage(a, sx, sy, CELL, CELL, dx, dy, dw, dh)
+  try {
+    const a = getAtlas()
+    const sx = (id % COLS) * CELL
+    const sy = Math.floor(id / COLS) * CELL
+    ctx.drawImage(a, sx, sy, CELL, CELL, dx, dy, dw, dh)
+  } catch {
+    ctx.fillStyle = "#c49a5a"
+    ctx.fillRect(dx, dy, Math.max(4, dw), Math.max(4, dh))
+  }
 }

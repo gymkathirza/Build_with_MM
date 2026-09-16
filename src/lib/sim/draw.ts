@@ -44,7 +44,7 @@ function drawTerrain(
   quality: DrawQuality,
   size: number,
 ) {
-  ctx.fillStyle = "#1a2618"
+  ctx.fillStyle = "#3d5a32"
   ctx.fillRect(0, 0, w, h)
   const c0 = worldToScreen(cam, 0, 0)
   const c1 = worldToScreen(cam, size, size)
@@ -52,7 +52,13 @@ function drawTerrain(
   const top = Math.min(c0.sy, c1.sy)
   const tw = Math.abs(c1.sx - c0.sx)
   const th = Math.abs(c1.sy - c0.sy)
-  const pat = ctx.createPattern(getMoss() as CanvasImageSource, "repeat")
+  const pat = (() => {
+    try {
+      return ctx.createPattern(getMoss() as CanvasImageSource, "repeat")
+    } catch {
+      return null
+    }
+  })()
   if (pat) {
     ctx.save()
     ctx.translate(left, top)
@@ -100,31 +106,43 @@ function drawTerrain(
         if (kind > 3) continue
         const p = worldToScreen(cam, gx + (hsh % 5), gy + ((hsh >> 3) % 5))
         if (culled(p.sx, p.sy, deco, w, h)) continue
-        const spr = kind === 0 ? SPR.palm : kind === 1 ? SPR.rock : SPR.grass
+        const spr = kind === 0 ? SPR.pine : kind === 1 ? SPR.rock : kind === 2 ? SPR.timber : SPR.grass
         blit(ctx, spr, p.sx - deco / 2, p.sy - deco * 0.75, deco, deco)
       }
     }
   }
 }
 
-function nodeSpr(type: Node["type"]) {
-  if (type === "grain") return SPR.grain
-  if (type === "timber") return SPR.timber
-  if (type === "ore") return SPR.ore
+function nodeSpr(n: Node) {
+  if (n.fauna === "deer") return SPR.deer
+  if (n.fauna === "boar") return SPR.boar
+  if (n.fauna === "bear") return SPR.bear
+  if (n.fauna === "wolf") return SPR.wolf
+  if (n.type === "grain") return SPR.grain
+  if (n.type === "timber") return n.id & 1 ? SPR.pine : SPR.timber
+  if (n.type === "ore") return n.id & 1 ? SPR.oreGold : SPR.ore
   return SPR.relic
 }
 
 function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: DrawQuality, w: number, h: number) {
   const p = worldToScreen(cam, n.x, n.y)
-  const s = Math.max(20, cam.z * 1.85)
+  const s = Math.max(20, cam.z * (n.fauna ? 2.15 : 1.85))
   if (culled(p.sx, p.sy, s, w, h)) return
   if (quality === 0) {
-    ctx.fillStyle =
-      n.type === "grain" ? "#d4b85a" : n.type === "timber" ? "#3d6a3a" : n.type === "ore" ? "#8a8f9a" : "#e0c36a"
+    ctx.fillStyle = n.fauna
+      ? "#c47a3a"
+      : n.type === "grain"
+        ? "#d4b85a"
+        : n.type === "timber"
+          ? "#3d6a3a"
+          : n.type === "ore"
+            ? "#8a8f9a"
+            : "#e0c36a"
     ctx.fillRect(p.sx - 3, p.sy - 3, 6, 6)
     return
   }
-  blit(ctx, nodeSpr(n.type), p.sx - s / 2, p.sy - s * 0.72, s, s)
+  const bob = n.fauna && quality > 1 ? Math.sin(n.id + performance.now() / 420) * 1.4 : 0
+  blit(ctx, nodeSpr(n), p.sx - s / 2, p.sy - s * 0.72 + bob, s, s)
   if (quality > 0) {
     ctx.fillStyle = "rgba(20,12,8,0.72)"
     ctx.font = `${Math.max(9, cam.z * 0.5)}px sans-serif`
@@ -301,7 +319,11 @@ export function drawWorld(
   h: number,
 ) {
   ctx.imageSmoothingEnabled = true
-  ctx.imageSmoothingQuality = "low"
+  try {
+    ctx.imageSmoothingQuality = "low"
+  } catch {
+    /* some 2d contexts reject this setter */
+  }
   drawTerrain(ctx, cam, w, h, quality, world.size)
   for (const n of world.nodes) {
     if (n.amount > 0) drawNode(ctx, n, cam, quality, w, h)

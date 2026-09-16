@@ -6,13 +6,16 @@ import {
   findBuildSite,
   issueAttack,
   issueAttackMove,
+  issueDefend,
   issueGather,
   issueMove,
   placeBuilding,
   popUsed,
   queueTrain,
   startAge,
+  upgradeBuilding,
 } from "./engine"
+import { COSTS } from "./catalog"
 import { personaById, type Persona } from "./personas"
 
 function idleLevies(w: World, owner: Owner) {
@@ -72,6 +75,14 @@ function gatherNeed(w: World, owner: Owner, persona: Persona): Res | undefined {
     } else if (u.order.t === "return" && u.carry) {
       counts[u.carry.res]++
     }
+  }
+  if (p.age === 0 && !w.buildings.some((b) => b.owner === owner && b.type === "yard")) {
+    if (p.timber < 90) return "timber"
+    if (p.ore < 20) return "ore"
+  }
+  if (p.age === 0 && p.ore < COSTS.age1.ore) {
+    if (p.timber < 90) return "timber"
+    return "ore"
   }
   if (p.timber < 80) return "timber"
   if (p.grain < 140) return "grain"
@@ -141,14 +152,14 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
   const wantCamps = w.size >= 200 ? 3 : tuned.expandCamps > 0 ? 1 : 0
 
   if (!incomplete.length && ids.length && !noiseRoll(persona.noise * 0.4, w.tick)) {
-    if (camps < wantCamps && p.timber >= 50) {
+    if (!has("yard") && p.timber >= 90 && p.ore >= 20) {
+      const site = findBuildSite(w, "yard", h.x, h.y)
+      if (site) placeBuilding(w, owner, "yard", site.x, site.y, ids)
+    } else if (camps < wantCamps && p.timber >= 50 && (p.age >= 1 || p.timber >= 140)) {
       const trees = nearestNode(w, h.x, h.y, "timber")
       const site = trees ? findBuildSite(w, "camp", trees.x, trees.y) : findBuildSite(w, "camp", h.x, h.y)
       if (site) placeBuilding(w, owner, "camp", site.x, site.y, ids)
-    } else if (!has("yard") && p.timber >= 90 && p.ore >= 20) {
-      const site = findBuildSite(w, "yard", h.x, h.y)
-      if (site) placeBuilding(w, owner, "yard", site.x, site.y, ids)
-    } else if (!has("pit") && p.timber >= 60 && p.ore >= 15) {
+    } else if (!has("pit") && p.timber >= 60 && p.ore >= 15 && (p.age >= 1 || p.ore >= 155)) {
       const ore = nearestNode(w, h.x, h.y, "ore")
       const site = ore ? findBuildSite(w, "pit", ore.x, ore.y) : null
       if (site) placeBuilding(w, owner, "pit", site.x, site.y, ids)
@@ -162,9 +173,16 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     }
   }
 
-  const ageReady = p.age === 0 && has("yard", true) && p.grain >= 280 && p.ore >= 140
-  if (ageReady && (persona.coach || tuned.agePriority > 0.4)) {
+  const ageReady = p.age === 0 && has("yard", true) && p.grain >= COSTS.age1.grain && p.ore >= COSTS.age1.ore
+  if (ageReady && h.aging <= 0 && (persona.coach || tuned.agePriority > 0.32)) {
     startAge(w, owner)
+  }
+
+  if (p.age >= 1 && !incomplete.length) {
+    const shorable = w.buildings.find((b) => b.owner === owner && b.done && b.type !== "hearth" && b.tier < 1)
+    if (shorable && p.grain >= COSTS.upgrade.grain && p.timber >= COSTS.upgrade.timber && p.ore >= COSTS.upgrade.ore) {
+      upgradeBuilding(w, shorable.id)
+    }
   }
 
   const yard = w.buildings.find((b) => b.owner === owner && b.type === "yard" && b.done)
@@ -172,7 +190,11 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
   const pop = popUsed(w, owner)
   const wantMil = pop < w.popCap * tuned.militaryRatio
   const levyTarget = Math.max(8, Math.floor(w.popCap * 0.22))
-  const savingForAge = p.age === 0 && has("yard", true) && tuned.agePriority > 0.5 && p.grain < 280
+  const savingForAge =
+    p.age === 0 &&
+    tuned.agePriority > 0.35 &&
+    (h.aging > 0 ||
+      (has("yard", true) && (p.grain < COSTS.age1.grain || p.ore < COSTS.age1.ore)))
 
   if (h.queue.length < 2 && levies.length < levyTarget && p.grain >= 50 && !savingForAge) {
     queueTrain(w, h.id, "levy")
@@ -189,10 +211,24 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
   }
 
   const enemyHall = hall(w, owner === 0 ? 1 : 0)
+  const guards = military.filter((u) => u.type === "guard")
+  const garrisonN = Math.min(guards.length, Math.max(2, Math.floor(guards.length * 0.4) || (guards.length ? 1 : 0)))
+  const garrison = guards.slice(0, garrisonN)
+  if (garrison.length && w.tick % 20 === owner) {
+    issueDefend(
+      w,
+      garrison.map((u) => u.id),
+      h.x,
+      h.y,
+    )
+  }
 
   if (persona.tease && military.length >= 1 && w.tick % 40 === owner) {
     const prey = w.units.find((u) => u.owner !== owner && u.type === "levy")
-    const raiders = military.filter((u) => u.order.t === "idle" || u.order.t === "move").slice(0, 2)
+    const raiders = military
+      .filter((u) => u.order.t === "idle" || u.order.t === "move")
+      .filter((u) => !garrison.some((g) => g.id === u.id))
+      .slice(0, 2)
     if (prey && raiders.length) {
       issueAttack(
         w,
@@ -210,7 +246,11 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
   }
 
   if (enemyHall && military.length >= tuned.attackAtArmy) {
-    const soldiers = military.filter((u) => u.order.t === "idle" || u.order.t === "move")
+    const soldiers = military.filter(
+      (u) =>
+        (u.order.t === "idle" || u.order.t === "move" || u.order.t === "attackMove") &&
+        !garrison.some((g) => g.id === u.id),
+    )
     if (soldiers.length) {
       issueAttackMove(
         w,

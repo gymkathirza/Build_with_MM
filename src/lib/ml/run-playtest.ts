@@ -25,6 +25,8 @@ export type GameResult = {
   p1Grain: number
   p0Timber: number
   p1Timber: number
+  p0Guards: number
+  p0Upgrades: number
 }
 
 function westOwnerWon(w: World, winner: 0 | 1 | null) {
@@ -87,6 +89,8 @@ function runGame(
     p1Grain: w.players[1].grain,
     p0Timber: w.players[0].timber,
     p1Timber: w.players[1].timber,
+    p0Guards: w.units.filter((u) => u.owner === 0 && u.type === "guard").length,
+    p0Upgrades: w.buildings.filter((b) => b.owner === 0 && b.tier >= 1).length,
   }
 }
 
@@ -138,7 +142,7 @@ function closeRound(
   const tunedAfter = improveFromScore(
     tuned,
     score,
-    games.map((x) => ({ winner: x.winner, ticks: x.ticks, southWon: x.southWon, swap: x.swap })),
+    games.map((x) => ({ winner: x.winner, ticks: x.ticks, southWon: x.southWon, swap: x.swap, p0Age: x.p0Age })),
     live,
   )
   return { round, games, score, tunedAfter, elapsedMs: Date.now() - started }
@@ -188,6 +192,7 @@ export type CompactRound = {
   inputMs: number
   persona: string
   mapId: string
+  aged: number
 }
 
 export function runHourBenchmark(
@@ -236,7 +241,7 @@ export function runHourBenchmark(
   let gamesN = 0
   while (Date.now() - t0 < minMs) {
     round++
-    const live = round % 4 === 1 ? readLiveObs() : null
+    const live = readLiveObs()
     const games: GameResult[] = []
     for (let g = 0; g < gamesPerRound; g++) {
       const persona = nextPersona(round + g)
@@ -271,6 +276,7 @@ export function runHourBenchmark(
       inputMs: rec.score.inputMs,
       persona: games[0]?.persona ?? "",
       mapId: HUGE_MAP_ID,
+      aged: games.filter((g) => g.p0Age >= 1).length,
     }
     totals.p0 += compact.p0
     totals.p1 += compact.p1
@@ -321,6 +327,7 @@ export function summarizeBenchmark(data: ReturnType<typeof runHourBenchmark>) {
     personas: data.personas,
     final: data.tuned,
     trajectory: data.history,
+    agedRounds: data.history.reduce((s, h) => s + (h.aged ?? 0), 0),
   }
 }
 
