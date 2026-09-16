@@ -18,7 +18,7 @@ import {
   type MapId,
 } from "@/lib/game-data"
 import { PERSONAS, type PersonaId } from "@/lib/sim/personas"
-import { specFor } from "@/lib/sim/maps"
+import { hallPositions, specFor } from "@/lib/sim/maps"
 import { cn } from "@/lib/utils"
 
 const OPENING_AGES = AGES.filter((age) => age.id !== "dominion")
@@ -233,37 +233,72 @@ function Choice({
   )
 }
 
+function CaveHall({ x, y, fill }: { x: number; y: number; fill: string }) {
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <ellipse cx="0" cy="18" rx="22" ry="6" fill="rgba(20,12,8,0.35)" />
+      <path d="M-20 16 Q-22 -8 -4 -14 Q4 -20 12 -10 Q28 -6 20 16Z" fill="#8a929a" stroke="#3a2414" strokeWidth="1.2" />
+      <ellipse cx="-6" cy="-2" rx="6" ry="3.5" fill="#c5cbd4" />
+      <ellipse cx="4" cy="-10" rx="14" ry="5" fill="#3d6a32" />
+      <rect x="-5" y="0" width="10" height="14" rx="3" fill="#5a3218" />
+      <rect x="10" y="-16" width="3" height="12" fill={fill} />
+      <path d="M13 -16 L22 -10 L13 -6Z" fill={fill} />
+    </g>
+  )
+}
+
 function MapPreview({ mapId, accent }: { mapId: string; accent: string }) {
   const spec = specFor(mapId)
+  const halls = hallPositions(spec)
+  const toX = (x: number) => (x / spec.size) * 640
+  const toY = (y: number) => (y / spec.size) * 280
   const scale = spec.size / 100
-  const lakeRx = 40 + scale * 28
-  const lakeRy = 22 + scale * 10
-  const land =
-    mapId === "vast-mere"
-      ? "M0 210 C80 140 180 230 320 160 C460 90 560 200 640 150 L640 280 L0 280Z"
-      : mapId === "emberglass"
-        ? "M0 240 C90 220 140 80 280 120 C400 160 520 40 640 90 L640 280 L0 280Z"
-        : mapId === "shattercoast"
-          ? "M0 80 C120 40 180 200 320 120 C500 20 580 160 640 100 L640 280 L0 280Z"
-          : mapId === "nightgrove"
-            ? "M0 160 C80 40 200 90 300 70 C440 40 520 130 640 90 L640 280 L0 280Z"
-            : mapId === "sunvault"
-              ? "M0 200 C160 180 240 210 400 190 C520 175 600 200 640 185 L640 280 L0 280Z"
-              : "M0 200 C120 160 200 220 320 190 C460 155 540 210 640 170 L640 280 L0 280Z"
+  const lakeRx = 36 + scale * 22
+  const lakeRy = 18 + scale * 8
+  const moss =
+    mapId === "sunvault" ? "#5a6a3a" : mapId === "nightgrove" ? "#243526" : mapId === "emberglass" ? "#3a4a32" : "#35502f"
   const waterId = `water-${mapId}`
+  const mossId = `moss-${mapId}`
+  const trees = [
+    [120, 70],
+    [180, 200],
+    [300, 48],
+    [420, 210],
+    [510, 90],
+    [70, 150],
+  ] as const
   return (
     <svg viewBox="0 0 640 280" className="h-48 w-full sm:h-56" role="img" aria-label={`${mapId} preview`}>
       <defs>
-        <linearGradient id={waterId} x1="0" x2="1">
-          <stop offset="0%" stopColor={mapId === "emberglass" ? "#4a2418" : "#1a3942"} />
-          <stop offset="100%" stopColor={mapId === "sunvault" ? "#5a4620" : "#0f242a"} />
-        </linearGradient>
+        <radialGradient id={waterId} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={mapId === "emberglass" ? "#6a3828" : "#4a8a9a"} />
+          <stop offset="100%" stopColor={mapId === "sunvault" ? "#5a4620" : "#16343c"} />
+        </radialGradient>
+        <pattern id={mossId} width="28" height="28" patternUnits="userSpaceOnUse">
+          <rect width="28" height="28" fill={moss} />
+          <ellipse cx="8" cy="10" rx="10" ry="5" fill="#4a7a38" opacity="0.45" />
+          <ellipse cx="20" cy="22" rx="8" ry="4" fill="#243526" opacity="0.5" />
+        </pattern>
       </defs>
-      <rect width="640" height="280" fill={mapId === "nightgrove" ? "#1a2618" : "#243022"} />
-      <ellipse cx={300 + (mapId.length % 7) * 6} cy={140} rx={lakeRx} ry={lakeRy} fill={`url(#${waterId})`} />
-      <path d={land} fill={mapId === "sunvault" ? "#6a5a32" : "#3a4a32"} />
-      <circle cx={80 + spec.pad} cy={220 - spec.pad * 0.4} r="8" fill={accent} />
-      <circle cx={560 - spec.pad} cy={60 + spec.pad * 0.3} r="8" fill="#7a3a2a" />
+      <rect width="640" height="280" fill={`url(#${mossId})`} />
+      <ellipse cx={320} cy={140} rx={lakeRx} ry={lakeRy} fill={`url(#${waterId})`} />
+      {trees.map(([tx, ty], i) => (
+        <g key={i} transform={`translate(${tx} ${ty})`}>
+          <rect x="-2" y="6" width="4" height="14" fill="#6b3d1c" />
+          <ellipse cx="0" cy="2" rx="10" ry="8" fill="#2f6a28" />
+        </g>
+      ))}
+      <ellipse cx={toX(halls.p0.x) + 28} cy={toY(halls.p0.y) + 8} rx="8" ry="5" fill="#d4b85a" />
+      <polygon
+        points={`${toX(halls.p0.x) + 8},${toY(halls.p0.y) - 22} ${toX(halls.p0.x) + 22},${toY(halls.p0.y) - 4} ${toX(halls.p0.x) - 4},${toY(halls.p0.y) - 4}`}
+        fill="#3d6a3a"
+      />
+      <polygon
+        points={`${toX(halls.p1.x) - 16},${toY(halls.p1.y) + 18} ${toX(halls.p1.x) - 4},${toY(halls.p1.y)} ${toX(halls.p1.x) + 10},${toY(halls.p1.y) + 6} ${toX(halls.p1.x) + 8},${toY(halls.p1.y) + 22}`}
+        fill="#8a929a"
+      />
+      <CaveHall x={toX(halls.p0.x)} y={toY(halls.p0.y)} fill={accent} />
+      <CaveHall x={toX(halls.p1.x)} y={toY(halls.p1.y)} fill="#7a3a2a" />
       <text x="16" y="24" fill="#f3d48a" fontSize="12">
         {spec.size} · pop {spec.popCap}
       </text>
