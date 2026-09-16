@@ -1,12 +1,14 @@
 "use client"
 
 import Link from "next/link"
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react"
 import { Anvil, Coins, Hammer, Pause, Trees, Wheat } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Overlay } from "@/components/game/overlay"
+import { PearlFlourish } from "@/components/game/pearl-flourish"
+import { PearlLogo } from "@/components/game/pearl-logo"
 import {
   AGE_NAMES,
   BUILDING_LABEL,
@@ -37,24 +39,11 @@ import {
 import { tickAi } from "@/lib/sim/ai"
 import { type Cam, drawWorld, screenToWorld } from "@/lib/sim/draw"
 import { createTelemetry, pushEvent, pushFrame } from "@/lib/obs/telemetry"
-import { DEFAULT_TUNED, scoreTelemetry, type DrawQuality, type Tuned } from "@/lib/ml/score"
+import { DEFAULT_TUNED, type DrawQuality, type Tuned } from "@/lib/ml/score"
 import { factionById } from "@/lib/game-data"
 import tunedJson from "@/lib/ml/tuned.json"
 
 type Pending = { kind: "build"; type: BuildingType } | { kind: "attackMove" } | null
-
-type Obs = {
-  fps: number
-  frameMs: number
-  simMs: number
-  inputMs: number
-  clicks: number
-  failed: number
-  deaths: number
-  camera: number
-  score: number
-  quality: DrawQuality
-}
 
 const LOADED_TUNED: Tuned = {
   ai: { ...DEFAULT_TUNED.ai, ...tunedJson.ai },
@@ -91,6 +80,14 @@ export function MatchView({
   const pausedRef = useRef(false)
   const selectedDrawRef = useRef<Set<number>>(new Set())
   const qualityRef = useRef<DrawQuality>(LOADED_TUNED.quality)
+  const obsLineRef = useRef<HTMLParagraphElement>(null)
+  const grainRef = useRef<HTMLSpanElement>(null)
+  const timberRef = useRef<HTMLSpanElement>(null)
+  const oreRef = useRef<HTMLSpanElement>(null)
+  const relicsRef = useRef<HTMLSpanElement>(null)
+  const ageRef = useRef<HTMLSpanElement>(null)
+  const popRef = useRef<HTMLSpanElement>(null)
+  const camEventAt = useRef(0)
 
   const [tuned] = useState<Tuned>(() => ({
     ...LOADED_TUNED,
@@ -101,18 +98,7 @@ export function MatchView({
   const [paused, setPaused] = useState(false)
   const [pending, setPending] = useState<Pending>(null)
   const [winner, setWinner] = useState<0 | 1 | null>(null)
-  const [obs, setObs] = useState<Obs>({
-    fps: 60,
-    frameMs: 16,
-    simMs: 0,
-    inputMs: 0,
-    clicks: 0,
-    failed: 0,
-    deaths: 0,
-    camera: 0,
-    score: 0.7,
-    quality: LOADED_TUNED.quality,
-  })
+  const [endPearl, setEndPearl] = useState(false)
 
   useEffect(() => {
     pausedRef.current = paused
@@ -124,33 +110,27 @@ export function MatchView({
     selectedDrawRef.current = new Set(selected)
   }, [selected])
 
-  const snapshot = useCallback(() => {
+  const paintHud = useCallback((fps: number, frameMs: number, simMs: number) => {
     const tel = telRef.current
-    const last = tel.frames.at(-1)
-    const scored = scoreTelemetry(tel, {
-      winner: world.winner,
-      ticks: world.tick,
-      peakEntities: last?.entities ?? world.units.length + world.buildings.length,
-    })
-    setWinner(world.winner)
-    setObs({
-      fps: last?.fps ?? 60,
-      frameMs: last?.frameMs ?? 16,
-      simMs: last?.simMs ?? 0,
-      inputMs: last?.inputMs ?? 0,
-      clicks: tel.clicks,
-      failed: tel.failedOrders,
-      deaths: tel.deaths,
-      camera: tel.cameraMoves,
-      score: scored.total,
-      quality: qualityRef.current,
-    })
+    const p0 = world.players[0]
+    if (grainRef.current) grainRef.current.textContent = String(Math.floor(p0.grain))
+    if (timberRef.current) timberRef.current.textContent = String(Math.floor(p0.timber))
+    if (oreRef.current) oreRef.current.textContent = String(Math.floor(p0.ore))
+    if (relicsRef.current) relicsRef.current.textContent = String(Math.floor(p0.relics))
+    if (ageRef.current) ageRef.current.textContent = AGE_NAMES[p0.age]
+    if (popRef.current) popRef.current.textContent = `Banners ${popUsed(world, 0)}/${POP_CAP}`
+    if (obsLineRef.current) {
+      const last = tel.frames.at(-1)
+      obsLineRef.current.textContent = last
+        ? `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms\nsim ${simMs.toFixed(2)} ms · in ${tel.lastInputMs.toFixed(0)} ms\nclicks ${tel.clicks} · fail ${tel.failedOrders} · deaths ${tel.deaths}\npan ${tel.cameraMoves} · lod ${qualityRef.current}`
+        : "warming…"
+    }
   }, [world])
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx = canvas.getContext("2d")
+    const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true })
     if (!ctx) return
     let raf = 0
     let last = performance.now()
@@ -158,8 +138,14 @@ export function MatchView({
     let frames = 0
     let fpsT = last
     let fps = 60
+    let hudAt = 0
+    let postedWin = false
+    let sampleN = 0
+    const p0Ai = bot
+      ? { ...tuned.ai, gatherBias: 0.8, attackAtArmy: tuned.ai.attackAtArmy + 2 }
+      : null
     const loop = (now: number) => {
-      const dt = Math.min(0.05, (now - last) / 1000)
+      const dt = Math.min(0.033, (now - last) / 1000)
       last = now
       frames++
       if (now - fpsT > 500) {
@@ -174,7 +160,7 @@ export function MatchView({
       const parent = canvas.parentElement
       const w = parent?.clientWidth ?? 800
       const h = parent?.clientHeight ?? 480
-      const dpr = Math.min(2, window.devicePixelRatio || 1)
+      const dpr = Math.min(1.5, window.devicePixelRatio || 1)
       if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
         canvas.width = Math.floor(w * dpr)
         canvas.height = Math.floor(h * dpr)
@@ -185,16 +171,27 @@ export function MatchView({
       cam.h = h
       const keys = keysRef.current
       const pan = 28 / cam.z
+      let panning = false
       if (keys.has("KeyW") || keys.has("ArrowUp")) {
         cam.y -= pan * dt * 60
-        pushEvent(telRef.current, "camera", "pan")
+        panning = true
       }
       if (keys.has("KeyS") || keys.has("ArrowDown")) {
         cam.y += pan * dt * 60
+        panning = true
+      }
+      if (keys.has("KeyA") || keys.has("ArrowLeft")) {
+        cam.x -= pan * dt * 60
+        panning = true
+      }
+      if (keys.has("KeyD") || keys.has("ArrowRight")) {
+        cam.x += pan * dt * 60
+        panning = true
+      }
+      if (panning && now - camEventAt.current > 280) {
+        camEventAt.current = now
         pushEvent(telRef.current, "camera", "pan")
       }
-      if (keys.has("KeyA") || keys.has("ArrowLeft")) cam.x -= pan * dt * 60
-      if (keys.has("KeyD") || keys.has("ArrowRight")) cam.x += pan * dt * 60
       cam.x = Math.max(8, Math.min(92, cam.x))
       cam.y = Math.max(8, Math.min(92, cam.y))
 
@@ -203,19 +200,22 @@ export function MatchView({
         acc += dt
         const step = 1 / TICK_HZ
         let safety = 0
-        while (acc >= step && safety++ < 5) {
+        while (acc >= step && safety++ < 2) {
           const a = performance.now()
-          if (bot) tickAi(world, 0, { ...tuned.ai, gatherBias: 0.8, attackAtArmy: tuned.ai.attackAtArmy + 2 })
+          if (p0Ai) tickAi(world, 0, p0Ai)
           tickAi(world, 1, tuned.ai)
           tick(world)
           simMs += performance.now() - a
           acc -= step
-          for (const ev of world.events) {
+          const evs = world.events
+          for (let i = 0; i < evs.length; i++) {
+            const ev = evs[i]
             if (ev.k === "death") pushEvent(telRef.current, "death", ev.type)
-            if (ev.k === "failed") pushEvent(telRef.current, "failed", ev.why)
+            else if (ev.k === "failed") pushEvent(telRef.current, "failed", ev.why)
           }
-          world.events = world.events.filter((e) => e.k !== "death" && e.k !== "failed")
+          evs.length = 0
         }
+        if (acc > step * 2) acc = 0
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       const t0 = performance.now()
@@ -226,19 +226,29 @@ export function MatchView({
         ctx.strokeRect(drag.sx, drag.sy, drag.x - drag.sx, drag.y - drag.sy)
       }
       const frameMs = performance.now() - t0 + simMs
-      pushFrame(telRef.current, {
-        fps,
-        frameMs,
-        simMs,
-        inputMs: telRef.current.lastInputMs,
-        entities: world.units.length + world.buildings.length,
-      })
-      if (Math.floor(now / 200) !== Math.floor((now - dt * 1000) / 200)) snapshot()
+      if ((++sampleN & 3) === 0) {
+        pushFrame(telRef.current, {
+          fps,
+          frameMs,
+          simMs,
+          inputMs: telRef.current.lastInputMs,
+          entities: world.units.length + world.buildings.length,
+        })
+      }
+      if (now - hudAt > 400) {
+        hudAt = now
+        paintHud(fps, frameMs, simMs)
+      }
+      if (!postedWin && world.winner !== null) {
+        postedWin = true
+        setWinner(world.winner)
+        setEndPearl(true)
+      }
       raf = requestAnimationFrame(loop)
     }
     raf = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(raf)
-  }, [bot, snapshot, tuned, world])
+  }, [bot, paintHud, tuned, world])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -284,7 +294,6 @@ export function MatchView({
       setPending(null)
       if (!b) pushEvent(telRef.current, "failed", "build")
       telRef.current.lastInputMs = performance.now() - t0
-      snapshot()
       return
     }
     if (!own.length) {
@@ -316,17 +325,18 @@ export function MatchView({
   return (
     <div className="relative flex min-h-dvh flex-col bg-[#140e0a] text-foreground">
       <header className="relative z-20 flex flex-wrap items-center gap-2 border-b border-primary/25 bg-black/55 px-2 py-1.5">
+        <PearlLogo size={28} className="hidden shrink-0 sm:block" />
         <p className="font-heading hidden text-[11px] tracking-[0.28em] text-primary uppercase sm:block">
           {faction.name}
         </p>
-        <Chip icon={<Wheat className="size-3.5" />} label="Grain" value={Math.floor(p.grain)} />
-        <Chip icon={<Trees className="size-3.5" />} label="Timber" value={Math.floor(p.timber)} />
-        <Chip icon={<Anvil className="size-3.5" />} label="Ore" value={Math.floor(p.ore)} />
-        <Chip icon={<Coins className="size-3.5" />} label="Relics" value={Math.floor(p.relics)} />
+        <Chip icon={<Wheat className="size-3.5" />} label="Grain" valueRef={grainRef} initial={240} />
+        <Chip icon={<Trees className="size-3.5" />} label="Timber" valueRef={timberRef} initial={220} />
+        <Chip icon={<Anvil className="size-3.5" />} label="Ore" valueRef={oreRef} initial={110} />
+        <Chip icon={<Coins className="size-3.5" />} label="Relics" valueRef={relicsRef} initial={0} />
         <Badge variant="secondary" className="ml-auto font-heading tracking-wide">
-          {AGE_NAMES[p.age]}
+          <span ref={ageRef}>{AGE_NAMES[p.age]}</span>
         </Badge>
-        <span className="text-xs tabular-nums text-muted-foreground">
+        <span ref={popRef} className="text-xs tabular-nums text-muted-foreground">
           Banners {popUsed(world, 0)}/{POP_CAP}
         </span>
         <Button size="icon-sm" variant="outline" aria-label="Pause" onClick={() => setPaused(true)}>
@@ -384,21 +394,14 @@ export function MatchView({
             setSelected(ids)
           }}
         />
-        <aside className="pointer-events-none absolute top-2 right-2 z-10 hidden w-44 rounded-sm border border-primary/25 bg-black/60 p-2 text-[10px] text-primary sm:block">
+        <aside className="pointer-events-none absolute top-2 right-2 z-10 hidden w-44 rounded-sm border border-primary/25 bg-black/60 p-2 text-[10px] whitespace-pre-line text-primary sm:block">
           <p className="font-heading tracking-widest uppercase">Observatory</p>
-          <p className="mt-1 tabular-nums text-muted-foreground">
-            {obs.fps.toFixed(0)} fps · {obs.frameMs.toFixed(1)} ms
-          </p>
-          <p className="tabular-nums text-muted-foreground">
-            sim {obs.simMs.toFixed(2)} ms · in {obs.inputMs.toFixed(0)} ms
-          </p>
-          <p className="tabular-nums text-muted-foreground">
-            score {(obs.score * 100).toFixed(0)} · clicks {obs.clicks} · fail {obs.failed}
-          </p>
-          <p className="tabular-nums text-muted-foreground">
-            deaths {obs.deaths} · pan {obs.camera} · lod {obs.quality}
+          <p ref={obsLineRef} className="mt-1 tabular-nums text-muted-foreground">
+            60 fps
           </p>
         </aside>
+        <PearlFlourish play variant="start" />
+        <PearlFlourish play={endPearl} variant="end" />
         {winner !== null ? (
           <Overlay
             title={winner === 0 ? "The field is yours" : "The hearth is gone"}
@@ -452,7 +455,7 @@ export function MatchView({
               ))}
             </div>
           </div>
-          <TrainPanel world={world} selected={selBuild} onTrain={snapshot} />
+          <TrainPanel world={world} selected={selBuild} onTrain={() => paintHud(60, 16, 0)} />
         </div>
         <p className="px-3 pb-1.5 text-[11px] text-muted-foreground">
           WASD pan · wheel zoom · left select · right order · Build with Manon Mani
@@ -479,12 +482,22 @@ export function MatchView({
   )
 }
 
-function Chip({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
+function Chip({
+  icon,
+  label,
+  valueRef,
+  initial,
+}: {
+  icon: ReactNode
+  label: string
+  valueRef: RefObject<HTMLSpanElement | null>
+  initial: number
+}) {
   return (
     <span className="inline-flex items-center gap-1.5 text-xs tabular-nums">
       <span className="text-primary">{icon}</span>
       <span className="hidden sm:inline text-muted-foreground">{label}</span>
-      {value}
+      <span ref={valueRef}>{initial}</span>
     </span>
   )
 }

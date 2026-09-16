@@ -216,6 +216,7 @@ export function createWorld(
   faction0: string,
   faction1: string,
   ai: AiParams = DEFAULT_AI,
+  swap = false,
 ): World {
   const w: World = {
     nextId: 1,
@@ -231,11 +232,13 @@ export function createWorld(
     ai: { ...ai },
     events: [],
   }
-  addBuilding(w, 0, "hearth", 16, 78, true)
-  addBuilding(w, 1, "hearth", 84, 20, true)
+  const south: 0 | 1 = swap ? 1 : 0
+  const north: 0 | 1 = swap ? 0 : 1
+  addBuilding(w, south, "hearth", 16, 78, true)
+  addBuilding(w, north, "hearth", 84, 20, true)
   for (let i = 0; i < 4; i++) {
-    spawnUnit(w, 0, "levy", 14 + i * 1.6, 74)
-    spawnUnit(w, 1, "levy", 82 + i * 1.6, 24)
+    spawnUnit(w, south, "levy", 14 + i * 1.6, 74)
+    spawnUnit(w, north, "levy", 82 + i * 1.6, 24)
   }
   node(w, "grain", 10, 68, 900)
   node(w, "grain", 22, 88, 900)
@@ -619,7 +622,7 @@ function tickBuildings(w: World) {
 export function tick(w: World) {
   if (w.winner !== null) return
   w.tick++
-  if (w.events.length > 80) w.events.splice(0, w.events.length - 40)
+  if (w.events.length > 40) w.events.length = 0
   tickBuildings(w)
   for (const u of [...w.units]) tickUnit(w, u)
   for (const owner of [0, 1] as Owner[]) {

@@ -23,7 +23,7 @@ export function CinematicShell({
         </p>
       ) : (
         <p className="relative z-10 px-4 pb-3 text-center text-[11px] tracking-widest text-muted-foreground/70 uppercase">
-          {GAME_TITLE} · interface mock · no simulation
+          {GAME_TITLE} · local skirmish vs AI
         </p>
       )}
     </div>

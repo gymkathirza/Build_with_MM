@@ -1,5 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" fill="#140e0a"/>
-  <path d="M16 4 L26 28 H6 Z" fill="none" stroke="#d4a850" stroke-width="1.6"/>
-  <circle cx="16" cy="18" r="3" fill="#c45c2a"/>
+  <defs>
+    <radialGradient id="p" cx="38%" cy="30%" r="72%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#f4ebe3"/>
+      <stop offset="100%" stop-color="#9e8778"/>
+    </radialGradient>
+  </defs>
+  <circle cx="15" cy="17" r="10" fill="url(#p)"/>
+  <ellipse cx="12" cy="13" rx="3.2" ry="2" fill="#fff" fill-opacity="0.85"/>
+  <path d="M24 6 L24.8 9.2 L28 10 L24.8 10.8 L24 14 L23.2 10.8 L20 10 L23.2 9.2 Z" fill="#fffef8"/>
 </svg>

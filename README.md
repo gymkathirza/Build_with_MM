@@ -13,6 +13,7 @@ Open [http://127.0.0.1:43147](http://127.0.0.1:43147).
 
 ```bash
 npm run playtest
+npm run benchmark   # wall-clock hour of AI vs AI (BENCH_MINUTES=60)
 ```
 
 | Route | What it is |

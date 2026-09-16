@@ -20,6 +20,7 @@ export type Telemetry = {
   cameraMoves: number
   deaths: number
   lastInputMs: number
+  frameN: number
 }
 
 export function createTelemetry(): Telemetry {
@@ -31,21 +32,26 @@ export function createTelemetry(): Telemetry {
     cameraMoves: 0,
     deaths: 0,
     lastInputMs: 0,
+    frameN: 0,
   }
 }
 
 export function pushEvent(tel: Telemetry, kind: string, detail: string) {
-  tel.events.push({ t: performance.now(), kind, detail })
-  if (tel.events.length > 120) tel.events.splice(0, tel.events.length - 80)
   if (kind === "click") tel.clicks++
-  if (kind === "failed") tel.failedOrders++
-  if (kind === "camera") tel.cameraMoves++
-  if (kind === "death") tel.deaths++
+  else if (kind === "failed") tel.failedOrders++
+  else if (kind === "camera") {
+    tel.cameraMoves++
+    return
+  } else if (kind === "death") tel.deaths++
+  tel.events.push({ t: performance.now(), kind, detail })
+  if (tel.events.length > 80) tel.events.length = 48
 }
 
 export function pushFrame(tel: Telemetry, sample: FrameSample) {
-  tel.frames.push(sample)
-  if (tel.frames.length > 180) tel.frames.splice(0, tel.frames.length - 120)
+  tel.frameN++
+  const frames = tel.frames
+  if (frames.length >= 48) frames.shift()
+  frames.push(sample)
 }
 
 export function latestFrame(tel: Telemetry): FrameSample | null {
@@ -53,6 +59,9 @@ export function latestFrame(tel: Telemetry): FrameSample | null {
 }
 
 export function avg(tel: Telemetry, key: keyof FrameSample) {
-  if (!tel.frames.length) return 0
-  return tel.frames.reduce((s, f) => s + Number(f[key]), 0) / tel.frames.length
+  const n = tel.frames.length
+  if (!n) return 0
+  let s = 0
+  for (let i = 0; i < n; i++) s += Number(tel.frames[i][key])
+  return s / n
 }

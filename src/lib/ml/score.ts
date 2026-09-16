@@ -88,16 +88,25 @@ export function improveFromScore(prev: Tuned, score: LoopScore, games: { winner:
   const p0Wins = games.filter((g) => g.winner === 0).length
   const p1Wins = games.filter((g) => g.winner === 1).length
   const unfinished = games.filter((g) => g.winner === null).length
-  if (unfinished > games.length / 2) {
-    next.ai.attackAtArmy = Math.max(4, prev.ai.attackAtArmy - 1)
+  if (Math.abs(p0Wins - p1Wins) <= Math.max(1, games.length / 4) && unfinished === 0) {
+    if (score.simMs < 2 && prev.quality < 2) next.quality = Math.min(2, prev.quality + 1) as DrawQuality
+  } else if (unfinished > games.length / 2) {
+    next.ai.attackAtArmy = Math.max(3, prev.ai.attackAtArmy - 1)
     next.ai.militaryRatio = Math.min(0.75, prev.ai.militaryRatio + 0.06)
   } else if (p1Wins >= games.length && games.length) {
     next.ai.attackAtArmy = Math.min(10, prev.ai.attackAtArmy + 1)
     next.ai.gatherBias = Math.min(0.85, prev.ai.gatherBias + 0.04)
-  } else if (p0Wins >= games.length && games.length) {
-    next.ai.militaryRatio = Math.min(0.78, prev.ai.militaryRatio + 0.05)
-    next.ai.gatherBias = Math.max(0.58, prev.ai.gatherBias - 0.03)
-    next.ai.agePriority = Math.min(0.85, prev.ai.agePriority + 0.04)
+  } else if (p0Wins > p1Wins + games.length * 0.25) {
+    next.ai.militaryRatio = Math.min(0.78, prev.ai.militaryRatio + 0.04)
+    next.ai.gatherBias = Math.max(0.55, prev.ai.gatherBias - 0.03)
+    next.ai.agePriority = Math.min(0.85, prev.ai.agePriority + 0.03)
+  } else if (p1Wins > p0Wins + games.length * 0.25) {
+    next.ai.attackAtArmy = Math.min(9, prev.ai.attackAtArmy + 1)
+    next.ai.gatherBias = Math.min(0.82, prev.ai.gatherBias + 0.03)
   }
+  next.ai.gatherBias = Number(next.ai.gatherBias.toFixed(2))
+  next.ai.militaryRatio = Number(next.ai.militaryRatio.toFixed(2))
+  next.ai.agePriority = Number(next.ai.agePriority.toFixed(2))
+  next.ai.kite = Number(next.ai.kite.toFixed(2))
   return next
 }

@@ -3,6 +3,8 @@
 import Link from "next/link"
 import { useState } from "react"
 import { CinematicShell } from "@/components/game/cinematic-shell"
+import { PearlFlourish } from "@/components/game/pearl-flourish"
+import { PearlLogo } from "@/components/game/pearl-logo"
 import { GAME_SHORT, GAME_TAGLINE, GAME_TITLE } from "@/lib/game-data"
 
 const ITEMS = [
@@ -28,9 +30,11 @@ export function MainMenu() {
 
   return (
     <CinematicShell>
+      <PearlFlourish play variant="start" />
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-between gap-10 px-6 py-16 sm:px-10 lg:flex-row lg:items-center lg:py-20">
         <div className="max-w-xl space-y-10">
           <header className="space-y-4">
+            <PearlLogo size={72} className="mb-2" />
             <p className="text-xs tracking-[0.42em] text-primary/80 uppercase">{GAME_TITLE}</p>
             <h1 className="font-heading text-4xl leading-tight font-semibold tracking-[0.12em] text-primary sm:text-6xl">
               {GAME_SHORT}
