@@ -221,10 +221,17 @@
     position: fixed;
     inset: 0;
     z-index: 80;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse 50% 45% at 50% 50%, rgb(18 12 8 / 0.55), rgb(8 6 4 / 0.12) 55%, transparent 70%);
+    animation: pearl-flourish-veil 1.8s ease forwards;
+  }
+
+  .pearl-flourish-stage {
     display: grid;
     place-items: center;
-    background: radial-gradient(ellipse 50% 45% at 50% 48%, rgb(18 12 8 / 0.55), rgb(8 6 4 / 0.12) 55%, transparent 70%);
-    animation: pearl-flourish-veil 1.8s ease forwards;
+    transform: translate(0, 0);
   }
 
   .pearl-flourish .pearl-logo {

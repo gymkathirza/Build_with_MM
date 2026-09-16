@@ -27,11 +27,18 @@ function accent(world: World, owner: 0 | 1) {
   return factionById(world.players[owner].faction).accent
 }
 
-function drawTerrain(ctx: CanvasRenderingContext2D, cam: Cam, w: number, h: number, quality: DrawQuality) {
+function drawTerrain(
+  ctx: CanvasRenderingContext2D,
+  cam: Cam,
+  w: number,
+  h: number,
+  quality: DrawQuality,
+  size: number,
+) {
   ctx.fillStyle = "#1c2a1c"
   ctx.fillRect(0, 0, w, h)
   const c0 = worldToScreen(cam, 0, 0)
-  const c1 = worldToScreen(cam, 100, 100)
+  const c1 = worldToScreen(cam, size, size)
   const grd = ctx.createLinearGradient(c0.sx, c0.sy, c1.sx, c1.sy)
   grd.addColorStop(0, "#2a3d28")
   grd.addColorStop(0.45, "#243526")
@@ -39,16 +46,18 @@ function drawTerrain(ctx: CanvasRenderingContext2D, cam: Cam, w: number, h: numb
   ctx.fillStyle = grd
   ctx.fillRect(c0.sx, c0.sy, c1.sx - c0.sx, c1.sy - c0.sy)
   ctx.fillStyle = "#16343c"
-  const lake = worldToScreen(cam, 50, 48)
+  const lake = worldToScreen(cam, size / 2, size / 2)
+  const lakeR = Math.max(6, size * 0.045)
   ctx.beginPath()
-  ctx.ellipse(lake.sx, lake.sy, 11 * cam.z, 6 * cam.z, 0.2, 0, Math.PI * 2)
+  ctx.ellipse(lake.sx, lake.sy, lakeR * cam.z, lakeR * 0.55 * cam.z, 0.2, 0, Math.PI * 2)
   ctx.fill()
   if (quality > 0) {
     ctx.strokeStyle = "rgba(212,168,80,0.18)"
     ctx.lineWidth = 1
-    for (let i = 10; i < 100; i += 10) {
+    const step = size >= 200 ? 20 : 10
+    for (let i = step; i < size; i += step) {
       const a = worldToScreen(cam, i, 0)
-      const b = worldToScreen(cam, i, 100)
+      const b = worldToScreen(cam, i, size)
       ctx.beginPath()
       ctx.moveTo(a.sx, a.sy)
       ctx.lineTo(b.sx, b.sy)
@@ -300,8 +309,9 @@ function drawMinimap(ctx: CanvasRenderingContext2D, world: World, cam: Cam, w: n
   ctx.fillRect(x, y, mw, mh)
   ctx.strokeStyle = "rgba(243,212,138,0.45)"
   ctx.strokeRect(x, y, mw, mh)
-  const sx = mw / 100
-  const sy = mh / 100
+  const size = Math.max(1, world.size)
+  const sx = mw / size
+  const sy = mh / size
   for (const n of world.nodes) {
     if (n.amount <= 0) continue
     ctx.fillStyle =
@@ -333,7 +343,7 @@ export function drawWorld(
   w: number,
   h: number,
 ) {
-  drawTerrain(ctx, cam, w, h, quality)
+  drawTerrain(ctx, cam, w, h, quality, world.size)
   for (const n of world.nodes) {
     if (n.amount > 0) drawNode(ctx, n, cam, quality)
   }

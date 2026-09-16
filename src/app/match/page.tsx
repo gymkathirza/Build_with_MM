@@ -18,6 +18,8 @@ export default async function MatchPage({
       enemyFaction={one(q.enemy, "gilded")}
       bot={one(q.bot, "") === "1"}
       difficulty={one(q.difficulty, "marshal")}
+      mapId={one(q.map, "vast-mere")}
+      personaId={one(q.persona, "balanced")}
     />
   )
 }

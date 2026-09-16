@@ -5,7 +5,7 @@ import { useState } from "react"
 import { CinematicShell } from "@/components/game/cinematic-shell"
 import { PearlFlourish } from "@/components/game/pearl-flourish"
 import { PearlLogo } from "@/components/game/pearl-logo"
-import { GAME_SHORT, GAME_TAGLINE, GAME_TITLE } from "@/lib/game-data"
+import { GAME_CHANNEL, GAME_SHORT, GAME_TAGLINE, GAME_TITLE, GAME_VERSION } from "@/lib/game-data"
 
 const ITEMS = [
   {
@@ -36,6 +36,9 @@ export function MainMenu() {
           <header className="space-y-4">
             <PearlLogo size={72} className="mb-2" />
             <p className="text-xs tracking-[0.42em] text-primary/80 uppercase">{GAME_TITLE}</p>
+            <p className="text-[11px] tracking-[0.2em] text-muted-foreground uppercase">
+              {GAME_CHANNEL} · {GAME_VERSION}
+            </p>
             <h1 className="font-heading text-4xl leading-tight font-semibold tracking-[0.12em] text-primary sm:text-6xl">
               {GAME_SHORT}
             </h1>

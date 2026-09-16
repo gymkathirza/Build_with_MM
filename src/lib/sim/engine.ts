@@ -4,12 +4,18 @@ import {
   COSTS,
   DT,
   GATHER,
-  POP_CAP,
   UNIT_STATS,
-  WORLD,
   type BuildingType,
   type UnitType,
 } from "./catalog"
+import {
+  contestNodes,
+  hallPositions,
+  localNodes,
+  specFor,
+  type HallAxis,
+  type MapSpec,
+} from "./maps"
 
 export type Owner = 0 | 1
 export type Res = "grain" | "timber" | "ore" | "relics"
@@ -103,6 +109,11 @@ export type World = {
   winner: Owner | null
   ai: AiParams
   events: SimEvent[]
+  size: number
+  mapId: string
+  popCap: number
+  persona: string
+  southOwner: Owner
 }
 
 export type SimEvent =
@@ -168,8 +179,8 @@ function spawnUnit(w: World, owner: Owner, type: UnitType, x: number, y: number)
     kind: "unit",
     type,
     owner,
-    x: clamp(x, 1, WORLD - 1),
-    y: clamp(y, 1, WORLD - 1),
+    x: clamp(x, 1, w.size - 1),
+    y: clamp(y, 1, w.size - 1),
     hp: s.hp,
     hpMax: s.hp,
     order: { t: "idle" },
@@ -216,8 +227,13 @@ export function createWorld(
   faction0: string,
   faction1: string,
   ai: AiParams = DEFAULT_AI,
-  swap = false,
+  opts: { mapId?: string; swap?: boolean; persona?: string; axis?: HallAxis } | boolean = {},
 ): World {
+  const options = typeof opts === "boolean" ? { swap: opts } : opts
+  const spec: MapSpec = specFor(options.mapId ?? "vast-mere")
+  const swap = options.swap === true
+  const axis: HallAxis = options.axis ?? "sw-ne"
+  const halls = hallPositions(spec, axis)
   const w: World = {
     nextId: 1,
     tick: 0,
@@ -231,31 +247,33 @@ export function createWorld(
     winner: null,
     ai: { ...ai },
     events: [],
+    size: spec.size,
+    mapId: spec.id,
+    popCap: spec.popCap,
+    persona: options.persona ?? "balanced",
+    southOwner: swap ? 1 : 0,
   }
-  const south: 0 | 1 = swap ? 1 : 0
-  const north: 0 | 1 = swap ? 0 : 1
-  addBuilding(w, south, "hearth", 16, 78, true)
-  addBuilding(w, north, "hearth", 84, 20, true)
-  for (let i = 0; i < 4; i++) {
-    spawnUnit(w, south, "levy", 14 + i * 1.6, 74)
-    spawnUnit(w, north, "levy", 82 + i * 1.6, 24)
+  const a: Owner = swap ? 1 : 0
+  const b: Owner = swap ? 0 : 1
+  addBuilding(w, a, "hearth", halls.p0.x, halls.p0.y, true)
+  addBuilding(w, b, "hearth", halls.p1.x, halls.p1.y, true)
+  const inward0 = { x: spec.size / 2 - halls.p0.x, y: spec.size / 2 - halls.p0.y }
+  const inward1 = { x: spec.size / 2 - halls.p1.x, y: spec.size / 2 - halls.p1.y }
+  const n0 = Math.hypot(inward0.x, inward0.y) || 1
+  const n1 = Math.hypot(inward1.x, inward1.y) || 1
+  const u0 = { x: inward0.x / n0, y: inward0.y / n0 }
+  const u1 = { x: inward1.x / n1, y: inward1.y / n1 }
+  for (let i = 0; i < spec.startLevies; i++) {
+    spawnUnit(w, a, "levy", halls.p0.x + u0.x * 4 + (i - spec.startLevies / 2) * 1.4, halls.p0.y + u0.y * 3)
+    spawnUnit(w, b, "levy", halls.p1.x + u1.x * 4 + (i - spec.startLevies / 2) * 1.4, halls.p1.y + u1.y * 3)
   }
-  node(w, "grain", 10, 68, 900)
-  node(w, "grain", 22, 88, 900)
-  node(w, "timber", 8, 86, 800)
-  node(w, "timber", 28, 70, 800)
-  node(w, "ore", 32, 82, 500)
-  node(w, "relics", 24, 60, 6)
-  node(w, "grain", 90, 30, 900)
-  node(w, "grain", 76, 10, 900)
-  node(w, "timber", 92, 12, 800)
-  node(w, "timber", 70, 28, 800)
-  node(w, "ore", 68, 16, 500)
-  node(w, "relics", 76, 38, 6)
-  node(w, "ore", 50, 48, 700)
-  node(w, "relics", 50, 52, 8)
-  node(w, "grain", 48, 62, 600)
-  node(w, "timber", 54, 36, 600)
+  for (const seed of localNodes(spec.size)) {
+    node(w, seed.type, halls.p0.x + seed.ox, halls.p0.y + seed.oy, seed.amount)
+    node(w, seed.type, halls.p1.x - seed.ox, halls.p1.y - seed.oy, seed.amount)
+  }
+  for (const seed of contestNodes(spec.size)) {
+    node(w, seed.type, seed.ox, seed.oy, seed.amount)
+  }
   return w
 }
 
@@ -267,7 +285,7 @@ export function canAfford(p: Player, key: keyof typeof COSTS) {
 export function issueMove(w: World, ids: number[], x: number, y: number) {
   for (const u of w.units) {
     if (!ids.includes(u.id)) continue
-    u.order = { t: "move", x: clamp(x, 1, WORLD - 1), y: clamp(y, 1, WORLD - 1) }
+    u.order = { t: "move", x: clamp(x, 1, w.size - 1), y: clamp(y, 1, w.size - 1) }
   }
 }
 
@@ -328,7 +346,7 @@ export function placeBuilding(
     w.events.push({ k: "failed", owner, why: "Not enough stores to raise that." })
     return null
   }
-  const b = addBuilding(w, owner, type, clamp(x, 4, WORLD - 4), clamp(y, 4, WORLD - 4), false)
+  const b = addBuilding(w, owner, type, clamp(x, 4, w.size - 4), clamp(y, 4, w.size - 4), false)
   const levies = w.units.filter((u) => builderIds.includes(u.id) && u.type === "levy")
   const backup = w.units.filter((u) => u.owner === owner && u.type === "levy").slice(0, 3)
   const crew = (levies.length ? levies : backup).slice(0, 3)
@@ -353,7 +371,7 @@ export function queueTrain(w: World, buildingId: number, type: UnitType): boolea
     w.events.push({ k: "failed", owner: b.owner, why: "Forge Age is required." })
     return false
   }
-  if (popUsed(w, b.owner) + c.pop > POP_CAP) {
+  if (popUsed(w, b.owner) + c.pop > w.popCap) {
     w.events.push({ k: "failed", owner: b.owner, why: "Population cap." })
     return false
   }
@@ -413,7 +431,7 @@ function nearestEnemy(w: World, u: Unit, range: number) {
   return best
 }
 
-function steer(u: Unit, tx: number, ty: number, speed: number, buildings: Building[]) {
+function steer(u: Unit, tx: number, ty: number, speed: number, buildings: Building[], size: number) {
   const d = dist(u.x, u.y, tx, ty)
   if (d < 0.35) return true
   const vx = ((tx - u.x) / d) * speed * DT
@@ -430,18 +448,19 @@ function steer(u: Unit, tx: number, ty: number, speed: number, buildings: Buildi
       ny = b.y + py * r
     }
   }
-  u.x = clamp(nx, 0.5, WORLD - 0.5)
-  u.y = clamp(ny, 0.5, WORLD - 0.5)
+  u.x = clamp(nx, 0.5, size - 0.5)
+  u.y = clamp(ny, 0.5, size - 0.5)
   return dist(u.x, u.y, tx, ty) < 0.45
 }
 
 export function findBuildSite(w: World, type: BuildingType, nearX: number, nearY: number) {
   const need = BUILDING_STATS[type].radius
-  for (let ring = 5; ring <= 16; ring += 2) {
+  const maxRing = Math.min(42, Math.max(16, Math.floor(w.size * 0.14)))
+  for (let ring = 5; ring <= maxRing; ring += 2) {
     for (let a = 0; a < 14; a++) {
       const x = nearX + Math.cos((a / 14) * Math.PI * 2) * ring
       const y = nearY + Math.sin((a / 14) * Math.PI * 2) * ring
-      if (x < 4 || y < 4 || x > WORLD - 4 || y > WORLD - 4) continue
+      if (x < 4 || y < 4 || x > w.size - 4 || y > w.size - 4) continue
       let ok = true
       for (const b of w.buildings) {
         if (dist(b.x, b.y, x, y) < BUILDING_STATS[b.type].radius + need + 0.9) ok = false
@@ -479,7 +498,7 @@ function tickUnit(w: World, u: Unit) {
   const o = u.order
 
   if (o.t === "move") {
-    if (steer(u, o.x, o.y, speed, w.buildings)) u.order = { t: "idle" }
+    if (steer(u, o.x, o.y, speed, w.buildings, w.size)) u.order = { t: "idle" }
     return
   }
   if (o.t === "attackMove") {
@@ -487,9 +506,9 @@ function tickUnit(w: World, u: Unit) {
     if (foe) {
       const r = UNIT_STATS[u.type].range
       const reach = foe.kind === "building" ? r + BUILDING_STATS[foe.type].radius : r
-      if (dist(u.x, u.y, foe.x, foe.y) > reach) steer(u, foe.x, foe.y, speed, w.buildings)
+      if (dist(u.x, u.y, foe.x, foe.y) > reach) steer(u, foe.x, foe.y, speed, w.buildings, w.size)
       else hit(w, u, foe)
-    } else if (steer(u, o.x, o.y, speed, w.buildings)) u.order = { t: "idle" }
+    } else if (steer(u, o.x, o.y, speed, w.buildings, w.size)) u.order = { t: "idle" }
     return
   }
   if (o.t === "attack") {
@@ -501,7 +520,7 @@ function tickUnit(w: World, u: Unit) {
     }
     const r = UNIT_STATS[u.type].range
     const reach = t.kind === "building" ? r + BUILDING_STATS[t.type].radius : r
-    if (dist(u.x, u.y, t.x, t.y) > reach) steer(u, t.x, t.y, speed, w.buildings)
+    if (dist(u.x, u.y, t.x, t.y) > reach) steer(u, t.x, t.y, speed, w.buildings, w.size)
     else hit(w, u, t)
     return
   }
@@ -512,7 +531,7 @@ function tickUnit(w: World, u: Unit) {
       return
     }
     const reach = BUILDING_STATS[b.type].radius + 0.7
-    if (dist(u.x, u.y, b.x, b.y) > reach) steer(u, b.x, b.y, speed, w.buildings)
+    if (dist(u.x, u.y, b.x, b.y) > reach) steer(u, b.x, b.y, speed, w.buildings, w.size)
     else {
       b.construct += DT * 1.15
       if (b.construct >= b.constructMax) {
@@ -544,7 +563,7 @@ function tickUnit(w: World, u: Unit) {
       return
     }
     if (dist(u.x, u.y, n.x, n.y) > 1.4) {
-      steer(u, n.x, n.y, speed, w.buildings)
+      steer(u, n.x, n.y, speed, w.buildings, w.size)
       return
     }
     u.gatherT += DT
@@ -567,7 +586,7 @@ function tickUnit(w: World, u: Unit) {
     }
     const reach = BUILDING_STATS[drop.type].radius + 0.6
     if (dist(u.x, u.y, drop.x, drop.y) > reach) {
-      steer(u, drop.x, drop.y, speed, w.buildings)
+      steer(u, drop.x, drop.y, speed, w.buildings, w.size)
       return
     }
     const p = w.players[u.owner]
@@ -584,7 +603,7 @@ function tickUnit(w: World, u: Unit) {
     if (foe) {
       const r = UNIT_STATS[u.type].range
       const reach = foe.kind === "building" ? r + BUILDING_STATS[foe.type].radius : r
-      if (dist(u.x, u.y, foe.x, foe.y) > reach) steer(u, foe.x, foe.y, speed, w.buildings)
+      if (dist(u.x, u.y, foe.x, foe.y) > reach) steer(u, foe.x, foe.y, speed, w.buildings, w.size)
       else hit(w, u, foe)
     }
   }
@@ -606,7 +625,7 @@ function tickBuildings(w: World) {
     const q = b.queue[0]
     q.t += DT
     if (q.t >= q.max) {
-      if (popUsed(w, b.owner) + UNIT_STATS[q.type].pop > POP_CAP) {
+      if (popUsed(w, b.owner) + UNIT_STATS[q.type].pop > w.popCap) {
         q.t = q.max - 0.2
         continue
       }

@@ -1,7 +1,7 @@
 import { Cinzel, Source_Sans_3 } from "next/font/google"
 import type { Metadata } from "next"
 import { Providers } from "@/components/providers"
-import { GAME_TAGLINE, GAME_TITLE } from "@/lib/game-data"
+import { GAME_CHANNEL, GAME_TAGLINE, GAME_TITLE, GAME_VERSION } from "@/lib/game-data"
 import "./globals.css"
 
 const heading = Cinzel({
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     default: GAME_TITLE,
     template: `%s · ${GAME_TITLE}`,
   },
-  description: `${GAME_TITLE} — ${GAME_TAGLINE} Local 1v1 skirmish vs AI.`,
+  description: `${GAME_TITLE} ${GAME_CHANNEL} ${GAME_VERSION} — ${GAME_TAGLINE} Local 1v1 skirmish vs AI.`,
   icons: { icon: "/icon.svg" },
 }
 

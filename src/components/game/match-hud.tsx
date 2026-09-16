@@ -4,7 +4,6 @@ import Link from "next/link"
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 import {
   Anvil,
-  Coins,
   Flag,
   Hammer,
   Map as MapIcon,
@@ -26,6 +25,7 @@ import {
 } from "@/components/ui/tooltip"
 import { EmptyState, ErrorState, LoadingState } from "@/components/game/screen-states"
 import { Overlay } from "@/components/game/overlay"
+import { WealthIcon } from "@/components/game/wealth-icon"
 import {
   AGES,
   BUILDINGS,
@@ -153,7 +153,7 @@ export function MatchHud({
         <ResourceChip icon={<Wheat className="size-3.5" />} label="Grain" value={resources.grain} />
         <ResourceChip icon={<Trees className="size-3.5" />} label="Timber" value={resources.timber} />
         <ResourceChip icon={<Anvil className="size-3.5" />} label="Ore" value={resources.ore} />
-        <ResourceChip icon={<Coins className="size-3.5" />} label="Relics" value={resources.relics} />
+        <ResourceChip icon={<WealthIcon />} label="Relics" value={resources.relics} />
         <Badge variant="secondary" className="ml-auto font-heading tracking-wide">
           {age.name}
         </Badge>

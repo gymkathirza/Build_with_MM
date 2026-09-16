@@ -1,6 +1,8 @@
 export const GAME_TITLE = "Build with Manon Mani"
 export const GAME_SHORT = "Manon Mani"
 export const GAME_TAGLINE = "Four banners. Four epochs. One treaty left to break."
+export const GAME_VERSION = "0.1.0-alpha"
+export const GAME_CHANNEL = "Alpha pre-release"
 
 export const AGES = [
   {
@@ -103,12 +105,21 @@ export type FactionId = (typeof FACTIONS)[number]["id"]
 
 export const MAPS = [
   {
+    id: "vast-mere",
+    name: "Vast Mere",
+    size: "Huge",
+    terrain: "Open basin, twin hearths, long sightlines",
+    notes: "Default Alpha plate. Pop 100. Pathing and banners have room to breathe — and to lag.",
+    players: 2,
+    status: "ready" as const,
+  },
+  {
     id: "hollowmere",
     name: "Hollowmere Basin",
     size: "Large",
     terrain: "Lakes, reed flats, twin fords",
     notes: "Four relic stands around a drowned keep. Control the fords or starve.",
-    players: 4,
+    players: 2,
     status: "ready" as const,
   },
   {
@@ -116,7 +127,7 @@ export const MAPS = [
     name: "The Shattercoast",
     size: "Medium",
     terrain: "Cliffs, coves, timbered headlands",
-    notes: "Naval lanes matter. Inland ore is scarce; wreck-beaches hide relics.",
+    notes: "Coastal lanes. Inland ore is scarce; wreck-beaches hide relics.",
     players: 2,
     status: "ready" as const,
   },
@@ -135,7 +146,7 @@ export const MAPS = [
     size: "Large",
     terrain: "Erg, oasis rings, buried vaults",
     notes: "Long sightlines. Relics cluster in the old synod ruins.",
-    players: 6,
+    players: 2,
     status: "ready" as const,
   },
   {
@@ -144,7 +155,7 @@ export const MAPS = [
     size: "Medium",
     terrain: "Deep wood, river braids",
     notes: "Fog sits until Citadel Age. Perfect for Conclave ambush doctrine.",
-    players: 4,
+    players: 2,
     status: "ready" as const,
   },
   {
@@ -401,7 +412,7 @@ export function factionById(id: string) {
 }
 
 export function mapById(id: string) {
-  return MAPS.find((m) => m.id === id) ?? MAPS[0]
+  return MAPS.find((m) => m.id === id) ?? MAPS.find((m) => m.id === "vast-mere") ?? MAPS[0]
 }
 
 export function difficultyById(id: string) {

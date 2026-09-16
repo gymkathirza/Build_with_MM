@@ -1,12 +1,15 @@
 {
-  "name": "ages-of-accord",
-  "version": "0.1.0",
+  "name": "build-with-manon-mani",
+  "version": "0.1.0-alpha",
   "private": true,
   "scripts": {
     "dev": "next dev --hostname 0.0.0.0 --port 43147",
     "build": "next build",
     "start": "next start --hostname 0.0.0.0 --port 43147",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/lib/sim/alpha.test.ts src/lib/audio/sea-crest.test.ts",
+    "audio": "tsx src/lib/audio/write-wav.ts",
     "playtest": "tsx src/lib/ml/cli.ts",
     "benchmark": "tsx src/lib/ml/cli.ts --hour"
   },

@@ -2,17 +2,17 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react"
-import { Anvil, Coins, Hammer, Pause, Trees, Wheat } from "lucide-react"
+import { Anvil, Hammer, Pause, Trees, Wheat } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Overlay } from "@/components/game/overlay"
 import { PearlFlourish } from "@/components/game/pearl-flourish"
 import { PearlLogo } from "@/components/game/pearl-logo"
+import { WealthIcon } from "@/components/game/wealth-icon"
 import {
   AGE_NAMES,
   BUILDING_LABEL,
-  POP_CAP,
   TICK_HZ,
   UNIT_LABEL,
   type BuildingType,
@@ -41,6 +41,8 @@ import { type Cam, drawWorld, screenToWorld } from "@/lib/sim/draw"
 import { createTelemetry, pushEvent, pushFrame } from "@/lib/obs/telemetry"
 import { DEFAULT_TUNED, type DrawQuality, type Tuned } from "@/lib/ml/score"
 import { factionById } from "@/lib/game-data"
+import { hallPositions, specFor } from "@/lib/sim/maps"
+import { personaById } from "@/lib/sim/personas"
 import tunedJson from "@/lib/ml/tuned.json"
 
 type Pending = { kind: "build"; type: BuildingType } | { kind: "attackMove" } | null
@@ -65,14 +67,20 @@ export function MatchView({
   enemyFaction = "gilded",
   bot = false,
   difficulty = "marshal",
+  mapId = "vast-mere",
+  personaId = "balanced",
 }: {
   factionId: string
   enemyFaction?: string
   bot?: boolean
   difficulty?: string
+  mapId?: string
+  personaId?: string
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const camRef = useRef<Cam>({ x: 22, y: 74, z: 16, w: 800, h: 480 })
+  const spec = specFor(mapId)
+  const halls = hallPositions(spec)
+  const camRef = useRef<Cam>({ x: halls.p0.x, y: halls.p0.y, z: spec.size >= 200 ? 11 : 16, w: 800, h: 480 })
   const keysRef = useRef<Set<string>>(new Set())
   const telRef = useRef(createTelemetry())
   const pendingRef = useRef<Pending>(null)
@@ -89,11 +97,16 @@ export function MatchView({
   const popRef = useRef<HTMLSpanElement>(null)
   const camEventAt = useRef(0)
 
-  const [tuned] = useState<Tuned>(() => ({
-    ...LOADED_TUNED,
-    ai: difficultyAi(difficulty, LOADED_TUNED.ai),
-  }))
-  const [world] = useState<World>(() => createWorld(factionId, enemyFaction, tuned.ai))
+  const [tuned] = useState<Tuned>(() => {
+    const persona = personaById(personaId)
+    return {
+      ...LOADED_TUNED,
+      ai: difficultyAi(difficulty, { ...LOADED_TUNED.ai, ...persona.params }),
+    }
+  })
+  const [world] = useState<World>(() =>
+    createWorld(factionId, enemyFaction, tuned.ai, { mapId, persona: personaId }),
+  )
   const [selected, setSelected] = useState<number[]>([])
   const [paused, setPaused] = useState(false)
   const [pending, setPending] = useState<Pending>(null)
@@ -118,7 +131,7 @@ export function MatchView({
     if (oreRef.current) oreRef.current.textContent = String(Math.floor(p0.ore))
     if (relicsRef.current) relicsRef.current.textContent = String(Math.floor(p0.relics))
     if (ageRef.current) ageRef.current.textContent = AGE_NAMES[p0.age]
-    if (popRef.current) popRef.current.textContent = `Banners ${popUsed(world, 0)}/${POP_CAP}`
+    if (popRef.current) popRef.current.textContent = `Banners ${popUsed(world, 0)}/${world.popCap}`
     if (obsLineRef.current) {
       const last = tel.frames.at(-1)
       obsLineRef.current.textContent = last
@@ -141,6 +154,7 @@ export function MatchView({
     let hudAt = 0
     let postedWin = false
     let sampleN = 0
+    let lastObsPost = 0
     const p0Ai = bot
       ? { ...tuned.ai, gatherBias: 0.8, attackAtArmy: tuned.ai.attackAtArmy + 2 }
       : null
@@ -192,8 +206,8 @@ export function MatchView({
         camEventAt.current = now
         pushEvent(telRef.current, "camera", "pan")
       }
-      cam.x = Math.max(8, Math.min(92, cam.x))
-      cam.y = Math.max(8, Math.min(92, cam.y))
+      cam.x = Math.max(8, Math.min(world.size - 8, cam.x))
+      cam.y = Math.max(8, Math.min(world.size - 8, cam.y))
 
       let simMs = 0
       if (!pausedRef.current && world.winner === null) {
@@ -203,7 +217,7 @@ export function MatchView({
         while (acc >= step && safety++ < 2) {
           const a = performance.now()
           if (p0Ai) tickAi(world, 0, p0Ai)
-          tickAi(world, 1, tuned.ai)
+          tickAi(world, 1, tuned.ai, personaById(personaId))
           tick(world)
           simMs += performance.now() - a
           acc -= step
@@ -238,6 +252,27 @@ export function MatchView({
       if (now - hudAt > 400) {
         hudAt = now
         paintHud(fps, frameMs, simMs)
+        if (now - lastObsPost > 2500) {
+          lastObsPost = now
+          const body = JSON.stringify({
+            fps,
+            frameMs,
+            simMs,
+            inputMs: telRef.current.lastInputMs,
+            entities: world.units.length + world.buildings.length,
+            quality: qualityRef.current,
+            lod: tuned.lodDistance,
+            mapId: world.mapId,
+            persona: world.persona,
+            pop: popUsed(world, 0),
+            popCap: world.popCap,
+          })
+          if (navigator.sendBeacon) {
+            navigator.sendBeacon("/api/obs", new Blob([body], { type: "application/json" }))
+          } else {
+            void fetch("/api/obs", { method: "POST", body, keepalive: true })
+          }
+        }
       }
       if (!postedWin && world.winner !== null) {
         postedWin = true
@@ -248,7 +283,7 @@ export function MatchView({
     }
     raf = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(raf)
-  }, [bot, paintHud, tuned, world])
+  }, [bot, paintHud, personaId, tuned, world])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -332,12 +367,12 @@ export function MatchView({
         <Chip icon={<Wheat className="size-3.5" />} label="Grain" valueRef={grainRef} initial={240} />
         <Chip icon={<Trees className="size-3.5" />} label="Timber" valueRef={timberRef} initial={220} />
         <Chip icon={<Anvil className="size-3.5" />} label="Ore" valueRef={oreRef} initial={110} />
-        <Chip icon={<Coins className="size-3.5" />} label="Relics" valueRef={relicsRef} initial={0} />
+        <Chip icon={<WealthIcon />} label="Relics" valueRef={relicsRef} initial={0} />
         <Badge variant="secondary" className="ml-auto font-heading tracking-wide">
           <span ref={ageRef}>{AGE_NAMES[p.age]}</span>
         </Badge>
         <span ref={popRef} className="text-xs tabular-nums text-muted-foreground">
-          Banners {popUsed(world, 0)}/{POP_CAP}
+          Banners {popUsed(world, 0)}/{world.popCap}
         </span>
         <Button size="icon-sm" variant="outline" aria-label="Pause" onClick={() => setPaused(true)}>
           <Pause />
@@ -411,12 +446,12 @@ export function MatchView({
                 : "Your Hearth Hall fell. Resign, or return to the hall and raise another."
             }
           >
-            <Button className="w-full" render={<Link href="/skirmish" />}>
+            <Link href="/skirmish" className={buttonVariants({ className: "w-full" })}>
               Another skirmish
-            </Button>
-            <Button className="w-full" variant="outline" render={<Link href="/" />}>
+            </Link>
+            <Link href="/" className={buttonVariants({ variant: "outline", className: "w-full" })}>
               Main menu
-            </Button>
+            </Link>
           </Overlay>
         ) : null}
       </div>
@@ -470,12 +505,12 @@ export function MatchView({
           <Button className="w-full" onClick={() => setPaused(false)}>
             Resume
           </Button>
-          <Button className="w-full" variant="outline" render={<Link href="/settings" />}>
+          <Link href="/settings" className={buttonVariants({ variant: "outline", className: "w-full" })}>
             Settings
-          </Button>
-          <Button className="w-full" variant="destructive" render={<Link href="/" />}>
+          </Link>
+          <Link href="/" className={buttonVariants({ variant: "destructive", className: "w-full" })}>
             Resign to menu
-          </Button>
+          </Link>
         </Overlay>
       ) : null}
     </div>

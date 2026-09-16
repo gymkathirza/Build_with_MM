@@ -1,13 +1,13 @@
 {
   "ai": {
-    "gatherBias": 0.61,
-    "militaryRatio": 0.73,
-    "attackAtArmy": 4,
+    "gatherBias": 0.7,
+    "militaryRatio": 0.68,
+    "attackAtArmy": 3,
     "expandCamps": 1,
-    "agePriority": 0.67,
+    "agePriority": 0.55,
     "kite": 0.4
   },
   "quality": 2,
   "lodDistance": 28,
-  "round": 42640
+  "round": 2
 }
