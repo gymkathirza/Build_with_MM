@@ -223,10 +223,29 @@ test("hearth screen keeps deer, timber, and ore in reach", () => {
   const w = createWorld("ashen", "gilded")
   const hall = w.buildings.find((b) => b.owner === 0 && b.type === "hearth")
   assert.ok(hall)
-  const near = w.nodes.filter((n) => Math.hypot(n.x - hall.x, n.y - hall.y) < 24)
+  const near = w.nodes.filter((n) => Math.hypot(n.x - hall.x, n.y - hall.y) < 36)
   assert.ok(near.some((n) => n.fauna === "deer"), "deer should stand by the hearth")
   assert.ok(near.some((n) => n.fauna === "boar"), "boar should stand by the hearth")
   assert.ok(near.some((n) => n.type === "timber"), "pines should stand by the hearth")
   assert.ok(near.some((n) => n.type === "ore"), "ore should stand by the hearth")
+})
+
+test("local hunt sprites stay clear of nearby timber on small and huge plates", () => {
+  for (const mapId of ["emberglass", "vast-mere"] as const) {
+    const w = createWorld("ashen", "gilded", undefined, { mapId })
+    const hall = w.buildings.find((b) => b.owner === 0 && b.type === "hearth")
+    assert.ok(hall, mapId)
+    const near = w.nodes.filter((n) => Math.hypot(n.x - hall.x, n.y - hall.y) < 28)
+    const deer = near.filter((n) => n.fauna === "deer")
+    const timber = near.filter((n) => n.type === "timber")
+    assert.ok(deer.length >= 1, `${mapId} deer`)
+    assert.ok(timber.length >= 1, `${mapId} timber`)
+    for (const d of deer) {
+      for (const t of timber) {
+        const dist = Math.hypot(d.x - t.x, d.y - t.y)
+        assert.ok(dist >= 3.2, `${mapId} deer/timber ${dist.toFixed(2)}`)
+      }
+    }
+  }
 })
 

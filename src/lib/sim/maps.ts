@@ -32,12 +32,12 @@ export function localNodes(size: number): NodeSeed[] {
     size >= 200
       ? [
           { type: "grain", ox: 8 * s, oy: -3 * s, amount: 1400 },
-          { type: "timber", ox: 4 * s, oy: -6 * s, amount: 1200 },
+          { type: "timber", ox: 4 * s, oy: -3 * s, amount: 1200 },
           { type: "ore", ox: 10 * s, oy: 3 * s, amount: 820 },
           { type: "grain", ox: 7 * s, oy: -5 * s, amount: 520, fauna: "deer" },
           { type: "grain", ox: 6 * s, oy: 6 * s, amount: 480, fauna: "boar" },
         ]
-      : [{ type: "grain", ox: 6 * s, oy: -4 * s, amount: 360, fauna: "deer" }]
+      : [{ type: "grain", ox: 1 * s, oy: Math.max(7 * s, 6), amount: 360, fauna: "deer" }]
   return [
     { type: "grain", ox: 4 * s, oy: -5 * s, amount: 1100 },
     { type: "grain", ox: 6 * s, oy: 4 * s, amount: 1100 },
@@ -45,7 +45,7 @@ export function localNodes(size: number): NodeSeed[] {
     { type: "timber", ox: 7 * s, oy: 3 * s, amount: 980 },
     { type: "ore", ox: 8 * s, oy: -2 * s, amount: 640 },
     { type: "relics", ox: 4 * s, oy: -3 * s, amount: 8 },
-    { type: "grain", ox: 3 * s, oy: -6 * s, amount: 420, fauna: "deer" },
+    { type: "grain", ox: 3 * s, oy: -(size < 200 ? Math.max(6 * s, 7) : 6 * s), amount: 420, fauna: "deer" },
     { type: "grain", ox: 8 * s, oy: 5 * s, amount: 380, fauna: "boar" },
     ...extra,
   ]

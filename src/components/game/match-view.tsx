@@ -177,7 +177,7 @@ export function MatchView({
         fps = (frames * 1000) / (now - fpsT)
         frames = 0
         fpsT = now
-        if (fps < 40) qualityRef.current = 1
+        if (fps < 40) qualityRef.current = 0
         else if (fps < 52) qualityRef.current = 1
         else qualityRef.current = tuned.quality
       }

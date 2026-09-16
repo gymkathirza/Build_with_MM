@@ -140,10 +140,12 @@ function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: Dra
   if (culled(p.sx, p.sy, s, w, h)) return
   const bob = n.fauna && quality > 0 ? Math.sin(n.id + performance.now() / 420) * 1.4 : 0
   blit(ctx, nodeSpr(n), p.sx - s / 2, p.sy - s * 0.72 + bob, s, s)
-  ctx.fillStyle = "rgba(20,12,8,0.82)"
-  ctx.font = `${Math.max(11, Math.min(15, cam.z * 0.7))}px sans-serif`
-  ctx.textAlign = "center"
-  ctx.fillText(nodeLabel(n), p.sx, p.sy + s * 0.42)
+  if (quality > 0) {
+    ctx.fillStyle = "rgba(20,12,8,0.82)"
+    ctx.font = `${Math.max(11, Math.min(15, cam.z * 0.7))}px sans-serif`
+    ctx.textAlign = "center"
+    ctx.fillText(nodeLabel(n), p.sx, p.sy + s * 0.42)
+  }
 }
 
 function hpBar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, ratio: number) {
@@ -203,11 +205,13 @@ function drawBuilding(
   } else if (b.hp < b.hpMax) {
     hpBar(ctx, p.sx - r, p.sy + r * 0.85, r * 2, b.hp / b.hpMax)
   }
-  ctx.fillStyle = "rgba(255,246,212,0.95)"
-  ctx.font = `${Math.max(11, Math.min(16, r * 0.32))}px sans-serif`
-  ctx.textAlign = "center"
-  const label = b.type === "hearth" ? AGE_NAMES[age as 0 | 1 | 2] : BUILDING_LABEL[b.type]
-  ctx.fillText(label, p.sx, p.sy + r + 14)
+  if (quality > 0) {
+    ctx.fillStyle = "rgba(255,246,212,0.95)"
+    ctx.font = `${Math.max(11, Math.min(16, r * 0.32))}px sans-serif`
+    ctx.textAlign = "center"
+    const label = b.type === "hearth" ? AGE_NAMES[age as 0 | 1 | 2] : BUILDING_LABEL[b.type]
+    ctx.fillText(label, p.sx, p.sy + r + 14)
+  }
   if (selected) {
     ctx.strokeStyle = "#f3d48a"
     ctx.lineWidth = 2
