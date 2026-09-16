@@ -82,7 +82,7 @@ export function MatchView({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const spec = specFor(mapId)
   const halls = hallPositions(spec)
-  const camRef = useRef<Cam>({ x: halls.p0.x, y: halls.p0.y, z: spec.size >= 200 ? 14 : 18, w: 800, h: 480 })
+  const camRef = useRef<Cam>({ x: halls.p0.x + 6, y: halls.p0.y, z: spec.size >= 200 ? 12 : 16, w: 800, h: 480 })
   const keysRef = useRef<Set<string>>(new Set())
   const telRef = useRef(createTelemetry())
   const pendingRef = useRef<Pending>(null)
@@ -177,7 +177,7 @@ export function MatchView({
         fps = (frames * 1000) / (now - fpsT)
         frames = 0
         fpsT = now
-        if (fps < 40) qualityRef.current = 0
+        if (fps < 40) qualityRef.current = 1
         else if (fps < 52) qualityRef.current = 1
         else qualityRef.current = tuned.quality
       }
@@ -328,7 +328,7 @@ export function MatchView({
     const wheel = (e: WheelEvent) => {
       e.preventDefault()
       const cam = camRef.current
-      cam.z = Math.max(8, Math.min(36, cam.z * (e.deltaY > 0 ? 0.92 : 1.08)))
+      cam.z = Math.max(6, Math.min(36, cam.z * (e.deltaY > 0 ? 0.92 : 1.08)))
       pushEvent(telRef.current, "camera", "zoom")
     }
     window.addEventListener("keydown", down)

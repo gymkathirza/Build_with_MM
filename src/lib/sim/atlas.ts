@@ -753,27 +753,13 @@ function bakeAtlas() {
 }
 
 function bakeMoss() {
-  const c = makeCanvas(128, 128)
+  const c = makeCanvas(48, 48)
   const ctx = ctx2d(c)
-  ctx.fillStyle = "#2c4328"
-  ctx.fillRect(0, 0, 128, 128)
-  for (let i = 0; i < 48; i++) {
-    ctx.fillStyle = i % 4 === 0 ? "#3d5a32" : i % 4 === 1 ? "#243526" : "#35502f"
-    ctx.beginPath()
-    ctx.ellipse((i * 47) % 128, (i * 91) % 128, 16 + (i % 7), 9 + (i % 5), i * 0.4, 0, Math.PI * 2)
-    ctx.fill()
-  }
-  ctx.fillStyle = "rgba(74,122,56,0.4)"
-  for (let i = 0; i < 22; i++) {
-    ctx.beginPath()
-    ctx.ellipse((i * 23) % 128, (i * 61) % 128, 7, 3.5, 0.5, 0, Math.PI * 2)
-    ctx.fill()
-  }
-  ctx.fillStyle = "rgba(90,70,40,0.18)"
-  for (let i = 0; i < 8; i++) {
-    ctx.beginPath()
-    ctx.ellipse((i * 37) % 128, (i * 53) % 128, 10, 4, 0.2, 0, Math.PI * 2)
-    ctx.fill()
+  ctx.fillStyle = "#35502f"
+  ctx.fillRect(0, 0, 48, 48)
+  for (let i = 0; i < 18; i++) {
+    ctx.fillStyle = i % 3 === 0 ? "#3d5a32" : "#2f4a2c"
+    ctx.fillRect((i * 13) % 48, (i * 19) % 48, 3, 2)
   }
   return c
 }

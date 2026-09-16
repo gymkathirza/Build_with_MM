@@ -219,3 +219,14 @@ test("vast mere seeds hunt herds plus timber and ore", () => {
   assert.ok(Math.abs(west - east) <= 2)
 })
 
+test("hearth screen keeps deer, timber, and ore in reach", () => {
+  const w = createWorld("ashen", "gilded")
+  const hall = w.buildings.find((b) => b.owner === 0 && b.type === "hearth")
+  assert.ok(hall)
+  const near = w.nodes.filter((n) => Math.hypot(n.x - hall.x, n.y - hall.y) < 24)
+  assert.ok(near.some((n) => n.fauna === "deer"), "deer should stand by the hearth")
+  assert.ok(near.some((n) => n.fauna === "boar"), "boar should stand by the hearth")
+  assert.ok(near.some((n) => n.type === "timber"), "pines should stand by the hearth")
+  assert.ok(near.some((n) => n.type === "ore"), "ore should stand by the hearth")
+})
+

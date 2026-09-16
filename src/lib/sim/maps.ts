@@ -25,28 +25,28 @@ export function specFor(mapId: string): MapSpec {
 
 export type NodeSeed = { type: Res; ox: number; oy: number; amount: number; fauna?: Fauna }
 
-/** Offsets from the south-west hall, biased inward so 180° copies stay on the plate. */
+/** Offsets from the west hall, kept tight so the opening camera actually sees them. */
 export function localNodes(size: number): NodeSeed[] {
   const s = size / 100
   const extra: NodeSeed[] =
     size >= 200
       ? [
-          { type: "grain", ox: 14 * s, oy: -4 * s, amount: 1400 },
-          { type: "timber", ox: 4 * s, oy: -16 * s, amount: 1200 },
-          { type: "ore", ox: 18 * s, oy: 6 * s, amount: 820 },
-          { type: "grain", ox: 20 * s, oy: -12 * s, amount: 520, fauna: "deer" },
-          { type: "grain", ox: 8 * s, oy: 14 * s, amount: 480, fauna: "boar" },
+          { type: "grain", ox: 8 * s, oy: -3 * s, amount: 1400 },
+          { type: "timber", ox: 4 * s, oy: -6 * s, amount: 1200 },
+          { type: "ore", ox: 10 * s, oy: 3 * s, amount: 820 },
+          { type: "grain", ox: 7 * s, oy: -5 * s, amount: 520, fauna: "deer" },
+          { type: "grain", ox: 6 * s, oy: 6 * s, amount: 480, fauna: "boar" },
         ]
-      : [{ type: "grain", ox: 12 * s, oy: -6 * s, amount: 360, fauna: "deer" }]
+      : [{ type: "grain", ox: 6 * s, oy: -4 * s, amount: 360, fauna: "deer" }]
   return [
-    { type: "grain", ox: 6 * s, oy: -10 * s, amount: 1100 },
-    { type: "grain", ox: 10 * s, oy: 8 * s, amount: 1100 },
-    { type: "timber", ox: 10 * s, oy: -8 * s, amount: 980 },
-    { type: "timber", ox: 12 * s, oy: 6 * s, amount: 980 },
-    { type: "ore", ox: 16 * s, oy: -4 * s, amount: 640 },
-    { type: "relics", ox: 8 * s, oy: -18 * s, amount: 8 },
-    { type: "grain", ox: 2 * s, oy: -14 * s, amount: 420, fauna: "deer" },
-    { type: "grain", ox: 15 * s, oy: 10 * s, amount: 380, fauna: "boar" },
+    { type: "grain", ox: 4 * s, oy: -5 * s, amount: 1100 },
+    { type: "grain", ox: 6 * s, oy: 4 * s, amount: 1100 },
+    { type: "timber", ox: 5 * s, oy: -4 * s, amount: 980 },
+    { type: "timber", ox: 7 * s, oy: 3 * s, amount: 980 },
+    { type: "ore", ox: 8 * s, oy: -2 * s, amount: 640 },
+    { type: "relics", ox: 4 * s, oy: -3 * s, amount: 8 },
+    { type: "grain", ox: 3 * s, oy: -6 * s, amount: 420, fauna: "deer" },
+    { type: "grain", ox: 8 * s, oy: 5 * s, amount: 380, fauna: "boar" },
     ...extra,
   ]
 }
