@@ -25,23 +25,23 @@ export function specFor(mapId: string): MapSpec {
 
 export type NodeSeed = { type: Res; ox: number; oy: number; amount: number }
 
-/** Offsets from a hall. Mirrored 180° for the rival so travel times match. */
+/** Offsets from the south-west hall, biased inward so 180° copies stay on the plate. */
 export function localNodes(size: number): NodeSeed[] {
   const s = size / 100
   const extra: NodeSeed[] =
     size >= 200
       ? [
-          { type: "grain", ox: -14 * s, oy: 4 * s, amount: 1400 },
-          { type: "timber", ox: 4 * s, oy: 16 * s, amount: 1200 },
-          { type: "ore", ox: -18 * s, oy: -6 * s, amount: 820 },
+          { type: "grain", ox: 14 * s, oy: -4 * s, amount: 1400 },
+          { type: "timber", ox: 4 * s, oy: -16 * s, amount: 1200 },
+          { type: "ore", ox: 18 * s, oy: 6 * s, amount: 820 },
         ]
       : []
   return [
-    { type: "grain", ox: -6 * s, oy: -10 * s, amount: 1100 },
-    { type: "grain", ox: 8 * s, oy: 10 * s, amount: 1100 },
-    { type: "timber", ox: -10 * s, oy: 8 * s, amount: 980 },
-    { type: "timber", ox: 12 * s, oy: -8 * s, amount: 980 },
-    { type: "ore", ox: 16 * s, oy: 4 * s, amount: 640 },
+    { type: "grain", ox: 6 * s, oy: -10 * s, amount: 1100 },
+    { type: "grain", ox: 10 * s, oy: 8 * s, amount: 1100 },
+    { type: "timber", ox: 10 * s, oy: -8 * s, amount: 980 },
+    { type: "timber", ox: 12 * s, oy: 6 * s, amount: 980 },
+    { type: "ore", ox: 16 * s, oy: -4 * s, amount: 640 },
     { type: "relics", ox: 8 * s, oy: -18 * s, amount: 8 },
     ...extra,
   ]

@@ -220,7 +220,14 @@ function addBuilding(
 }
 
 function node(w: World, type: Res, x: number, y: number, amount: number) {
-  w.nodes.push({ id: nid(w), kind: "node", type, x, y, amount })
+  w.nodes.push({
+    id: nid(w),
+    kind: "node",
+    type,
+    x: clamp(x, 3, w.size - 3),
+    y: clamp(y, 3, w.size - 3),
+    amount,
+  })
 }
 
 export function createWorld(
@@ -268,8 +275,10 @@ export function createWorld(
     spawnUnit(w, b, "levy", halls.p1.x + u1.x * 4 + (i - spec.startLevies / 2) * 1.4, halls.p1.y + u1.y * 3)
   }
   for (const seed of localNodes(spec.size)) {
-    node(w, seed.type, halls.p0.x + seed.ox, halls.p0.y + seed.oy, seed.amount)
-    node(w, seed.type, halls.p1.x - seed.ox, halls.p1.y - seed.oy, seed.amount)
+    const x = clamp(halls.p0.x + seed.ox, 4, spec.size - 4)
+    const y = clamp(halls.p0.y + seed.oy, 4, spec.size - 4)
+    node(w, seed.type, x, y, seed.amount)
+    node(w, seed.type, spec.size - x, spec.size - y, seed.amount)
   }
   for (const seed of contestNodes(spec.size)) {
     node(w, seed.type, seed.ox, seed.oy, seed.amount)

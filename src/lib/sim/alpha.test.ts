@@ -34,6 +34,10 @@ test("halls are mirrored: equal travel to center", () => {
   const n0 = w.nodes.filter((n) => n.x < spec.size / 2).length
   const n1 = w.nodes.filter((n) => n.x > spec.size / 2).length
   assert.ok(Math.abs(n0 - n1) <= 2)
+  for (const n of w.nodes) {
+    assert.ok(n.x >= 3 && n.x <= spec.size - 3, `node x ${n.x}`)
+    assert.ok(n.y >= 3 && n.y <= spec.size - 3, `node y ${n.y}`)
+  }
 })
 
 test("personas rotate and skewed eco differs from balanced", () => {
