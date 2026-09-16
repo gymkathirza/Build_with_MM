@@ -796,8 +796,13 @@ export function blit(
   dw: number,
   dh: number,
 ) {
-  const a = getAtlas()
-  const sx = (id % COLS) * CELL
-  const sy = Math.floor(id / COLS) * CELL
-  ctx.drawImage(a, sx, sy, CELL, CELL, dx, dy, dw, dh)
+  try {
+    const a = getAtlas()
+    const sx = (id % COLS) * CELL
+    const sy = Math.floor(id / COLS) * CELL
+    ctx.drawImage(a, sx, sy, CELL, CELL, dx, dy, dw, dh)
+  } catch {
+    ctx.fillStyle = "#c49a5a"
+    ctx.fillRect(dx, dy, Math.max(4, dw), Math.max(4, dh))
+  }
 }

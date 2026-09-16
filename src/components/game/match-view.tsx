@@ -169,6 +169,7 @@ export function MatchView({
       ? { ...tuned.ai, gatherBias: 0.8, attackAtArmy: tuned.ai.attackAtArmy + 2 }
       : null
     const loop = (now: number) => {
+      try {
       const dt = Math.min(0.033, (now - last) / 1000)
       last = now
       frames++
@@ -182,15 +183,14 @@ export function MatchView({
       }
       const cam = camRef.current
       const parent = canvas.parentElement
-      const box = canvas.getBoundingClientRect()
-      const w = Math.max(parent?.clientWidth ?? 0, Math.floor(box.width), 320)
-      const h = Math.max(parent?.clientHeight ?? 0, Math.floor(box.height), 200)
+      const w = Math.max(parent?.clientWidth || 0, 320)
+      const h = Math.max(parent?.clientHeight || 0, 200)
       const dpr = Math.min(1.5, window.devicePixelRatio || 1)
-      if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
-        canvas.width = Math.floor(w * dpr)
-        canvas.height = Math.floor(h * dpr)
-        canvas.style.width = `${w}px`
-        canvas.style.height = `${h}px`
+      const bw = Math.floor(w * dpr)
+      const bh = Math.floor(h * dpr)
+      if (canvas.width !== bw || canvas.height !== bh) {
+        canvas.width = bw
+        canvas.height = bh
       }
       cam.w = w
       cam.h = h
@@ -243,7 +243,7 @@ export function MatchView({
         if (acc > step * 2) acc = 0
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      ctx.fillStyle = "#35502f"
+      ctx.fillStyle = "#3d5a32"
       ctx.fillRect(0, 0, w, h)
       const t0 = performance.now()
       try {
@@ -295,6 +295,12 @@ export function MatchView({
         postedWin = true
         setWinner(world.winner)
         setEndPearl(true)
+      }
+      } catch (err) {
+        console.error(err)
+        ctx.setTransform(1, 0, 0, 1, 0, 0)
+        ctx.fillStyle = "#3d5a32"
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
       }
       raf = requestAnimationFrame(loop)
     }
@@ -375,8 +381,8 @@ export function MatchView({
   }
 
   return (
-    <div className="relative flex min-h-dvh flex-col bg-[#140e0a] text-foreground">
-      <header className="relative z-20 flex flex-wrap items-center gap-2 border-b border-primary/25 bg-black/55 px-2 py-1.5">
+    <div className="relative flex h-dvh max-h-dvh flex-col overflow-hidden bg-[#140e0a] text-foreground">
+      <header className="relative z-20 flex shrink-0 flex-wrap items-center gap-2 border-b border-primary/25 bg-black/55 px-2 py-1.5">
         <PearlLogo size={28} className="hidden shrink-0 sm:block" />
         <p className="font-heading hidden text-[11px] tracking-[0.28em] text-primary uppercase sm:block">
           {faction.name}
@@ -396,10 +402,10 @@ export function MatchView({
         </Button>
       </header>
 
-      <div className="relative min-h-[50vh] flex-1">
+      <div className="relative min-h-0 flex-1 overflow-hidden bg-[#3d5a32]">
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 h-full w-full cursor-crosshair bg-[#35502f]"
+          className="absolute inset-0 block h-full w-full cursor-crosshair bg-[#3d5a32]"
           onContextMenu={(e) => e.preventDefault()}
           onPointerDown={(e) => {
             const r = e.currentTarget.getBoundingClientRect()
@@ -473,7 +479,7 @@ export function MatchView({
         ) : null}
       </div>
 
-      <footer className="relative z-20 border-t border-primary/25 bg-black/75">
+      <footer className="relative z-20 shrink-0 border-t border-primary/25 bg-black/75">
         <div className="grid gap-2 p-2 lg:grid-cols-[minmax(0,1.1fr)_14rem_13rem]" data-hud={hudPulse}>
           <Selection selectedUnits={selUnits} building={selBuild} />
           <div className="rounded-sm border border-primary/20 bg-card/50 p-2">

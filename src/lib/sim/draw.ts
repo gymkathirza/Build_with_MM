@@ -44,7 +44,7 @@ function drawTerrain(
   quality: DrawQuality,
   size: number,
 ) {
-  ctx.fillStyle = "#1a2618"
+  ctx.fillStyle = "#3d5a32"
   ctx.fillRect(0, 0, w, h)
   const c0 = worldToScreen(cam, 0, 0)
   const c1 = worldToScreen(cam, size, size)
