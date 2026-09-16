@@ -71,17 +71,18 @@ export function contestNodes(size: number): NodeSeed[] {
   return pairs.map(([dx, dy, type, amount]) => ({ type, ox: c + dx, oy: c + dy, amount }))
 }
 
-export type HallAxis = "sw-ne" | "se-nw"
+export type HallAxis = "w-e" | "e-w"
 
-export function hallPositions(spec: MapSpec, axis: HallAxis = "sw-ne") {
-  if (axis === "se-nw") {
+export function hallPositions(spec: MapSpec, axis: HallAxis = "w-e") {
+  const mid = spec.size / 2
+  if (axis === "e-w") {
     return {
-      p0: { x: spec.size - spec.pad, y: spec.size - spec.pad },
-      p1: { x: spec.pad, y: spec.pad },
+      p0: { x: spec.size - spec.pad, y: mid },
+      p1: { x: spec.pad, y: mid },
     }
   }
   return {
-    p0: { x: spec.pad, y: spec.size - spec.pad },
-    p1: { x: spec.size - spec.pad, y: spec.pad },
+    p0: { x: spec.pad, y: mid },
+    p1: { x: spec.size - spec.pad, y: mid },
   }
 }

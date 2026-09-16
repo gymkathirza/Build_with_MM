@@ -27,10 +27,10 @@ export type GameResult = {
   p1Timber: number
 }
 
-function southOwnerWon(swap: boolean, winner: 0 | 1 | null) {
+function westOwnerWon(w: World, winner: 0 | 1 | null) {
   if (winner === null) return false
-  const south: 0 | 1 = swap ? 1 : 0
-  return winner === south
+  const hall = w.buildings.find((b) => b.owner === winner && b.type === "hearth")
+  return !!hall && hall.x < w.size / 2
 }
 
 function runGame(
@@ -40,7 +40,7 @@ function runGame(
   swap: boolean,
   persona: Persona,
   mapId = HUGE_MAP_ID,
-  axis: "sw-ne" | "se-nw" = "sw-ne",
+  axis: "w-e" | "e-w" = "w-e",
 ): GameResult {
   const w: World = createWorld("ashen", "gilded", tuned.ai, {
     mapId,
@@ -78,7 +78,7 @@ function runGame(
     simMsAvg,
     wallMs,
     swap,
-    southWon: southOwnerWon(swap, w.winner),
+    southWon: westOwnerWon(w, w.winner),
     p0Age: w.players[0].age,
     p1Age: w.players[1].age,
     persona: persona.id,
@@ -240,7 +240,7 @@ export function runHourBenchmark(
     const games: GameResult[] = []
     for (let g = 0; g < gamesPerRound; g++) {
       const persona = nextPersona(round + g)
-      const axis = (round + g) % 2 === 0 ? "sw-ne" : "se-nw"
+      const axis = (round + g) % 2 === 0 ? "w-e" : "e-w"
       games.push(runGame(tuned, maxSeconds, true, g % 2 === 1, persona, HUGE_MAP_ID, axis))
     }
     const rec = closeRound(round, games, tuned, t0, live)

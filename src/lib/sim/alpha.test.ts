@@ -23,12 +23,13 @@ test("huge map is default and selectable", () => {
 
 test("halls are mirrored: equal travel to center", () => {
   const spec = specFor(HUGE_MAP_ID)
-  for (const axis of ["sw-ne", "se-nw"] as const) {
+  for (const axis of ["w-e", "e-w"] as const) {
     const h = hallPositions(spec, axis)
     const c = spec.size / 2
     const d0 = Math.hypot(h.p0.x - c, h.p0.y - c)
     const d1 = Math.hypot(h.p1.x - c, h.p1.y - c)
     assert.ok(Math.abs(d0 - d1) < 0.01, `${axis} travel ${d0} vs ${d1}`)
+    assert.ok(Math.abs(h.p0.y - h.p1.y) < 0.01, "same latitude kills south snowball")
   }
   const w = createWorld("ashen", "gilded", undefined, { mapId: HUGE_MAP_ID })
   const n0 = w.nodes.filter((n) => n.x < spec.size / 2).length

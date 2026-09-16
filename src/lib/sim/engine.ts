@@ -239,7 +239,7 @@ export function createWorld(
   const options = typeof opts === "boolean" ? { swap: opts } : opts
   const spec: MapSpec = specFor(options.mapId ?? "vast-mere")
   const swap = options.swap === true
-  const axis: HallAxis = options.axis ?? "sw-ne"
+  const axis: HallAxis = options.axis ?? "w-e"
   const halls = hallPositions(spec, axis)
   const w: World = {
     nextId: 1,
@@ -270,9 +270,12 @@ export function createWorld(
   const n1 = Math.hypot(inward1.x, inward1.y) || 1
   const u0 = { x: inward0.x / n0, y: inward0.y / n0 }
   const u1 = { x: inward1.x / n1, y: inward1.y / n1 }
+  const p0perp = { x: -u0.y, y: u0.x }
+  const p1perp = { x: -u1.y, y: u1.x }
   for (let i = 0; i < spec.startLevies; i++) {
-    spawnUnit(w, a, "levy", halls.p0.x + u0.x * 4 + (i - spec.startLevies / 2) * 1.4, halls.p0.y + u0.y * 3)
-    spawnUnit(w, b, "levy", halls.p1.x + u1.x * 4 + (i - spec.startLevies / 2) * 1.4, halls.p1.y + u1.y * 3)
+    const s = (i - (spec.startLevies - 1) / 2) * 1.4
+    spawnUnit(w, a, "levy", halls.p0.x + u0.x * 4 + p0perp.x * s, halls.p0.y + u0.y * 4 + p0perp.y * s)
+    spawnUnit(w, b, "levy", halls.p1.x + u1.x * 4 + p1perp.x * s, halls.p1.y + u1.y * 4 + p1perp.y * s)
   }
   for (const seed of localNodes(spec.size)) {
     const x = clamp(halls.p0.x + seed.ox, 4, spec.size - 4)
