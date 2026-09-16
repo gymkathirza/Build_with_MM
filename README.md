@@ -2,17 +2,17 @@
 
 **Version:** 0.1.0-alpha (**Alpha pre-release**). Original RTS. Local 1v1 vs AI only — not Age of Empires, not Microsoft IP.
 
-KATHIREZA: this is how you run the Alpha on a Mac.
+[![Alpha CI](https://github.com/gymkathirza/Build_with_MM/actions/workflows/alpha.yml/badge.svg)](https://github.com/gymkathirza/Build_with_MM/actions/workflows/alpha.yml)
 
-## Need
+Clone: [github.com/gymkathirza/Build_with_MM](https://github.com/gymkathirza/Build_with_MM)
 
-- **Node.js 20 or 22** (`node -v`). Install from [nodejs.org](https://nodejs.org) or `brew install node`.
-- Git, and this repo cloned once GitHub exists. Until then, use the Live desktop from the agent session.
+## Mac local (KATHIREZA)
 
-## Install, dev, play
+Need **Node.js 20 or 22** (`node -v`). From [nodejs.org](https://nodejs.org) or `brew install node`.
 
 ```bash
-cd /path/to/build-with-manon-mani
+git clone https://github.com/gymkathirza/Build_with_MM.git
+cd Build_with_MM
 npm ci
 npm run dev
 ```
@@ -42,6 +42,18 @@ npm run benchmark      # wall-clock hour: BENCH_MINUTES=60 npm run benchmark
 
 ## CI/CD
 
-GitHub Actions (`.github/workflows/alpha.yml`): lint, typecheck, unit tests, headless playtest, production build. Tag `v0.1.0-alpha` also uploads the Next build artifact. The hour ML job is **manual**, not PR CI.
+GitHub Actions (`.github/workflows/alpha.yml`) on every **push** and **pull request**:
 
-If this Project is still `agent_temp` with no GitHub host, the workflow files are in the tree but no PR can open until you create a GitHub repo.
+`npm ci` → lint → `tsc --noEmit` → unit tests → short headless playtest → production build.
+
+Tag `v0.1.0-alpha` also uploads the Next `.next` build artifact. The hour ML job is **manual**, not PR CI.
+
+## Deploy (optional)
+
+**Do not use GitHub Pages as the app host.** The Observatory posts to `/api/obs`, which Pages cannot run.
+
+**Vercel Hobby** is the recommended free host for this Next.js app (clone this repo, Framework Preset: Next.js, no extra env required for Alpha). itch.io can wait until there is a static HTML5 export.
+
+## License
+
+MIT. See `LICENSE`.
