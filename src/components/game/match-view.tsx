@@ -181,6 +181,10 @@ export function MatchView({
       const w = parent?.clientWidth ?? 800
       const h = parent?.clientHeight ?? 480
       const dpr = Math.min(1.5, window.devicePixelRatio || 1)
+      if (w < 32 || h < 32) {
+        raf = requestAnimationFrame(loop)
+        return
+      }
       if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
         canvas.width = Math.floor(w * dpr)
         canvas.height = Math.floor(h * dpr)
@@ -389,7 +393,7 @@ export function MatchView({
         </Button>
       </header>
 
-      <div className="relative min-h-0 flex-1">
+      <div className="relative min-h-[50vh] flex-1">
         <canvas
           ref={canvasRef}
           className="absolute inset-0 h-full w-full cursor-crosshair"
