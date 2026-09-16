@@ -2,6 +2,7 @@ import {
   type AiParams,
   type Owner,
   type World,
+  findBuildSite,
   issueAttackMove,
   issueGather,
   placeBuilding,
@@ -41,13 +42,13 @@ function countType(w: World, owner: Owner, type: string) {
   return w.units.filter((u) => u.owner === owner && u.type === type).length
 }
 
-function buildersFor(w: World, owner: Owner) {
+function crewIds(w: World, owner: Owner) {
   const idle = idleLevies(w, owner)
-  if (idle.length) return idle
-  const gathering = w.units.filter(
-    (u) => u.owner === owner && u.type === "levy" && (u.order.t === "gather" || u.order.t === "return"),
-  )
-  return gathering.slice(0, 1)
+  if (idle.length) return idle.slice(0, 3).map((u) => u.id)
+  return w.units
+    .filter((u) => u.owner === owner && u.type === "levy")
+    .slice(0, 2)
+    .map((u) => u.id)
 }
 
 export function tickAi(w: World, owner: Owner, params: AiParams) {
@@ -59,14 +60,25 @@ export function tickAi(w: World, owner: Owner, params: AiParams) {
 
   const levies = w.units.filter((u) => u.owner === owner && u.type === "levy")
   const military = w.units.filter((u) => u.owner === owner && u.type !== "levy")
-  const wantsGather = Math.max(2, Math.floor(levies.length * params.gatherBias))
+  const incomplete = w.buildings.filter((b) => b.owner === owner && !b.done)
+  if (incomplete.length) {
+    const target = incomplete[0]
+    const already = w.units.filter((u) => u.owner === owner && u.order.t === "build").length
+    if (already < 2) {
+      for (const id of crewIds(w, owner)) {
+        const u = w.units.find((x) => x.id === id)
+        if (u) u.order = { t: "build", building: target.id }
+      }
+    }
+  }
 
+  const wantsGather = Math.max(2, Math.floor(levies.length * params.gatherBias))
   const gathering = levies.filter((u) => u.order.t === "gather" || u.order.t === "return")
-  if (gathering.length < wantsGather) {
+  if (!incomplete.length && gathering.length < wantsGather) {
     for (const u of idleLevies(w, owner)) {
       if (gathering.length >= wantsGather) break
       const need =
-        p.timber < 80 ? "timber" : p.grain < 140 ? "grain" : p.ore < 90 ? "ore" : undefined
+        p.timber < 90 ? "timber" : p.grain < 160 ? "grain" : p.ore < 100 ? "ore" : undefined
       const n = nearestNode(w, u.x, u.y, need)
       if (n) {
         issueGather(w, [u.id], n.id)
@@ -75,43 +87,49 @@ export function tickAi(w: World, owner: Owner, params: AiParams) {
     }
   }
 
-  const hasCamp = w.buildings.some((b) => b.owner === owner && b.type === "camp")
-  const hasPit = w.buildings.some((b) => b.owner === owner && b.type === "pit")
-  const hasYard = w.buildings.some((b) => b.owner === owner && b.type === "yard")
-  const hasLodge = w.buildings.some((b) => b.owner === owner && b.type === "lodge")
-  const hasGranary = w.buildings.some((b) => b.owner === owner && b.type === "granary")
-  const builders = buildersFor(w, owner)
-  const side = owner === 0 ? 1 : -1
+  const has = (type: string, done = false) =>
+    w.buildings.some((b) => b.owner === owner && b.type === type && (!done || b.done))
+  const ids = crewIds(w, owner)
 
-  if (!hasCamp && params.expandCamps > 0 && p.timber >= 50 && builders.length) {
-    const trees = nearestNode(w, h.x, h.y, "timber")
-    if (trees) placeBuilding(w, owner, "camp", trees.x + 3 * side, trees.y + 2, [builders[0].id])
-  } else if (!hasPit && p.timber >= 60 && p.ore >= 15 && builders.length) {
-    const ore = nearestNode(w, h.x, h.y, "ore")
-    if (ore) placeBuilding(w, owner, "pit", ore.x - 3 * side, ore.y + 2, [builders[0].id])
-  } else if (!hasYard && p.timber >= 90 && p.ore >= 20 && builders.length) {
-    placeBuilding(w, owner, "yard", h.x + 6 * side, h.y - 5 * side, [builders[0].id])
-  } else if (!hasGranary && p.timber >= 45 && builders.length) {
-    const grain = nearestNode(w, h.x, h.y, "grain")
-    if (grain) placeBuilding(w, owner, "granary", grain.x + 2.5 * side, grain.y - 2, [builders[0].id])
-  } else if (p.age >= 1 && !hasLodge && p.timber >= 110 && p.ore >= 40 && builders.length) {
-    placeBuilding(w, owner, "lodge", h.x + 8 * side, h.y, [builders[0].id])
+  if (!incomplete.length && ids.length) {
+    if (!has("camp") && params.expandCamps > 0 && p.timber >= 50) {
+      const trees = nearestNode(w, h.x, h.y, "timber")
+      const site = trees ? findBuildSite(w, "camp", trees.x, trees.y) : findBuildSite(w, "camp", h.x, h.y)
+      if (site) placeBuilding(w, owner, "camp", site.x, site.y, ids)
+    } else if (!has("yard") && p.timber >= 90 && p.ore >= 20) {
+      const site = findBuildSite(w, "yard", h.x, h.y)
+      if (site) placeBuilding(w, owner, "yard", site.x, site.y, ids)
+    } else if (!has("pit") && p.timber >= 60 && p.ore >= 15) {
+      const ore = nearestNode(w, h.x, h.y, "ore")
+      const site = ore ? findBuildSite(w, "pit", ore.x, ore.y) : null
+      if (site) placeBuilding(w, owner, "pit", site.x, site.y, ids)
+    } else if (!has("granary") && p.timber >= 45) {
+      const grain = nearestNode(w, h.x, h.y, "grain")
+      const site = grain ? findBuildSite(w, "granary", grain.x, grain.y) : findBuildSite(w, "granary", h.x, h.y)
+      if (site) placeBuilding(w, owner, "granary", site.x, site.y, ids)
+    } else if (p.age >= 1 && !has("lodge") && p.timber >= 110 && p.ore >= 40) {
+      const site = findBuildSite(w, "lodge", h.x, h.y)
+      if (site) placeBuilding(w, owner, "lodge", site.x, site.y, ids)
+    }
   }
 
-  if (p.age === 0 && hasYard && params.agePriority > 0.4) startAge(w, owner)
+  if (p.age === 0 && has("yard", true) && p.grain >= 280 && p.ore >= 140 && params.agePriority > 0.4) {
+    startAge(w, owner)
+  }
 
   const yard = w.buildings.find((b) => b.owner === owner && b.type === "yard" && b.done)
   const lodge = w.buildings.find((b) => b.owner === owner && b.type === "lodge" && b.done)
   const pop = popUsed(w, owner)
   const wantMil = pop < POP_CAP * params.militaryRatio + 8
+  const savingForAge = p.age === 0 && has("yard", true) && params.agePriority > 0.5 && p.grain < 280
 
-  if (h.queue.length < 2 && levies.length < 9 && p.grain >= 50) {
+  if (h.queue.length < 1 && levies.length < 7 && p.grain >= 50 && !savingForAge) {
     queueTrain(w, h.id, "levy")
   }
-  if (yard && wantMil && yard.queue.length < 3) {
-    if (countType(w, owner, "warden") < 3 && p.timber >= 35) {
+  if (yard && wantMil && yard.queue.length < 3 && !savingForAge) {
+    if (countType(w, owner, "warden") < 2 && p.timber >= 35) {
       queueTrain(w, yard.id, "warden")
-    } else {
+    } else if (p.grain >= 55 && p.ore >= 20) {
       queueTrain(w, yard.id, "guard")
     }
   }

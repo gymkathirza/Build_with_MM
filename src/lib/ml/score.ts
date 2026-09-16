@@ -95,8 +95,9 @@ export function improveFromScore(prev: Tuned, score: LoopScore, games: { winner:
     next.ai.attackAtArmy = Math.min(10, prev.ai.attackAtArmy + 1)
     next.ai.gatherBias = Math.min(0.85, prev.ai.gatherBias + 0.04)
   } else if (p0Wins >= games.length && games.length) {
-    next.ai.attackAtArmy = Math.max(4, prev.ai.attackAtArmy - 1)
-    next.ai.agePriority = Math.min(0.9, prev.ai.agePriority + 0.05)
+    next.ai.militaryRatio = Math.min(0.78, prev.ai.militaryRatio + 0.05)
+    next.ai.gatherBias = Math.max(0.58, prev.ai.gatherBias - 0.03)
+    next.ai.agePriority = Math.min(0.85, prev.ai.agePriority + 0.04)
   }
   return next
 }

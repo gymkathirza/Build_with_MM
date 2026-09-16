@@ -85,11 +85,11 @@ export type AiParams = {
 }
 
 export const DEFAULT_AI: AiParams = {
-  gatherBias: 0.72,
-  militaryRatio: 0.55,
-  attackAtArmy: 5,
+  gatherBias: 0.7,
+  militaryRatio: 0.58,
+  attackAtArmy: 4,
   expandCamps: 1,
-  agePriority: 0.65,
+  agePriority: 0.55,
   kite: 0.4,
 }
 
@@ -327,7 +327,8 @@ export function placeBuilding(
   }
   const b = addBuilding(w, owner, type, clamp(x, 4, WORLD - 4), clamp(y, 4, WORLD - 4), false)
   const levies = w.units.filter((u) => builderIds.includes(u.id) && u.type === "levy")
-  const crew = levies.length ? levies : w.units.filter((u) => u.owner === owner && u.type === "levy").slice(0, 2)
+  const backup = w.units.filter((u) => u.owner === owner && u.type === "levy").slice(0, 3)
+  const crew = (levies.length ? levies : backup).slice(0, 3)
   for (const u of crew) u.order = { t: "build", building: b.id }
   return b
 }
@@ -431,6 +432,23 @@ function steer(u: Unit, tx: number, ty: number, speed: number, buildings: Buildi
   return dist(u.x, u.y, tx, ty) < 0.45
 }
 
+export function findBuildSite(w: World, type: BuildingType, nearX: number, nearY: number) {
+  const need = BUILDING_STATS[type].radius
+  for (let ring = 5; ring <= 16; ring += 2) {
+    for (let a = 0; a < 14; a++) {
+      const x = nearX + Math.cos((a / 14) * Math.PI * 2) * ring
+      const y = nearY + Math.sin((a / 14) * Math.PI * 2) * ring
+      if (x < 4 || y < 4 || x > WORLD - 4 || y > WORLD - 4) continue
+      let ok = true
+      for (const b of w.buildings) {
+        if (dist(b.x, b.y, x, y) < BUILDING_STATS[b.type].radius + need + 0.9) ok = false
+      }
+      if (ok) return { x, y }
+    }
+  }
+  return null
+}
+
 function hit(w: World, u: Unit, target: Unit | Building) {
   const stats = UNIT_STATS[u.type]
   if (u.atkCd > 0) return
@@ -438,7 +456,7 @@ function hit(w: World, u: Unit, target: Unit | Building) {
     target.kind === "building" ? stats.range + BUILDING_STATS[target.type].radius : stats.range
   if (dist(u.x, u.y, target.x, target.y) > range + 0.2) return
   const armor = target.kind === "unit" ? UNIT_STATS[target.type].armor : 2
-  const dmg = Math.max(1, stats.atk - armor)
+  const dmg = Math.max(1, stats.atk - armor) * (target.kind === "building" ? 1.4 : 1)
   target.hp -= dmg
   u.atkCd = stats.cd
   if (target.hp <= 0) {

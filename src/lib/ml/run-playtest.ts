@@ -24,7 +24,7 @@ function runGame(tuned: Tuned, maxSeconds: number, playerBot: boolean): GameResu
     typeof performance !== "undefined" ? performance.now() : Date.now()
   for (let i = 0; i < maxTicks && w.winner === null; i++) {
     const a = typeof performance !== "undefined" ? performance.now() : Date.now()
-    if (playerBot) tickAi(w, 0, { ...tuned.ai, attackAtArmy: tuned.ai.attackAtArmy + 1, gatherBias: 0.78 })
+    if (playerBot) tickAi(w, 0, tuned.ai)
     tickAi(w, 1, tuned.ai)
     tick(w)
     const b = typeof performance !== "undefined" ? performance.now() : Date.now()
