@@ -695,14 +695,15 @@ function tickUnit(w: World, u: Unit) {
       return
     }
     const n = w.nodes.find((x) => x.id === o.node)
-    const job = o.job ?? (n ? gatherJobOf(n) : null)
     if (!n || n.amount <= 0) {
+      const job = o.job ?? (n ? gatherJobOf(n) : undefined)
       if (job && advancedGather(w, u.owner) && retargetGather(w, u, job, o.node)) return
       u.order = { t: "idle" }
       w.gather.idleDeplete++
       w.events.push({ k: "gather", owner: u.owner, why: "idle-deplete" })
       return
     }
+    const job = o.job ?? gatherJobOf(n)
     if (u.carry) {
       const drop = dropFor(w, u, u.carry.res)
       if (!drop) {
