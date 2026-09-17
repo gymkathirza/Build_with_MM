@@ -11,6 +11,7 @@
     "test": "tsx --test src/lib/sim/alpha.test.ts src/lib/audio/sea-crest.test.ts",
     "audio": "tsx src/lib/audio/write-wav.ts",
     "playtest": "tsx src/lib/ml/cli.ts",
+    "playtest:gather": "tsx src/lib/ml/cli.ts --gather",
     "benchmark": "tsx src/lib/ml/cli.ts --hour"
   },
   "dependencies": {
