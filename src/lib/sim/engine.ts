@@ -21,15 +21,25 @@ export type Owner = 0 | 1
 export type Res = "grain" | "timber" | "ore" | "relics"
 export type Age = 0 | 1 | 2
 
+export type GatherJob = { res: Res; hunt: boolean }
+
 export type Order =
   | { t: "idle" }
   | { t: "move"; x: number; y: number }
-  | { t: "gather"; node: number }
-  | { t: "return"; drop: number }
+  | { t: "gather"; node: number; lock?: boolean; job?: GatherJob }
+  | { t: "return"; drop: number; lock?: boolean; job?: GatherJob; node?: number }
   | { t: "build"; building: number }
   | { t: "attack"; target: number }
   | { t: "attackMove"; x: number; y: number }
   | { t: "defend"; x: number; y: number }
+
+export type GatherObs = {
+  travel: number
+  nearest: number
+  wrong: number
+  hops: number
+  idleDeplete: number
+}
 
 export type Fauna = "deer" | "boar" | "bear" | "wolf"
 
@@ -119,6 +129,7 @@ export type World = {
   popCap: number
   persona: string
   southOwner: Owner
+  gather: GatherObs
 }
 
 export type SimEvent =
@@ -128,6 +139,11 @@ export type SimEvent =
   | { k: "aged"; owner: Owner; age: Age }
   | { k: "upgraded"; type: BuildingType; owner: Owner }
   | { k: "failed"; owner: Owner; why: string }
+  | { k: "gather"; owner: Owner; why: "pick" | "wrong" | "hop" | "idle-deplete"; travel?: number; nearest?: number }
+
+export function emptyGatherObs(): GatherObs {
+  return { travel: 0, nearest: 0, wrong: 0, hops: 0, idleDeplete: 0 }
+}
 
 function clamp(v: number, a: number, b: number) {
   return Math.max(a, Math.min(b, v))
@@ -135,6 +151,61 @@ function clamp(v: number, a: number, b: number) {
 
 function dist(ax: number, ay: number, bx: number, by: number) {
   return Math.hypot(ax - bx, ay - by)
+}
+
+export function gatherJobOf(n: Node): GatherJob {
+  return { res: n.type, hunt: n.fauna != null }
+}
+
+export function nodeMatchesJob(n: Node, job: GatherJob) {
+  if (n.amount <= 0) return false
+  if (job.hunt) return n.fauna != null && n.type === job.res
+  return n.type === job.res && n.fauna == null
+}
+
+export function nearestGatherNode(w: World, x: number, y: number, job: GatherJob, except?: number) {
+  let best: Node | null = null
+  let bestD = Infinity
+  for (const n of w.nodes) {
+    if (except != null && n.id === except) continue
+    if (!nodeMatchesJob(n, job)) continue
+    const d = dist(n.x, n.y, x, y)
+    if (d < bestD) {
+      bestD = d
+      best = n
+    }
+  }
+  return best
+}
+
+function noteGatherAssign(w: World, u: Unit, target: Node, job: GatherJob) {
+  const travel = dist(u.x, u.y, target.x, target.y)
+  const nearest = nearestGatherNode(w, u.x, u.y, job)
+  const nearestD = nearest ? dist(u.x, u.y, nearest.x, nearest.y) : travel
+  w.gather.travel += travel
+  w.gather.nearest += nearestD
+  const wrong = travel > nearestD + 0.51
+  if (wrong) w.gather.wrong++
+  w.events.push({
+    k: "gather",
+    owner: u.owner,
+    why: wrong ? "wrong" : "pick",
+    travel,
+    nearest: nearestD,
+  })
+}
+
+function advancedGather(w: World, owner: Owner) {
+  return w.players[owner].age >= 1
+}
+
+function retargetGather(w: World, u: Unit, job: GatherJob, except?: number, lock = false) {
+  const next = nearestGatherNode(w, u.x, u.y, job, except)
+  if (!next) return false
+  u.order = { t: "gather", node: next.id, lock, job }
+  w.gather.hops++
+  w.events.push({ k: "gather", owner: u.owner, why: "hop" })
+  return true
 }
 
 export function popUsed(w: World, owner: Owner) {
@@ -267,6 +338,7 @@ export function createWorld(
     popCap: spec.popCap,
     persona: options.persona ?? "balanced",
     southOwner: swap ? 1 : 0,
+    gather: emptyGatherObs(),
   }
   const a: Owner = swap ? 1 : 0
   const b: Owner = swap ? 0 : 1
@@ -323,13 +395,20 @@ export function issueAttackMove(w: World, ids: number[], x: number, y: number) {
   }
 }
 
-export function issueGather(w: World, ids: number[], nodeId: number) {
+export function issueGather(w: World, ids: number[], nodeId: number, opts?: { lock?: boolean }) {
   const n = w.nodes.find((q) => q.id === nodeId)
   if (!n) return false
+  const lock = opts?.lock === true
+  const job = gatherJobOf(n)
   let ok = false
   for (const u of w.units) {
     if (!ids.includes(u.id) || u.type !== "levy") continue
-    u.order = { t: "gather", node: nodeId }
+    let target = n
+    if (!lock && advancedGather(w, u.owner)) {
+      target = nearestGatherNode(w, u.x, u.y, job) ?? n
+    }
+    u.order = { t: "gather", node: target.id, lock, job }
+    noteGatherAssign(w, u, target, job)
     ok = true
   }
   return ok
@@ -616,8 +695,12 @@ function tickUnit(w: World, u: Unit) {
       return
     }
     const n = w.nodes.find((x) => x.id === o.node)
+    const job = o.job ?? (n ? gatherJobOf(n) : null)
     if (!n || n.amount <= 0) {
+      if (job && advancedGather(w, u.owner) && retargetGather(w, u, job, o.node)) return
       u.order = { t: "idle" }
+      w.gather.idleDeplete++
+      w.events.push({ k: "gather", owner: u.owner, why: "idle-deplete" })
       return
     }
     if (u.carry) {
@@ -626,7 +709,7 @@ function tickUnit(w: World, u: Unit) {
         u.order = { t: "idle" }
         return
       }
-      u.order = { t: "return", drop: drop.id }
+      u.order = { t: "return", drop: drop.id, lock: o.lock, job, node: n.id }
       return
     }
     if (dist(u.x, u.y, n.x, n.y) > 1.4) {
@@ -641,7 +724,7 @@ function tickUnit(w: World, u: Unit) {
       n.amount -= take
       u.carry = { res: n.type, amt: take }
       const drop = dropFor(w, u, n.type)
-      if (drop) u.order = { t: "return", drop: drop.id }
+      if (drop) u.order = { t: "return", drop: drop.id, lock: o.lock, job, node: n.id }
     }
     return
   }
@@ -659,8 +742,21 @@ function tickUnit(w: World, u: Unit) {
     const p = w.players[u.owner]
     p[u.carry.res] += u.carry.amt
     const res = u.carry.res
+    const job = o.job ?? { res, hunt: false }
     u.carry = null
-    const next = w.nodes.find((n) => n.amount > 0 && n.type === res)
+    if (o.lock && o.node != null) {
+      const locked = w.nodes.find((q) => q.id === o.node)
+      if (locked && locked.amount > 0) {
+        u.order = { t: "gather", node: locked.id, lock: true, job }
+        return
+      }
+    }
+    if (advancedGather(w, u.owner)) {
+      const next = nearestGatherNode(w, u.x, u.y, job)
+      u.order = next ? { t: "gather", node: next.id, lock: false, job } : { t: "idle" }
+      return
+    }
+    const next = w.nodes.find((q) => q.amount > 0 && q.type === res)
     u.order = next ? { t: "gather", node: next.id } : { t: "idle" }
     return
   }

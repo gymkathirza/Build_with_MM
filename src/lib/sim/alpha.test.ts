@@ -4,6 +4,7 @@ import {
   createWorld,
   issueAttackMove,
   issueDefend,
+  issueGather,
   placeBuilding,
   popUsed,
   queueTrain,
@@ -247,5 +248,98 @@ test("local hunt sprites stay clear of nearby timber on small and huge plates", 
       }
     }
   }
+})
+
+function timberPair(age: 0 | 1) {
+  const w = createWorld("ashen", "gilded", undefined, { mapId: "emberglass" })
+  w.players[0].age = age
+  const hall = w.buildings.find((b) => b.owner === 0 && b.type === "hearth")
+  const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")
+  assert.ok(hall && levy)
+  levy.x = hall.x
+  levy.y = hall.y
+  levy.order = { t: "idle" }
+  levy.carry = null
+  for (const n of w.nodes) n.amount = 0
+  const stocks = w.nodes.filter((n) => n.type === "timber")
+  assert.ok(stocks.length >= 2)
+  const near = stocks[0]
+  const far = stocks[1]
+  near.x = hall.x + 3
+  near.y = hall.y
+  near.amount = 240
+  far.x = hall.x + 22
+  far.y = hall.y
+  far.amount = 240
+  return { w, levy, near, far }
+}
+
+test("Forge Age gathers the nearest node of the assigned resource", () => {
+  const { w, levy, near, far } = timberPair(1)
+  assert.ok(issueGather(w, [levy.id], far.id))
+  assert.equal(levy.order.t, "gather")
+  if (levy.order.t === "gather") assert.equal(levy.order.node, near.id)
+})
+
+test("Forge Age hops to the next nearest same type when a node depletes", () => {
+  const { w, levy, near, far } = timberPair(1)
+  assert.ok(issueGather(w, [levy.id], near.id))
+  near.amount = 0
+  tick(w)
+  assert.equal(levy.order.t, "gather")
+  if (levy.order.t === "gather") assert.equal(levy.order.node, far.id)
+})
+
+test("Ember Age does not auto-chain to the next node", () => {
+  const { w, levy, near } = timberPair(0)
+  assert.ok(issueGather(w, [levy.id], near.id))
+  near.amount = 0
+  tick(w)
+  assert.equal(levy.order.t, "idle")
+})
+
+test("player gather override sticks until that node depletes", () => {
+  const { w, levy, near, far } = timberPair(1)
+  assert.ok(issueGather(w, [levy.id], far.id, { lock: true }))
+  tick(w)
+  assert.equal(levy.order.t, "gather")
+  if (levy.order.t === "gather") assert.equal(levy.order.node, far.id)
+  far.amount = 0
+  tick(w)
+  assert.equal(levy.order.t, "gather")
+  if (levy.order.t === "gather") assert.equal(levy.order.node, near.id)
+})
+
+test("Forge Age hunt hops to the next hunt, not a grain field", () => {
+  const w = createWorld("ashen", "gilded", undefined, { mapId: "emberglass" })
+  w.players[0].age = 1
+  const hall = w.buildings.find((b) => b.owner === 0 && b.type === "hearth")
+  const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")
+  assert.ok(hall && levy)
+  levy.x = hall.x
+  levy.y = hall.y
+  for (const n of w.nodes) n.amount = 0
+  const grains = w.nodes.filter((n) => n.type === "grain")
+  assert.ok(grains.length >= 3)
+  const huntA = grains[0]
+  const huntB = grains[1]
+  const field = grains[2]
+  huntA.x = hall.x + 4
+  huntA.y = hall.y
+  huntA.amount = 80
+  huntA.fauna = "deer"
+  huntB.x = hall.x + 16
+  huntB.y = hall.y
+  huntB.amount = 80
+  huntB.fauna = "boar"
+  field.x = hall.x + 6
+  field.y = hall.y
+  field.amount = 400
+  field.fauna = null
+  assert.ok(issueGather(w, [levy.id], huntA.id))
+  huntA.amount = 0
+  tick(w)
+  assert.equal(levy.order.t, "gather")
+  if (levy.order.t === "gather") assert.equal(levy.order.node, huntB.id)
 })
 
