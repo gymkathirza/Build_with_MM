@@ -27,6 +27,11 @@ export type LiveObs = {
   quality?: number
   lod?: number
   at?: number
+  gatherTravel?: number
+  gatherNearest?: number
+  gatherWrong?: number
+  gatherHops?: number
+  gatherIdle?: number
 }
 
 export type Tuned = {

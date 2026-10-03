@@ -144,7 +144,7 @@ export function MatchView({
     if (obsLineRef.current) {
       const last = tel.frames.at(-1)
       obsLineRef.current.textContent = last
-        ? `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms\nsim ${simMs.toFixed(2)} ms · in ${tel.lastInputMs.toFixed(0)} ms\nclicks ${tel.clicks} · fail ${tel.failedOrders} · deaths ${tel.deaths}\npan ${tel.cameraMoves} · lod ${qualityRef.current}`
+        ? `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms\nsim ${simMs.toFixed(2)} ms · in ${tel.lastInputMs.toFixed(0)} ms\nclicks ${tel.clicks} · fail ${tel.failedOrders} · deaths ${tel.deaths}\npan ${tel.cameraMoves} · lod ${qualityRef.current}\ngather hop ${world.gather.hops} · idle ${world.gather.idleDeplete} · wrong ${world.gather.wrong}`
         : "warming…"
     }
     setHudPulse((n) => n + 1)
@@ -283,6 +283,11 @@ export function MatchView({
             persona: world.persona,
             pop: popUsed(world, 0),
             popCap: world.popCap,
+            gatherTravel: world.gather.travel,
+            gatherNearest: world.gather.nearest,
+            gatherWrong: world.gather.wrong,
+            gatherHops: world.gather.hops,
+            gatherIdle: world.gather.idleDeplete,
           })
           if (navigator.sendBeacon) {
             navigator.sendBeacon("/api/obs", new Blob([body], { type: "application/json" }))
@@ -365,7 +370,7 @@ export function MatchView({
       return
     }
     if (hit && hit.kind === "node") {
-      if (!issueGather(world, own, hit.id)) pushEvent(telRef.current, "failed", "gather")
+      if (!issueGather(world, own, hit.id, { lock: true })) pushEvent(telRef.current, "failed", "gather")
     } else if (hit && hit.owner === 1) {
       issueAttack(world, own, hit.id)
     } else if (pending?.kind === "attackMove") {

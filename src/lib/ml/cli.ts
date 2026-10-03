@@ -2,10 +2,12 @@ import { readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { DEFAULT_TUNED, type Tuned } from "./score"
 import { formatLoopReport, runHourBenchmark, runPlaytestLoop, summarizeBenchmark } from "./run-playtest"
+import { formatGatherReport, runGatherLoop } from "./gather-loop"
 
 const root = process.cwd()
 const tunedPath = join(root, "src/lib/ml/tuned.json")
 const hour = process.argv.includes("--hour")
+const gatherOnly = process.argv.includes("--gather")
 const minutes = Number(process.env.BENCH_MINUTES ?? (hour ? 60 : 0))
 
 function loadTuned(): Tuned {
@@ -37,6 +39,10 @@ if (hour) {
   console.log(
     `Done: ${summary.games} games in ${summary.wallMinutes.toFixed(2)} min · finish ${(1 - summary.drawRate) * 100}% · P0/P1 ${summary.p0Wins}/${summary.p1Wins} · west ${(summary.southWinRate * 100).toFixed(1)}% · avg ${summary.avgDurationSec.toFixed(0)}s · sim ${summary.avgSimMs.toFixed(3)}ms · peak ${summary.avgPeakEntities.toFixed(0)}`,
   )
+} else if (gatherOnly) {
+  const result = runGatherLoop(4, 28, loadTuned())
+  console.log(formatGatherReport(result))
+  writeFileSync(tunedPath, JSON.stringify(result.tuned, null, 2))
 } else {
   const result = runPlaytestLoop(2, 2, 75)
   console.log(formatLoopReport(result))
