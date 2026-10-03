@@ -189,6 +189,41 @@ test("garrison holds the hearth while a raid leaves", () => {
   assert.ok(home.length >= 1, "at least one guard stays on the hearth")
 })
 
+test("thin Forge banner line still sends a raid", () => {
+  const w = createWorld("ashen", "gilded", { ...personaById("balanced").params, attackAtArmy: 2 }, {
+    mapId: "emberglass",
+    persona: "balanced",
+  })
+  w.players[0].age = 1
+  w.players[0].grain = 800
+  w.players[0].ore = 400
+  w.players[0].timber = 400
+  const h = hall(w, 0)
+  const yard = placeBuilding(
+    w,
+    0,
+    "yard",
+    h.x + 8,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  yard.done = true
+  yard.construct = yard.constructMax
+  queueTrain(w, yard.id, "guard")
+  queueTrain(w, yard.id, "guard")
+  for (let i = 0; i < 20 * 30; i++) tick(w)
+  for (let i = 0; i < 40; i++) {
+    tickAi(w, 0, { ...personaById("balanced").params, attackAtArmy: 2 }, personaById("balanced"))
+    tick(w)
+  }
+  const banners = w.units.filter((u) => u.owner === 0 && u.type === "guard")
+  assert.ok(banners.length >= 2, `guards ${banners.length}`)
+  const raid = banners.filter((u) => u.order.t === "attackMove" || u.order.t === "attack")
+  const hold = banners.filter((u) => u.order.t === "defend")
+  assert.ok(raid.length >= 1, "at least one banner should march")
+  assert.ok(hold.length >= 1, "at least one banner should hold the hearth")
+})
+
 test("coach AI keeps a hearth garrison after banners exist", () => {
   const persona = personaById("coach")
   const w = createWorld("ashen", "gilded", persona.params, {

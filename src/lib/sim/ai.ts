@@ -212,7 +212,10 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
 
   const enemyHall = hall(w, owner === 0 ? 1 : 0)
   const guards = military.filter((u) => u.type === "guard")
-  const garrisonN = Math.min(guards.length, Math.max(2, Math.floor(guards.length * 0.4) || (guards.length ? 1 : 0)))
+  const attackAt = p.age >= 1 ? Math.max(2, tuned.attackAtArmy - 1) : tuned.attackAtArmy
+  const keepRaid = military.length >= attackAt ? 1 : 0
+  const wantHold = Math.max(1, Math.floor(guards.length * 0.35))
+  const garrisonN = Math.max(0, Math.min(guards.length - keepRaid, wantHold))
   const garrison = guards.slice(0, garrisonN)
   if (garrison.length && w.tick % 20 === owner) {
     issueDefend(
@@ -245,16 +248,28 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     }
   }
 
-  if (enemyHall && military.length >= tuned.attackAtArmy) {
+  if (enemyHall && military.length >= attackAt) {
     const soldiers = military.filter(
       (u) =>
-        (u.order.t === "idle" || u.order.t === "move" || u.order.t === "attackMove") &&
+        (u.order.t === "idle" || u.order.t === "move" || u.order.t === "attackMove" || u.order.t === "defend") &&
         !garrison.some((g) => g.id === u.id),
     )
     if (soldiers.length) {
       issueAttackMove(
         w,
         soldiers.map((u) => u.id),
+        enemyHall.x,
+        enemyHall.y,
+      )
+    }
+  } else if (p.age >= 1 && enemyHall && levies.length >= 6 && w.tick % 80 === owner) {
+    const militia = levies
+      .filter((u) => u.order.t === "idle" || u.order.t === "gather")
+      .slice(0, 2)
+    if (militia.length) {
+      issueAttackMove(
+        w,
+        militia.map((u) => u.id),
         enemyHall.x,
         enemyHall.y,
       )

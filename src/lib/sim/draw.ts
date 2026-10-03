@@ -86,6 +86,11 @@ function drawTerrain(
     ctx.strokeStyle = "rgba(180,220,210,0.22)"
     ctx.lineWidth = 1.5
     ctx.stroke()
+    ctx.strokeStyle = "rgba(220,240,235,0.16)"
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.ellipse(lake.sx, lake.sy, lrx * 0.72, lry * 0.72, 0.2, 0, Math.PI * 2)
+    ctx.stroke()
   }
 
   if (quality > 0) {
@@ -123,7 +128,7 @@ function nodeSpr(n: Node) {
   return SPR.relic
 }
 
-function nodeLabel(n: Node) {
+export function nodeLabel(n: Node) {
   if (n.fauna === "deer") return "Deer"
   if (n.fauna === "boar") return "Boar"
   if (n.fauna === "bear") return "Bear"
@@ -193,11 +198,12 @@ function drawBuilding(
   ctx.fill()
   ctx.fillStyle = trim
   ctx.fillRect(p.sx + s * 0.16, p.sy - s * 0.62, 3, s * 0.26)
-  if (b.type === "hearth" && b.aging > 0) {
-    ctx.strokeStyle = `rgba(243,212,138,${0.4 + 0.4 * Math.sin(now / 180)})`
-    ctx.lineWidth = 3
+  if (b.type === "hearth" && quality > 0) {
+    const pulse = b.aging > 0 ? 0.4 + 0.4 * Math.sin(now / 180) : 0.16 + 0.08 * Math.sin(now / 420)
+    ctx.strokeStyle = `rgba(243,212,138,${pulse})`
+    ctx.lineWidth = b.aging > 0 ? 3 : 1.5
     ctx.beginPath()
-    ctx.arc(p.sx, p.sy, r * 1.05, 0, Math.PI * 2)
+    ctx.arc(p.sx, p.sy, r * (b.aging > 0 ? 1.05 : 0.92), 0, Math.PI * 2)
     ctx.stroke()
   }
   if (!b.done) {
@@ -274,9 +280,17 @@ function drawMinimap(ctx: CanvasRenderingContext2D, world: World, cam: Cam, w: n
   const sy = mh / size
   for (const n of world.nodes) {
     if (n.amount <= 0) continue
-    ctx.fillStyle =
-      n.type === "grain" ? "#d4b85a" : n.type === "timber" ? "#3d6a3a" : n.type === "ore" ? "#8a8f9a" : "#e0c36a"
-    ctx.fillRect(x + n.x * sx - 1, y + n.y * sy - 1, 2, 2)
+    ctx.fillStyle = n.fauna
+      ? "#c47a3a"
+      : n.type === "grain"
+        ? "#d4b85a"
+        : n.type === "timber"
+          ? "#3d6a3a"
+          : n.type === "ore"
+            ? "#8a8f9a"
+            : "#e0c36a"
+    const dot = n.fauna ? 3 : 2
+    ctx.fillRect(x + n.x * sx - dot / 2, y + n.y * sy - dot / 2, dot, dot)
   }
   for (const b of world.buildings) {
     ctx.fillStyle = team(world, b.owner)
@@ -330,6 +344,24 @@ export function drawWorld(
   }
   for (const u of world.units) {
     drawUnit(ctx, u, cam, team(world, u.owner), selected.has(u.id), quality, now, w, h)
+  }
+  if (quality > 1) {
+    ctx.strokeStyle = "rgba(243,212,138,0.28)"
+    ctx.lineWidth = 1
+    ctx.setLineDash([4, 5])
+    for (const u of world.units) {
+      const order = u.order
+      if (!selected.has(u.id) || order.t !== "gather") continue
+      const n = world.nodes.find((q) => q.id === order.node)
+      if (!n) continue
+      const a = worldToScreen(cam, u.x, u.y)
+      const b = worldToScreen(cam, n.x, n.y)
+      ctx.beginPath()
+      ctx.moveTo(a.sx, a.sy)
+      ctx.lineTo(b.sx, b.sy)
+      ctx.stroke()
+    }
+    ctx.setLineDash([])
   }
   if (quality > 0) drawMinimap(ctx, world, cam, w, h)
 }

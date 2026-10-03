@@ -477,11 +477,12 @@ function drawWolf(ctx: CanvasRenderingContext2D, ox: number, oy: number) {
 function drawPine(ctx: CanvasRenderingContext2D, ox: number, oy: number) {
   ctx.fillStyle = WOOD
   ctx.fillRect(ox + 29, oy + 44, 6, 14)
-  ctx.fillStyle = "#1f4a28"
+  ctx.fillStyle = "#163820"
   for (const [y, w] of [
-    [18, 22],
-    [28, 26],
-    [38, 22],
+    [14, 20],
+    [24, 26],
+    [34, 24],
+    [44, 20],
   ] as const) {
     ctx.beginPath()
     ctx.moveTo(ox + 32, oy + y)

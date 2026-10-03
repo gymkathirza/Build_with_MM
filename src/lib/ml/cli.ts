@@ -23,7 +23,7 @@ if (hour) {
   const seed = loadTuned()
   const ms = Math.max(60_000, minutes * 60_000)
   console.log(`Hour benchmark: ${minutes} min wall-clock, seed round ${seed.round}`)
-  const result = runHourBenchmark(ms, seed, 6, 200, (rec, tuned) => {
+  const result = runHourBenchmark(ms, seed, 6, 260, (rec, tuned) => {
     if (rec.round === 1 || rec.round % 20 === 0) {
       console.log(
         `t+${(rec.elapsedMs / 60000).toFixed(1)}m round ${rec.round} P0/P1/draw ${rec.p0}/${rec.p1}/${rec.draw} west/east ${rec.south}/${rec.north} sim ${rec.simMs.toFixed(3)}ms peak ${rec.peak} fps~${rec.fps.toFixed(0)} q=${tuned.quality} lod=${tuned.lodDistance} persona=${rec.persona}`,
