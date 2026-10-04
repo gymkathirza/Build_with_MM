@@ -579,6 +579,15 @@ function caveHall(ctx: CanvasRenderingContext2D, ox: number, oy: number, variant
     ctx.beginPath()
     ctx.arc(cx, oy + 22, 3.2, 0, Math.PI * 2)
     ctx.fill()
+    ctx.fillStyle = ROCK_L
+    ctx.fillRect(cx + 10, oy + 10, 6, 10)
+    ctx.fillStyle = "#c45c2a"
+    ctx.beginPath()
+    ctx.moveTo(cx + 8, oy + 10)
+    ctx.lineTo(cx + 13, oy + 2)
+    ctx.lineTo(cx + 18, oy + 10)
+    ctx.closePath()
+    ctx.fill()
   }
 }
 
@@ -609,21 +618,48 @@ function bakeAtlas() {
     ctx.lineTo(x + 47, y + 30)
     ctx.fill()
   })
-  put(SPR.lodge, (x, y) => caveHall(ctx, x, y, 2))
-  put(SPR.camp, (x, y) => {
+  put(SPR.lodge, (x, y) => {
+    caveHall(ctx, x, y, 2)
     ctx.fillStyle = WOOD
-    ctx.fillRect(x + 14, y + 36, 36, 8)
-    ctx.fillRect(x + 18, y + 28, 28, 8)
-    ctx.fillStyle = MOSS
-    ctx.fillRect(x + 20, y + 22, 8, 16)
-    ctx.fillRect(x + 36, y + 24, 10, 14)
+    ctx.fillRect(x + 14, y + 20, 4, 28)
+    ctx.fillRect(x + 46, y + 22, 4, 26)
+    ctx.fillStyle = FUR
+    ctx.fillRect(x + 16, y + 18, 32, 5)
+  })
+  put(SPR.camp, (x, y) => {
     ellipse(ctx, x + 32, y + 52, 16, 5, "rgba(20,12,8,0.25)", false)
+    ctx.fillStyle = "#8a5a28"
+    ctx.beginPath()
+    ctx.moveTo(x + 32, y + 16)
+    ctx.lineTo(x + 54, y + 50)
+    ctx.lineTo(x + 10, y + 50)
+    ctx.closePath()
+    ctx.fill()
+    ctx.fillStyle = "#c49a5a"
+    ctx.beginPath()
+    ctx.moveTo(x + 32, y + 20)
+    ctx.lineTo(x + 46, y + 46)
+    ctx.lineTo(x + 18, y + 46)
+    ctx.closePath()
+    ctx.fill()
+    ctx.fillStyle = WOOD
+    ctx.fillRect(x + 30, y + 16, 4, 34)
+    ctx.fillStyle = DOOR
+    ctx.fillRect(x + 27, y + 38, 10, 12)
   })
   put(SPR.pit, (x, y) => {
     ellipse(ctx, x + 32, y + 40, 22, 12, "#5a6068")
     ellipse(ctx, x + 32, y + 40, 12, 6, "#2a2e34", false)
+    ctx.fillStyle = "#e07030"
+    ctx.beginPath()
+    ctx.ellipse(x + 32, y + 40, 6, 3, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = "#f3d48a"
+    ctx.beginPath()
+    ctx.ellipse(x + 32, y + 39, 3, 1.6, 0, 0, Math.PI * 2)
+    ctx.fill()
     ctx.fillStyle = ROCK_L
-    ctx.fillRect(x + 26, y + 28, 12, 8)
+    ctx.fillRect(x + 26, y + 26, 12, 8)
     mossDots(ctx, x + 32, y + 22, 4)
   })
   put(SPR.granary, (x, y) => {

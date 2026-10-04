@@ -262,10 +262,8 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         enemyHall.y,
       )
     }
-  } else if (p.age >= 1 && enemyHall && levies.length >= 6 && w.tick % 80 === owner) {
-    const militia = levies
-      .filter((u) => u.order.t === "idle" || u.order.t === "gather")
-      .slice(0, 2)
+  } else if (p.age >= 1 && enemyHall && levies.length >= 6 && w.tick % 80 === owner && p.timber >= 80 && p.ore >= 40) {
+    const militia = levies.filter((u) => u.order.t === "idle").slice(0, 2)
     if (militia.length) {
       issueAttackMove(
         w,
@@ -274,6 +272,26 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         enemyHall.y,
       )
     }
+  }
+
+  if (p.age >= 1 && w.tick % 60 === owner) {
+    let relic = null as (typeof w.nodes)[number] | null
+    let relicD = 1e9
+    for (const n of w.nodes) {
+      if (n.type !== "relics" || n.amount <= 0) continue
+      const d = Math.hypot(n.x - h.x, n.y - h.y)
+      if (d < relicD) {
+        relicD = d
+        relic = n
+      }
+    }
+    const scout = military.find(
+      (u) =>
+        u.type === "warden" &&
+        (u.order.t === "idle" || u.order.t === "move") &&
+        !garrison.some((g) => g.id === u.id),
+    )
+    if (relic && scout) issueMove(w, [scout.id], relic.x, relic.y)
   }
 }
 

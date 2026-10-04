@@ -42,8 +42,9 @@ function drawTerrain(
   w: number,
   h: number,
   quality: DrawQuality,
-  size: number,
+  world: World,
 ) {
+  const size = world.size
   ctx.fillStyle = "#3d5a32"
   ctx.fillRect(0, 0, w, h)
   const c0 = worldToScreen(cam, 0, 0)
@@ -91,6 +92,30 @@ function drawTerrain(
     ctx.beginPath()
     ctx.ellipse(lake.sx, lake.sy, lrx * 0.72, lry * 0.72, 0.2, 0, Math.PI * 2)
     ctx.stroke()
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + 0.3
+      const rp = worldToScreen(cam, size / 2 + Math.cos(a) * lakeR * 1.15, size / 2 + Math.sin(a) * lakeR * 0.7)
+      ctx.strokeStyle = "rgba(40,80,36,0.55)"
+      ctx.lineWidth = 1.4
+      ctx.beginPath()
+      ctx.moveTo(rp.sx, rp.sy)
+      ctx.lineTo(rp.sx + Math.cos(a) * 5, rp.sy - 9)
+      ctx.stroke()
+    }
+  }
+
+  if (quality > 0) {
+    const halls = world.buildings.filter((b) => b.type === "hearth" && b.done)
+    if (halls.length >= 2) {
+      const a = worldToScreen(cam, halls[0].x, halls[0].y)
+      const b = worldToScreen(cam, halls[1].x, halls[1].y)
+      ctx.strokeStyle = "rgba(90,70,40,0.22)"
+      ctx.lineWidth = Math.max(3, cam.z * 0.35)
+      ctx.beginPath()
+      ctx.moveTo(a.sx, a.sy)
+      ctx.quadraticCurveTo(lake.sx, lake.sy + lry * 0.8, b.sx, b.sy)
+      ctx.stroke()
+    }
   }
 
   if (quality > 0) {
@@ -143,7 +168,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: Dra
   const p = worldToScreen(cam, n.x, n.y)
   const s = Math.max(n.fauna ? 40 : 34, cam.z * (n.fauna ? 2.8 : 2.35))
   if (culled(p.sx, p.sy, s, w, h)) return
-  const bob = n.fauna && quality > 0 ? Math.sin(n.id + performance.now() / 420) * 1.4 : 0
+  const bob = n.fauna && quality > 0 ? Math.sin(n.id + performance.now() / 320) * 2.1 : 0
   blit(ctx, nodeSpr(n), p.sx - s / 2, p.sy - s * 0.72 + bob, s, s)
   if (quality > 0) {
     ctx.fillStyle = "rgba(20,12,8,0.82)"
@@ -189,6 +214,13 @@ function drawBuilding(
   if (!b.done) ctx.globalAlpha = 0.58
   blit(ctx, buildingSpr(b.type), p.sx - s / 2, p.sy - s * 0.78, s, s)
   ctx.globalAlpha = 1
+  if (quality > 0 && b.done && (b.type === "hearth" || b.type === "camp" || b.type === "pit")) {
+    const rise = (now / 18 + b.id * 13) % 28
+    ctx.fillStyle = `rgba(220,210,200,${0.18 + (b.type === "pit" ? 0.12 : 0)})`
+    ctx.beginPath()
+    ctx.ellipse(p.sx + s * 0.08, p.sy - s * 0.72 - rise, 5 + rise * 0.08, 3.2 + rise * 0.05, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
   ctx.fillStyle = color
   ctx.beginPath()
   ctx.moveTo(p.sx + s * 0.18, p.sy - s * 0.62)
@@ -247,9 +279,11 @@ function drawUnit(
   const p = worldToScreen(cam, u.x, u.y)
   const size = Math.max(30, cam.z * 2.7)
   if (culled(p.sx, p.sy, size, w, h)) return
-  const bob = quality > 0 ? Math.sin(t / 180 + u.id) * 1.2 : 0
+  const moving = u.order.t === "move" || u.order.t === "gather" || u.order.t === "return" || u.order.t === "attackMove"
+  const bob = quality > 0 ? Math.sin(t / (moving ? 90 : 180) + u.id) * (moving ? 2.2 : 1.2) : 0
+  const sway = quality > 0 && moving ? Math.sin(t / 70 + u.id) * 1.6 : 0
   const y = p.sy + bob
-  blit(ctx, unitSpr(u), p.sx - size / 2, y - size * 0.82, size, size)
+  blit(ctx, unitSpr(u), p.sx - size / 2 + sway, y - size * 0.82, size, size)
   ctx.fillStyle = color
   ctx.beginPath()
   ctx.ellipse(p.sx, y + size * 0.14, 5, 2.2, 0, 0, Math.PI * 2)
@@ -323,7 +357,7 @@ export function drawWorld(
   } catch {
     /* some 2d contexts reject this setter */
   }
-  drawTerrain(ctx, cam, w, h, quality, world.size)
+  drawTerrain(ctx, cam, w, h, quality, world)
   for (const n of world.nodes) {
     if (n.amount > 0) drawNode(ctx, n, cam, quality, w, h)
   }
