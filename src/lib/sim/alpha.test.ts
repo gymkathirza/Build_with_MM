@@ -13,7 +13,7 @@ import {
   upgradeBuilding,
 } from "./engine"
 import { tickAi } from "./ai"
-import { COSTS } from "./catalog"
+import { COSTS, UNIT_STATS, type UnitType } from "./catalog"
 import { hallPositions, HUGE_MAP_ID, MAP_SPECS, specFor } from "./maps"
 import { PERSONA_IDS, personaById } from "./personas"
 import { MAPS } from "../game-data"
@@ -222,6 +222,55 @@ test("thin Forge banner line still sends a raid", () => {
   const hold = banners.filter((u) => u.order.t === "defend")
   assert.ok(raid.length >= 1, "at least one banner should march")
   assert.ok(hold.length >= 1, "at least one banner should hold the hearth")
+})
+
+function pushBanner(w: ReturnType<typeof createWorld>, type: UnitType, owner: 0 | 1, x: number, y: number) {
+  const s = UNIT_STATS[type]
+  w.units.push({
+    id: w.nextId++,
+    kind: "unit",
+    type,
+    owner,
+    x,
+    y,
+    hp: s.hp,
+    hpMax: s.hp,
+    order: { t: "idle" },
+    carry: null,
+    gatherT: 0,
+    atkCd: 0,
+  })
+}
+
+test("Forge ashriders lead the attack wave", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 2 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  w.players[0].age = 1
+  w.players[0].grain = 800
+  w.players[0].ore = 400
+  w.players[0].timber = 400
+  const h = hall(w, 0)
+  pushBanner(w, "guard", 0, h.x + 2, h.y)
+  pushBanner(w, "guard", 0, h.x + 3, h.y)
+  pushBanner(w, "ashrider", 0, h.x + 4, h.y)
+  pushBanner(w, "ashrider", 0, h.x + 5, h.y)
+  for (let i = 0; i < 8; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const riders = w.units.filter((u) => u.owner === 0 && u.type === "ashrider")
+  const guards = w.units.filter((u) => u.owner === 0 && u.type === "guard")
+  assert.ok(riders.every((u) => u.order.t === "attackMove"), "ashriders should march first")
+  assert.ok(
+    guards.some((u) => u.order.t === "defend" || u.order.t === "idle"),
+    "banners stay while ashriders leave",
+  )
+  const march = riders[0]
+  if (march.order.t === "attackMove") {
+    const foe = hall(w, 1)
+    assert.ok(Math.abs(march.order.x - foe.x) < 0.01)
+    assert.ok(Math.abs(march.order.y - (foe.y - 6)) < 0.01, "west riders bend north of the hall")
+  }
 })
 
 test("coach AI keeps a hearth garrison after banners exist", () => {

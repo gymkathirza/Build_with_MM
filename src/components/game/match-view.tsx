@@ -144,7 +144,7 @@ export function MatchView({
     if (obsLineRef.current) {
       const last = tel.frames.at(-1)
       obsLineRef.current.textContent = last
-        ? `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms\nsim ${simMs.toFixed(2)} ms · in ${tel.lastInputMs.toFixed(0)} ms\nclicks ${tel.clicks} · fail ${tel.failedOrders} · deaths ${tel.deaths}\npan ${tel.cameraMoves} · lod ${qualityRef.current}\ngather hop ${world.gather.hops} · idle ${world.gather.idleDeplete} · wrong ${world.gather.wrong}`
+        ? `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms\nsim ${simMs.toFixed(2)} ms · in ${tel.lastInputMs.toFixed(0)} ms\nclicks ${tel.clicks} · fail ${tel.failedOrders} · deaths ${tel.deaths}\npan ${tel.cameraMoves} · lod ${qualityRef.current}\ngather hop ${world.gather.hops} · idle ${world.gather.idleDeplete} · wrong ${world.gather.wrong}\nbanners ${world.units.filter((u) => u.owner === 0 && u.type !== "levy").length} · ashriders ${world.units.filter((u) => u.owner === 0 && u.type === "ashrider").length}`
         : "warming…"
     }
     setHudPulse((n) => n + 1)
@@ -645,6 +645,7 @@ function Selection({
       <div className="rounded-sm border border-dashed border-primary/25 px-3 py-6 text-center text-sm text-muted-foreground">
         Select a levy or hall. Right-click grain, timber, ore, hunt, or relics to gather. In Forge Age
         levies hop to the next nearest of that job; a right-click lock holds the node you picked.
+        Ashriders leave first when the march starts.
       </div>
     )
   }
@@ -658,11 +659,21 @@ function Selection({
       <p className="text-xs text-muted-foreground">
         {u.order.t === "gather"
           ? gatherLine(world, u)
-          : u.order.t === "build"
-            ? "Raising"
-            : u.order.t === "defend"
-              ? "Holding the hearth"
-              : u.order.t}
+          : u.order.t === "return"
+            ? "Hauling home"
+            : u.order.t === "build"
+              ? "Raising"
+              : u.order.t === "defend"
+                ? "Holding the hearth"
+                : u.order.t === "attackMove"
+                  ? u.type === "ashrider"
+                    ? "Ashriders on the march"
+                    : "Marching"
+                  : u.order.t === "attack"
+                    ? "In the fray"
+                    : u.order.t === "move"
+                      ? "On the path"
+                      : "Idle"}
       </p>
       <Progress value={(u.hp / u.hpMax) * 100} className="mt-2" />
     </div>

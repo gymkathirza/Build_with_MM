@@ -75,6 +75,10 @@ function drawTerrain(
   const lakeR = Math.max(6, size * 0.045)
   const lrx = lakeR * cam.z
   const lry = lakeR * 0.55 * cam.z
+  ctx.fillStyle = "rgba(138,106,64,0.42)"
+  ctx.beginPath()
+  ctx.ellipse(lake.sx, lake.sy, lrx * 1.14, lry * 1.2, 0.2, 0, Math.PI * 2)
+  ctx.fill()
   const water = ctx.createRadialGradient(lake.sx, lake.sy, 2, lake.sx, lake.sy, lrx)
   water.addColorStop(0, "#4a8a9a")
   water.addColorStop(0.45, "#1e4a54")
@@ -92,6 +96,21 @@ function drawTerrain(
     ctx.beginPath()
     ctx.ellipse(lake.sx, lake.sy, lrx * 0.72, lry * 0.72, 0.2, 0, Math.PI * 2)
     ctx.stroke()
+    ctx.strokeStyle = `rgba(210,235,230,${0.08 + 0.08 * Math.sin(performance.now() / 700)})`
+    ctx.beginPath()
+    ctx.ellipse(lake.sx - 6, lake.sy - 4, lrx * 0.38, lry * 0.22, 0.15, 0, Math.PI * 2)
+    ctx.stroke()
+    if (quality > 1) {
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2
+        const palm = worldToScreen(
+          cam,
+          size / 2 + Math.cos(a) * lakeR * 1.55,
+          size / 2 + Math.sin(a) * lakeR * 0.95,
+        )
+        blit(ctx, SPR.palm, palm.sx - 16, palm.sy - 28, 32, 32)
+      }
+    }
     for (let i = 0; i < 10; i++) {
       const a = (i / 10) * Math.PI * 2 + 0.3
       const rp = worldToScreen(cam, size / 2 + Math.cos(a) * lakeR * 1.15, size / 2 + Math.sin(a) * lakeR * 0.7)
@@ -105,6 +124,16 @@ function drawTerrain(
   }
 
   if (quality > 0) {
+    for (let i = 0; i < 7; i++) {
+      const hx = ((hash(i * 19, 41) % 1000) / 1000) * size
+      const hy = ((hash(i * 29, 17) % 1000) / 1000) * size
+      if (Math.hypot(hx - size / 2, hy - size / 2) < lakeR * 2.4) continue
+      const hp = worldToScreen(cam, hx, hy)
+      ctx.fillStyle = "rgba(28,46,22,0.2)"
+      ctx.beginPath()
+      ctx.ellipse(hp.sx, hp.sy, 22 * cam.z * 0.22, 10 * cam.z * 0.22, 0.18, 0, Math.PI * 2)
+      ctx.fill()
+    }
     const halls = world.buildings.filter((b) => b.type === "hearth" && b.done)
     if (halls.length >= 2) {
       const a = worldToScreen(cam, halls[0].x, halls[0].y)
@@ -283,6 +312,13 @@ function drawUnit(
   const bob = quality > 0 ? Math.sin(t / (moving ? 90 : 180) + u.id) * (moving ? 2.2 : 1.2) : 0
   const sway = quality > 0 && moving ? Math.sin(t / 70 + u.id) * 1.6 : 0
   const y = p.sy + bob
+  if (quality > 1 && moving) {
+    const puff = (t / 40 + u.id * 3) % 10
+    ctx.fillStyle = `rgba(90,70,40,${0.16 - puff * 0.012})`
+    ctx.beginPath()
+    ctx.ellipse(p.sx - sway * 1.4, y + size * 0.16 + puff * 0.6, 4 + puff * 0.35, 1.8, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
   blit(ctx, unitSpr(u), p.sx - size / 2 + sway, y - size * 0.82, size, size)
   ctx.fillStyle = color
   ctx.beginPath()
@@ -380,16 +416,41 @@ export function drawWorld(
     drawUnit(ctx, u, cam, team(world, u.owner), selected.has(u.id), quality, now, w, h)
   }
   if (quality > 1) {
-    ctx.strokeStyle = "rgba(243,212,138,0.28)"
     ctx.lineWidth = 1
     ctx.setLineDash([4, 5])
     for (const u of world.units) {
+      if (!selected.has(u.id)) continue
       const order = u.order
-      if (!selected.has(u.id) || order.t !== "gather") continue
-      const n = world.nodes.find((q) => q.id === order.node)
-      if (!n) continue
+      let dest: { x: number; y: number } | null = null
+      let stroke = "rgba(243,212,138,0.28)"
+      if (order.t === "gather") {
+        const n = world.nodes.find((q) => q.id === order.node)
+        if (n) dest = n
+      } else if (order.t === "return") {
+        const drop = world.buildings.find((b) => b.id === order.drop)
+        if (drop) dest = drop
+        stroke = "rgba(125,202,106,0.4)"
+      } else if (order.t === "attackMove" || order.t === "attack") {
+        if (order.t === "attackMove") dest = { x: order.x, y: order.y }
+        else {
+          const t =
+            world.units.find((x) => x.id === order.target) ??
+            world.buildings.find((x) => x.id === order.target)
+          if (t) dest = t
+        }
+        stroke = "rgba(212,92,58,0.45)"
+      } else if (order.t === "defend" || order.t === "move") {
+        dest = { x: order.x, y: order.y }
+        stroke = order.t === "defend" ? "rgba(110,170,210,0.4)" : "rgba(243,212,138,0.28)"
+      } else if (order.t === "build") {
+        const b = world.buildings.find((q) => q.id === order.building)
+        if (b) dest = b
+        stroke = "rgba(196,154,90,0.4)"
+      }
+      if (!dest) continue
       const a = worldToScreen(cam, u.x, u.y)
-      const b = worldToScreen(cam, n.x, n.y)
+      const b = worldToScreen(cam, dest.x, dest.y)
+      ctx.strokeStyle = stroke
       ctx.beginPath()
       ctx.moveTo(a.sx, a.sy)
       ctx.lineTo(b.sx, b.sy)
