@@ -42,8 +42,9 @@ function drawTerrain(
   w: number,
   h: number,
   quality: DrawQuality,
-  size: number,
+  world: World,
 ) {
+  const size = world.size
   ctx.fillStyle = "#3d5a32"
   ctx.fillRect(0, 0, w, h)
   const c0 = worldToScreen(cam, 0, 0)
@@ -74,6 +75,10 @@ function drawTerrain(
   const lakeR = Math.max(6, size * 0.045)
   const lrx = lakeR * cam.z
   const lry = lakeR * 0.55 * cam.z
+  ctx.fillStyle = "rgba(138,106,64,0.42)"
+  ctx.beginPath()
+  ctx.ellipse(lake.sx, lake.sy, lrx * 1.14, lry * 1.2, 0.2, 0, Math.PI * 2)
+  ctx.fill()
   const water = ctx.createRadialGradient(lake.sx, lake.sy, 2, lake.sx, lake.sy, lrx)
   water.addColorStop(0, "#4a8a9a")
   water.addColorStop(0.45, "#1e4a54")
@@ -86,6 +91,60 @@ function drawTerrain(
     ctx.strokeStyle = "rgba(180,220,210,0.22)"
     ctx.lineWidth = 1.5
     ctx.stroke()
+    ctx.strokeStyle = "rgba(220,240,235,0.16)"
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.ellipse(lake.sx, lake.sy, lrx * 0.72, lry * 0.72, 0.2, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.strokeStyle = `rgba(210,235,230,${0.08 + 0.08 * Math.sin(performance.now() / 700)})`
+    ctx.beginPath()
+    ctx.ellipse(lake.sx - 6, lake.sy - 4, lrx * 0.38, lry * 0.22, 0.15, 0, Math.PI * 2)
+    ctx.stroke()
+    if (quality > 1) {
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2
+        const palm = worldToScreen(
+          cam,
+          size / 2 + Math.cos(a) * lakeR * 1.55,
+          size / 2 + Math.sin(a) * lakeR * 0.95,
+        )
+        blit(ctx, SPR.palm, palm.sx - 16, palm.sy - 28, 32, 32)
+      }
+    }
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + 0.3
+      const rp = worldToScreen(cam, size / 2 + Math.cos(a) * lakeR * 1.15, size / 2 + Math.sin(a) * lakeR * 0.7)
+      ctx.strokeStyle = "rgba(40,80,36,0.55)"
+      ctx.lineWidth = 1.4
+      ctx.beginPath()
+      ctx.moveTo(rp.sx, rp.sy)
+      ctx.lineTo(rp.sx + Math.cos(a) * 5, rp.sy - 9)
+      ctx.stroke()
+    }
+  }
+
+  if (quality > 0) {
+    for (let i = 0; i < 7; i++) {
+      const hx = ((hash(i * 19, 41) % 1000) / 1000) * size
+      const hy = ((hash(i * 29, 17) % 1000) / 1000) * size
+      if (Math.hypot(hx - size / 2, hy - size / 2) < lakeR * 2.4) continue
+      const hp = worldToScreen(cam, hx, hy)
+      ctx.fillStyle = "rgba(28,46,22,0.2)"
+      ctx.beginPath()
+      ctx.ellipse(hp.sx, hp.sy, 22 * cam.z * 0.22, 10 * cam.z * 0.22, 0.18, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    const halls = world.buildings.filter((b) => b.type === "hearth" && b.done)
+    if (halls.length >= 2) {
+      const a = worldToScreen(cam, halls[0].x, halls[0].y)
+      const b = worldToScreen(cam, halls[1].x, halls[1].y)
+      ctx.strokeStyle = "rgba(90,70,40,0.22)"
+      ctx.lineWidth = Math.max(3, cam.z * 0.35)
+      ctx.beginPath()
+      ctx.moveTo(a.sx, a.sy)
+      ctx.quadraticCurveTo(lake.sx, lake.sy + lry * 0.8, b.sx, b.sy)
+      ctx.stroke()
+    }
   }
 
   if (quality > 0) {
@@ -123,7 +182,7 @@ function nodeSpr(n: Node) {
   return SPR.relic
 }
 
-function nodeLabel(n: Node) {
+export function nodeLabel(n: Node) {
   if (n.fauna === "deer") return "Deer"
   if (n.fauna === "boar") return "Boar"
   if (n.fauna === "bear") return "Bear"
@@ -138,7 +197,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: Dra
   const p = worldToScreen(cam, n.x, n.y)
   const s = Math.max(n.fauna ? 40 : 34, cam.z * (n.fauna ? 2.8 : 2.35))
   if (culled(p.sx, p.sy, s, w, h)) return
-  const bob = n.fauna && quality > 0 ? Math.sin(n.id + performance.now() / 420) * 1.4 : 0
+  const bob = n.fauna && quality > 0 ? Math.sin(n.id + performance.now() / 320) * 2.1 : 0
   blit(ctx, nodeSpr(n), p.sx - s / 2, p.sy - s * 0.72 + bob, s, s)
   if (quality > 0) {
     ctx.fillStyle = "rgba(20,12,8,0.82)"
@@ -184,6 +243,13 @@ function drawBuilding(
   if (!b.done) ctx.globalAlpha = 0.58
   blit(ctx, buildingSpr(b.type), p.sx - s / 2, p.sy - s * 0.78, s, s)
   ctx.globalAlpha = 1
+  if (quality > 0 && b.done && (b.type === "hearth" || b.type === "camp" || b.type === "pit")) {
+    const rise = (now / 18 + b.id * 13) % 28
+    ctx.fillStyle = `rgba(220,210,200,${0.18 + (b.type === "pit" ? 0.12 : 0)})`
+    ctx.beginPath()
+    ctx.ellipse(p.sx + s * 0.08, p.sy - s * 0.72 - rise, 5 + rise * 0.08, 3.2 + rise * 0.05, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
   ctx.fillStyle = color
   ctx.beginPath()
   ctx.moveTo(p.sx + s * 0.18, p.sy - s * 0.62)
@@ -193,11 +259,12 @@ function drawBuilding(
   ctx.fill()
   ctx.fillStyle = trim
   ctx.fillRect(p.sx + s * 0.16, p.sy - s * 0.62, 3, s * 0.26)
-  if (b.type === "hearth" && b.aging > 0) {
-    ctx.strokeStyle = `rgba(243,212,138,${0.4 + 0.4 * Math.sin(now / 180)})`
-    ctx.lineWidth = 3
+  if (b.type === "hearth" && quality > 0) {
+    const pulse = b.aging > 0 ? 0.4 + 0.4 * Math.sin(now / 180) : 0.16 + 0.08 * Math.sin(now / 420)
+    ctx.strokeStyle = `rgba(243,212,138,${pulse})`
+    ctx.lineWidth = b.aging > 0 ? 3 : 1.5
     ctx.beginPath()
-    ctx.arc(p.sx, p.sy, r * 1.05, 0, Math.PI * 2)
+    ctx.arc(p.sx, p.sy, r * (b.aging > 0 ? 1.05 : 0.92), 0, Math.PI * 2)
     ctx.stroke()
   }
   if (!b.done) {
@@ -241,9 +308,18 @@ function drawUnit(
   const p = worldToScreen(cam, u.x, u.y)
   const size = Math.max(30, cam.z * 2.7)
   if (culled(p.sx, p.sy, size, w, h)) return
-  const bob = quality > 0 ? Math.sin(t / 180 + u.id) * 1.2 : 0
+  const moving = u.order.t === "move" || u.order.t === "gather" || u.order.t === "return" || u.order.t === "attackMove"
+  const bob = quality > 0 ? Math.sin(t / (moving ? 90 : 180) + u.id) * (moving ? 2.2 : 1.2) : 0
+  const sway = quality > 0 && moving ? Math.sin(t / 70 + u.id) * 1.6 : 0
   const y = p.sy + bob
-  blit(ctx, unitSpr(u), p.sx - size / 2, y - size * 0.82, size, size)
+  if (quality > 1 && moving) {
+    const puff = (t / 40 + u.id * 3) % 10
+    ctx.fillStyle = `rgba(90,70,40,${0.16 - puff * 0.012})`
+    ctx.beginPath()
+    ctx.ellipse(p.sx - sway * 1.4, y + size * 0.16 + puff * 0.6, 4 + puff * 0.35, 1.8, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  blit(ctx, unitSpr(u), p.sx - size / 2 + sway, y - size * 0.82, size, size)
   ctx.fillStyle = color
   ctx.beginPath()
   ctx.ellipse(p.sx, y + size * 0.14, 5, 2.2, 0, 0, Math.PI * 2)
@@ -274,9 +350,17 @@ function drawMinimap(ctx: CanvasRenderingContext2D, world: World, cam: Cam, w: n
   const sy = mh / size
   for (const n of world.nodes) {
     if (n.amount <= 0) continue
-    ctx.fillStyle =
-      n.type === "grain" ? "#d4b85a" : n.type === "timber" ? "#3d6a3a" : n.type === "ore" ? "#8a8f9a" : "#e0c36a"
-    ctx.fillRect(x + n.x * sx - 1, y + n.y * sy - 1, 2, 2)
+    ctx.fillStyle = n.fauna
+      ? "#c47a3a"
+      : n.type === "grain"
+        ? "#d4b85a"
+        : n.type === "timber"
+          ? "#3d6a3a"
+          : n.type === "ore"
+            ? "#8a8f9a"
+            : "#e0c36a"
+    const dot = n.fauna ? 3 : 2
+    ctx.fillRect(x + n.x * sx - dot / 2, y + n.y * sy - dot / 2, dot, dot)
   }
   for (const b of world.buildings) {
     ctx.fillStyle = team(world, b.owner)
@@ -309,7 +393,7 @@ export function drawWorld(
   } catch {
     /* some 2d contexts reject this setter */
   }
-  drawTerrain(ctx, cam, w, h, quality, world.size)
+  drawTerrain(ctx, cam, w, h, quality, world)
   for (const n of world.nodes) {
     if (n.amount > 0) drawNode(ctx, n, cam, quality, w, h)
   }
@@ -330,6 +414,49 @@ export function drawWorld(
   }
   for (const u of world.units) {
     drawUnit(ctx, u, cam, team(world, u.owner), selected.has(u.id), quality, now, w, h)
+  }
+  if (quality > 1) {
+    ctx.lineWidth = 1
+    ctx.setLineDash([4, 5])
+    for (const u of world.units) {
+      if (!selected.has(u.id)) continue
+      const order = u.order
+      let dest: { x: number; y: number } | null = null
+      let stroke = "rgba(243,212,138,0.28)"
+      if (order.t === "gather") {
+        const n = world.nodes.find((q) => q.id === order.node)
+        if (n) dest = n
+      } else if (order.t === "return") {
+        const drop = world.buildings.find((b) => b.id === order.drop)
+        if (drop) dest = drop
+        stroke = "rgba(125,202,106,0.4)"
+      } else if (order.t === "attackMove" || order.t === "attack") {
+        if (order.t === "attackMove") dest = { x: order.x, y: order.y }
+        else {
+          const t =
+            world.units.find((x) => x.id === order.target) ??
+            world.buildings.find((x) => x.id === order.target)
+          if (t) dest = t
+        }
+        stroke = "rgba(212,92,58,0.45)"
+      } else if (order.t === "defend" || order.t === "move") {
+        dest = { x: order.x, y: order.y }
+        stroke = order.t === "defend" ? "rgba(110,170,210,0.4)" : "rgba(243,212,138,0.28)"
+      } else if (order.t === "build") {
+        const b = world.buildings.find((q) => q.id === order.building)
+        if (b) dest = b
+        stroke = "rgba(196,154,90,0.4)"
+      }
+      if (!dest) continue
+      const a = worldToScreen(cam, u.x, u.y)
+      const b = worldToScreen(cam, dest.x, dest.y)
+      ctx.strokeStyle = stroke
+      ctx.beginPath()
+      ctx.moveTo(a.sx, a.sy)
+      ctx.lineTo(b.sx, b.sy)
+      ctx.stroke()
+    }
+    ctx.setLineDash([])
   }
   if (quality > 0) drawMinimap(ctx, world, cam, w, h)
 }

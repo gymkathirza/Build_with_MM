@@ -23,6 +23,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run playtest
+      - run: npm run playtest:gather
       - run: npm run build
 
   release-artifact:

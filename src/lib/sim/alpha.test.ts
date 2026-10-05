@@ -4,6 +4,7 @@ import {
   createWorld,
   issueAttackMove,
   issueDefend,
+  issueGather,
   placeBuilding,
   popUsed,
   queueTrain,
@@ -12,7 +13,7 @@ import {
   upgradeBuilding,
 } from "./engine"
 import { tickAi } from "./ai"
-import { COSTS } from "./catalog"
+import { COSTS, UNIT_STATS, type UnitType } from "./catalog"
 import { hallPositions, HUGE_MAP_ID, MAP_SPECS, specFor } from "./maps"
 import { PERSONA_IDS, personaById } from "./personas"
 import { MAPS } from "../game-data"
@@ -188,6 +189,90 @@ test("garrison holds the hearth while a raid leaves", () => {
   assert.ok(home.length >= 1, "at least one guard stays on the hearth")
 })
 
+test("thin Forge banner line still sends a raid", () => {
+  const w = createWorld("ashen", "gilded", { ...personaById("balanced").params, attackAtArmy: 2 }, {
+    mapId: "emberglass",
+    persona: "balanced",
+  })
+  w.players[0].age = 1
+  w.players[0].grain = 800
+  w.players[0].ore = 400
+  w.players[0].timber = 400
+  const h = hall(w, 0)
+  const yard = placeBuilding(
+    w,
+    0,
+    "yard",
+    h.x + 8,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  yard.done = true
+  yard.construct = yard.constructMax
+  queueTrain(w, yard.id, "guard")
+  queueTrain(w, yard.id, "guard")
+  for (let i = 0; i < 20 * 30; i++) tick(w)
+  for (let i = 0; i < 40; i++) {
+    tickAi(w, 0, { ...personaById("balanced").params, attackAtArmy: 2 }, personaById("balanced"))
+    tick(w)
+  }
+  const banners = w.units.filter((u) => u.owner === 0 && u.type === "guard")
+  assert.ok(banners.length >= 2, `guards ${banners.length}`)
+  const raid = banners.filter((u) => u.order.t === "attackMove" || u.order.t === "attack")
+  const hold = banners.filter((u) => u.order.t === "defend")
+  assert.ok(raid.length >= 1, "at least one banner should march")
+  assert.ok(hold.length >= 1, "at least one banner should hold the hearth")
+})
+
+function pushBanner(w: ReturnType<typeof createWorld>, type: UnitType, owner: 0 | 1, x: number, y: number) {
+  const s = UNIT_STATS[type]
+  w.units.push({
+    id: w.nextId++,
+    kind: "unit",
+    type,
+    owner,
+    x,
+    y,
+    hp: s.hp,
+    hpMax: s.hp,
+    order: { t: "idle" },
+    carry: null,
+    gatherT: 0,
+    atkCd: 0,
+  })
+}
+
+test("Forge ashriders lead the attack wave", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 2 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  w.players[0].age = 1
+  w.players[0].grain = 800
+  w.players[0].ore = 400
+  w.players[0].timber = 400
+  const h = hall(w, 0)
+  pushBanner(w, "guard", 0, h.x + 2, h.y)
+  pushBanner(w, "guard", 0, h.x + 3, h.y)
+  pushBanner(w, "ashrider", 0, h.x + 4, h.y)
+  pushBanner(w, "ashrider", 0, h.x + 5, h.y)
+  for (let i = 0; i < 8; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const riders = w.units.filter((u) => u.owner === 0 && u.type === "ashrider")
+  const guards = w.units.filter((u) => u.owner === 0 && u.type === "guard")
+  assert.ok(riders.every((u) => u.order.t === "attackMove"), "ashriders should march first")
+  assert.ok(
+    guards.some((u) => u.order.t === "defend" || u.order.t === "idle"),
+    "banners stay while ashriders leave",
+  )
+  const march = riders[0]
+  if (march.order.t === "attackMove") {
+    const foe = hall(w, 1)
+    assert.ok(Math.abs(march.order.x - foe.x) < 0.01)
+    assert.ok(Math.abs(march.order.y - (foe.y - 6)) < 0.01, "west riders bend north of the hall")
+  }
+})
+
 test("coach AI keeps a hearth garrison after banners exist", () => {
   const persona = personaById("coach")
   const w = createWorld("ashen", "gilded", persona.params, {
@@ -247,5 +332,98 @@ test("local hunt sprites stay clear of nearby timber on small and huge plates", 
       }
     }
   }
+})
+
+function timberPair(age: 0 | 1) {
+  const w = createWorld("ashen", "gilded", undefined, { mapId: "emberglass" })
+  w.players[0].age = age
+  const hall = w.buildings.find((b) => b.owner === 0 && b.type === "hearth")
+  const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")
+  assert.ok(hall && levy)
+  levy.x = hall.x
+  levy.y = hall.y
+  levy.order = { t: "idle" }
+  levy.carry = null
+  for (const n of w.nodes) n.amount = 0
+  const stocks = w.nodes.filter((n) => n.type === "timber")
+  assert.ok(stocks.length >= 2)
+  const near = stocks[0]
+  const far = stocks[1]
+  near.x = hall.x + 3
+  near.y = hall.y
+  near.amount = 240
+  far.x = hall.x + 22
+  far.y = hall.y
+  far.amount = 240
+  return { w, levy, near, far }
+}
+
+test("Forge Age gathers the nearest node of the assigned resource", () => {
+  const { w, levy, near, far } = timberPair(1)
+  assert.ok(issueGather(w, [levy.id], far.id))
+  assert.equal(levy.order.t, "gather")
+  if (levy.order.t === "gather") assert.equal(levy.order.node, near.id)
+})
+
+test("Forge Age hops to the next nearest same type when a node depletes", () => {
+  const { w, levy, near, far } = timberPair(1)
+  assert.ok(issueGather(w, [levy.id], near.id))
+  near.amount = 0
+  tick(w)
+  assert.equal(levy.order.t, "gather")
+  if (levy.order.t === "gather") assert.equal(levy.order.node, far.id)
+})
+
+test("Ember Age does not auto-chain to the next node", () => {
+  const { w, levy, near } = timberPair(0)
+  assert.ok(issueGather(w, [levy.id], near.id))
+  near.amount = 0
+  tick(w)
+  assert.equal(levy.order.t, "idle")
+})
+
+test("player gather override sticks until that node depletes", () => {
+  const { w, levy, near, far } = timberPair(1)
+  assert.ok(issueGather(w, [levy.id], far.id, { lock: true }))
+  tick(w)
+  assert.equal(levy.order.t, "gather")
+  if (levy.order.t === "gather") assert.equal(levy.order.node, far.id)
+  far.amount = 0
+  tick(w)
+  assert.equal(levy.order.t, "gather")
+  if (levy.order.t === "gather") assert.equal(levy.order.node, near.id)
+})
+
+test("Forge Age hunt hops to the next hunt, not a grain field", () => {
+  const w = createWorld("ashen", "gilded", undefined, { mapId: "emberglass" })
+  w.players[0].age = 1
+  const hall = w.buildings.find((b) => b.owner === 0 && b.type === "hearth")
+  const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")
+  assert.ok(hall && levy)
+  levy.x = hall.x
+  levy.y = hall.y
+  for (const n of w.nodes) n.amount = 0
+  const grains = w.nodes.filter((n) => n.type === "grain")
+  assert.ok(grains.length >= 3)
+  const huntA = grains[0]
+  const huntB = grains[1]
+  const field = grains[2]
+  huntA.x = hall.x + 4
+  huntA.y = hall.y
+  huntA.amount = 80
+  huntA.fauna = "deer"
+  huntB.x = hall.x + 16
+  huntB.y = hall.y
+  huntB.amount = 80
+  huntB.fauna = "boar"
+  field.x = hall.x + 6
+  field.y = hall.y
+  field.amount = 400
+  field.fauna = null
+  assert.ok(issueGather(w, [levy.id], huntA.id))
+  huntA.amount = 0
+  tick(w)
+  assert.equal(levy.order.t, "gather")
+  if (levy.order.t === "gather") assert.equal(levy.order.node, huntB.id)
 })
 

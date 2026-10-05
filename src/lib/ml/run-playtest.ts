@@ -6,6 +6,7 @@ import { TICK_HZ } from "../sim/catalog"
 import { HUGE_MAP_ID } from "../sim/maps"
 import { nextPersona, personaById, type Persona } from "../sim/personas"
 import { readLiveObs } from "./live-obs"
+import { formatGatherReport, runGatherLoop } from "./gather-loop"
 
 export type GameResult = {
   winner: 0 | 1 | null
@@ -151,6 +152,7 @@ function closeRound(
 export function runPlaytestLoop(rounds = 2, gamesPerRound = 2, maxSeconds = 90): {
   tuned: Tuned
   history: RoundRecord[]
+  gather: ReturnType<typeof runGatherLoop>
 } {
   let tuned = { ...DEFAULT_TUNED, ai: { ...DEFAULT_TUNED.ai } }
   const history: RoundRecord[] = []
@@ -165,7 +167,8 @@ export function runPlaytestLoop(rounds = 2, gamesPerRound = 2, maxSeconds = 90):
     history.push(rec)
     tuned = rec.tunedAfter
   }
-  return { tuned, history }
+  const gather = runGatherLoop(2, 24, tuned)
+  return { tuned: gather.tuned, history, gather }
 }
 
 export type CompactRound = {
@@ -345,6 +348,7 @@ export function formatLoopReport(data: ReturnType<typeof runPlaytestLoop>) {
   lines.push(
     `Tuned AI attackAtArmy=${data.tuned.ai.attackAtArmy} gather=${data.tuned.ai.gatherBias.toFixed(2)} quality=${data.tuned.quality} lod=${data.tuned.lodDistance}`,
   )
+  if (data.gather) lines.push(formatGatherReport(data.gather))
   return lines.join("\n")
 }
 
