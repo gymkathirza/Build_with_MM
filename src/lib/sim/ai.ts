@@ -264,6 +264,15 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         enemyHall.x,
         enemyHall.y + bend,
       )
+      const foot = soldiers.filter((u) => u.type !== "ashrider")
+      if (riders.length && foot.length && w.tick % 40 === owner) {
+        issueAttackMove(
+          w,
+          foot.map((u) => u.id),
+          enemyHall.x,
+          enemyHall.y,
+        )
+      }
     }
   } else if (p.age >= 1 && enemyHall && levies.length >= 6 && w.tick % 80 === owner && p.timber >= 80 && p.ore >= 40) {
     const militia = levies.filter((u) => u.order.t === "idle").slice(0, 2)
