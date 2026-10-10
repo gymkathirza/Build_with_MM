@@ -374,6 +374,32 @@ test("Forge Age hops to the next nearest same type when a node depletes", () => 
   if (levy.order.t === "gather") assert.equal(levy.order.node, far.id)
 })
 
+test("Forge Age last-packet return counts a hop", () => {
+  const { w, levy, near, far } = timberPair(1)
+  levy.x = near.x
+  levy.y = near.y
+  assert.ok(issueGather(w, [levy.id], near.id))
+  near.amount = 8
+  const hops0 = w.gather.hops
+  for (let i = 0; i < 20 * 8; i++) tick(w)
+  assert.ok(w.gather.hops >= hops0 + 1, `hops ${w.gather.hops}`)
+  assert.equal(levy.order.t, "gather")
+  if (levy.order.t === "gather") assert.equal(levy.order.node, far.id)
+})
+
+test("Forge Age last-packet return idles when no next node", () => {
+  const { w, levy, near, far } = timberPair(1)
+  levy.x = near.x
+  levy.y = near.y
+  far.amount = 0
+  assert.ok(issueGather(w, [levy.id], near.id))
+  near.amount = 8
+  const idle0 = w.gather.idleDeplete
+  for (let i = 0; i < 20 * 8; i++) tick(w)
+  assert.equal(levy.order.t, "idle")
+  assert.ok(w.gather.idleDeplete >= idle0 + 1, `idle ${w.gather.idleDeplete}`)
+})
+
 test("Ember Age does not auto-chain to the next node", () => {
   const { w, levy, near } = timberPair(0)
   assert.ok(issueGather(w, [levy.id], near.id))

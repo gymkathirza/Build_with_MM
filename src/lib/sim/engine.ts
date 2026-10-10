@@ -744,17 +744,31 @@ function tickUnit(w: World, u: Unit) {
     p[u.carry.res] += u.carry.amt
     const res = u.carry.res
     const job = o.job ?? { res, hunt: false }
+    const prevNode = o.node
     u.carry = null
-    if (o.lock && o.node != null) {
-      const locked = w.nodes.find((q) => q.id === o.node)
+    if (o.lock && prevNode != null) {
+      const locked = w.nodes.find((q) => q.id === prevNode)
       if (locked && locked.amount > 0) {
         u.order = { t: "gather", node: locked.id, lock: true, job }
         return
       }
     }
     if (advancedGather(w, u.owner)) {
+      const stale = prevNode != null && !w.nodes.some((q) => q.id === prevNode && q.amount > 0)
+      if (stale) {
+        if (retargetGather(w, u, job, prevNode)) return
+        u.order = { t: "idle" }
+        w.gather.idleDeplete++
+        w.events.push({ k: "gather", owner: u.owner, why: "idle-deplete" })
+        return
+      }
       const next = nearestGatherNode(w, u.x, u.y, job)
-      u.order = next ? { t: "gather", node: next.id, lock: false, job } : { t: "idle" }
+      if (next) {
+        noteGatherAssign(w, u, next, job)
+        u.order = { t: "gather", node: next.id, lock: false, job }
+      } else {
+        u.order = { t: "idle" }
+      }
       return
     }
     const next = w.nodes.find((q) => q.amount > 0 && q.type === res)
