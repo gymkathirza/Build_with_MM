@@ -96,9 +96,14 @@ function drawTerrain(
     ctx.beginPath()
     ctx.ellipse(lake.sx, lake.sy, lrx * 0.72, lry * 0.72, 0.2, 0, Math.PI * 2)
     ctx.stroke()
-    ctx.strokeStyle = `rgba(210,235,230,${0.08 + 0.08 * Math.sin(performance.now() / 700)})`
+    const t = performance.now()
+    ctx.strokeStyle = `rgba(210,235,230,${0.08 + 0.08 * Math.sin(t / 700)})`
     ctx.beginPath()
     ctx.ellipse(lake.sx - 6, lake.sy - 4, lrx * 0.38, lry * 0.22, 0.15, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.strokeStyle = `rgba(180,220,210,${0.06 + 0.07 * Math.sin(t / 1100 + 1.2)})`
+    ctx.beginPath()
+    ctx.ellipse(lake.sx + 8, lake.sy + 3, lrx * 0.52, lry * 0.28, -0.2, 0, Math.PI * 2)
     ctx.stroke()
     if (quality > 1) {
       for (let i = 0; i < 6; i++) {
@@ -320,6 +325,14 @@ function drawUnit(
     ctx.fill()
   }
   blit(ctx, unitSpr(u), p.sx - size / 2 + sway, y - size * 0.82, size, size)
+  if (quality > 1 && (u.order.t === "attack" || u.order.t === "attackMove") && u.atkCd > 0.65) {
+    ctx.strokeStyle = "rgba(243,212,138,0.55)"
+    ctx.lineWidth = 1.4
+    ctx.beginPath()
+    ctx.moveTo(p.sx + sway + 4, y - size * 0.2)
+    ctx.lineTo(p.sx + sway + 12, y - size * 0.42)
+    ctx.stroke()
+  }
   ctx.fillStyle = color
   ctx.beginPath()
   ctx.ellipse(p.sx, y + size * 0.14, 5, 2.2, 0, 0, Math.PI * 2)

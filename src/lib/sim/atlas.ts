@@ -283,6 +283,15 @@ function caveHuman(
     ctx.beginPath()
     ctx.arc(cx + 16, feet - 14, 6, -0.4, 1.2)
     ctx.stroke()
+    ctx.fillStyle = "#5a341c"
+    ctx.beginPath()
+    ctx.moveTo(cx + 12, feet - 18)
+    ctx.lineTo(cx + 10, feet - 24)
+    ctx.lineTo(cx + 15, feet - 18)
+    ctx.moveTo(cx + 20, feet - 16)
+    ctx.lineTo(cx + 22, feet - 22)
+    ctx.lineTo(cx + 17, feet - 16)
+    ctx.fill()
   }
 
   const hip = kind === "ride" ? feet - 18 : feet - 16
@@ -304,6 +313,16 @@ function caveHuman(
     ctx.lineTo(cx + 3, torsoY + 6)
     ctx.closePath()
     ctx.fill()
+  } else if (kind === "club" || kind === "axe") {
+    ctx.fillStyle = "#e8d5a3"
+    ctx.beginPath()
+    ctx.arc(cx, torsoY + 8, 1.6, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.strokeStyle = "#3a2414"
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.arc(cx, torsoY + 4, 4.2, 0.2, Math.PI - 0.2)
+    ctx.stroke()
   }
 
   const hx = cx
@@ -333,6 +352,10 @@ function caveHuman(
     bow(ctx, cx + 16, hy + 6)
     limb(ctx, cx + 8, armY, cx + 14, hy + 8, 5)
     limb(ctx, cx - 8, armY, cx - 12, hip, 5)
+  } else if (kind === "ride") {
+    spear(ctx, cx + 18, hy + 2)
+    limb(ctx, cx + 8, armY, cx + 16, hy + 6, 5)
+    limb(ctx, cx - 6, armY, cx - 4, hip + 2, 5)
   } else if (kind === "axe") {
     limb(ctx, cx - 7, armY, cx - 16, hy - 2, 5.5)
     axe(ctx, cx - 16, hy - 4)
@@ -628,6 +651,14 @@ function caveHall(ctx: CanvasRenderingContext2D, ox: number, oy: number, variant
     ctx.lineTo(cx + 18, oy + 10)
     ctx.closePath()
     ctx.fill()
+    ctx.fillStyle = "#fff6d4"
+    ctx.beginPath()
+    ctx.ellipse(cx - 10, base - 18, 3.2, 4.2, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = "#f0c36a"
+    ctx.beginPath()
+    ctx.ellipse(cx - 10, base - 18, 1.6, 2.2, 0, 0, Math.PI * 2)
+    ctx.fill()
   }
 }
 
@@ -657,6 +688,10 @@ function bakeAtlas() {
     ctx.lineTo(x + 58, y + 24)
     ctx.lineTo(x + 47, y + 30)
     ctx.fill()
+    ctx.fillStyle = WOOD
+    for (let i = 0; i < 5; i++) {
+      ctx.fillRect(x + 8 + i * 5, y + 48, 3, 8)
+    }
   })
   put(SPR.lodge, (x, y) => {
     caveHall(ctx, x, y, 2)
@@ -672,6 +707,16 @@ function bakeAtlas() {
     ctx.lineTo(x + 42, y + 36)
     ctx.closePath()
     ctx.fill()
+    ctx.strokeStyle = "#e8d5a3"
+    ctx.lineWidth = 1.6
+    ctx.beginPath()
+    ctx.moveTo(x + 20, y + 16)
+    ctx.lineTo(x + 16, y + 8)
+    ctx.lineTo(x + 22, y + 12)
+    ctx.moveTo(x + 44, y + 16)
+    ctx.lineTo(x + 48, y + 8)
+    ctx.lineTo(x + 42, y + 12)
+    ctx.stroke()
   })
   put(SPR.camp, (x, y) => {
     ellipse(ctx, x + 32, y + 52, 16, 5, "rgba(20,12,8,0.25)", false)

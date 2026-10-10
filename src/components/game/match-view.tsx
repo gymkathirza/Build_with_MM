@@ -13,6 +13,7 @@ import { WealthIcon } from "@/components/game/wealth-icon"
 import {
   AGE_NAMES,
   BUILDING_LABEL,
+  COSTS,
   TICK_HZ,
   UNIT_LABEL,
   type BuildingType,
@@ -630,7 +631,7 @@ function Selection({
         <p className="text-xs text-muted-foreground">
           {building.done
             ? building.aging > 0
-              ? "Age rite in progress"
+              ? `Age rite ${Math.max(0, Math.min(100, (1 - building.aging / COSTS.age1.time) * 100)).toFixed(0)}%`
               : building.tier >= 1
                 ? "Shored"
                 : "Standing"
