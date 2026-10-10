@@ -12,7 +12,8 @@
     "audio": "tsx src/lib/audio/write-wav.ts",
     "playtest": "tsx src/lib/ml/cli.ts",
     "playtest:gather": "tsx src/lib/ml/cli.ts --gather",
-    "benchmark": "tsx src/lib/ml/cli.ts --hour"
+    "benchmark": "tsx src/lib/ml/cli.ts --hour",
+    "ml:8h": "BENCH_MINUTES=485 tsx src/lib/ml/cli.ts --hour"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

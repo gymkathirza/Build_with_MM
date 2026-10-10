@@ -34,6 +34,10 @@ npm run playtest:gather  # Forge nearest-chain probe (travel / idle / wrong node
 npm run benchmark      # wall-clock hour: BENCH_MINUTES=60 npm run benchmark
 ```
 
+## Eight-hour ML loop
+
+`npm run ml:8h` is the durable command for the same wall-clock **≥480 minute** Vast Mere observability + tuner job we run on cloud agents (`BENCH_MINUTES=485`). Leave it until it prints `Done`. It writes `src/lib/ml/tuned.json` and `src/lib/ml/benchmark-latest.json`. `npm run benchmark` is the one-hour variant.
+
 ## What Alpha includes
 
 - Playable skirmish on six maps (Lost Cartograph stays sealed).
