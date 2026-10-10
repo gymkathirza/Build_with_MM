@@ -274,6 +274,15 @@ function caveHuman(
     ctx.fillStyle = HAIR
     ctx.fillRect(cx - 16, feet - 14, 6, 8)
     ctx.fillRect(cx + 10, feet - 8, 5, 8)
+    ctx.fillStyle = "#3a2414"
+    ctx.fillRect(cx - 6, feet - 16, 14, 5)
+    ctx.fillStyle = "#c49a5a"
+    ctx.fillRect(cx - 4, feet - 17, 10, 2)
+    ctx.strokeStyle = "#3a2414"
+    ctx.lineWidth = 1.2
+    ctx.beginPath()
+    ctx.arc(cx + 16, feet - 14, 6, -0.4, 1.2)
+    ctx.stroke()
   }
 
   const hip = kind === "ride" ? feet - 18 : feet - 16
@@ -287,15 +296,40 @@ function caveHuman(
   const torsoY = hip - 11
   ellipse(ctx, cx, torsoY, 11, 10, SKIN)
   skirt(ctx, cx, torsoY + 2, 13, 12, kind === "club" || kind === "ride")
+  if (kind === "ride") {
+    ctx.fillStyle = "#8a2c18"
+    ctx.beginPath()
+    ctx.moveTo(cx - 4, torsoY - 6)
+    ctx.quadraticCurveTo(cx - 18, torsoY + 2, cx - 8, hip + 2)
+    ctx.lineTo(cx + 3, torsoY + 6)
+    ctx.closePath()
+    ctx.fill()
+  }
 
   const hx = cx
   const hy = torsoY - 14
   const armY = torsoY - 2
   if (kind === "spear") {
+    ctx.fillStyle = FUR
+    ctx.beginPath()
+    ctx.ellipse(cx - 13, torsoY + 2, 6.2, 8, -0.35, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.strokeStyle = LINE
+    ctx.lineWidth = 1.1
+    ctx.stroke()
     spear(ctx, cx + 16, hy + 8)
     limb(ctx, cx + 8, armY, cx + 16, hy + 4, 5)
     limb(ctx, cx - 8, armY, cx - 14, hip - 2, 5)
   } else if (kind === "bow") {
+    ctx.save()
+    ctx.translate(cx - 10, torsoY + 1)
+    ctx.rotate(-0.45)
+    ctx.fillStyle = WOOD
+    ctx.fillRect(-3, -2, 6, 14)
+    ctx.fillStyle = FUR_L
+    ctx.fillRect(-2, -7, 2, 7)
+    ctx.fillRect(1, -6, 2, 6)
+    ctx.restore()
     bow(ctx, cx + 16, hy + 6)
     limb(ctx, cx + 8, armY, cx + 14, hy + 8, 5)
     limb(ctx, cx - 8, armY, cx - 12, hip, 5)
@@ -304,6 +338,12 @@ function caveHuman(
     axe(ctx, cx - 16, hy - 4)
     limb(ctx, cx + 7, armY, cx + 13, hip + 2, 5)
   } else if (kind === "carry") {
+    ctx.strokeStyle = "#3a2414"
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(cx - 8, torsoY - 8)
+    ctx.lineTo(cx + 16, torsoY + 8)
+    ctx.stroke()
     limb(ctx, cx - 7, armY, cx - 12, hip, 5)
     limb(ctx, cx + 8, armY, cx + 16, torsoY + 6, 5.5)
     ellipse(ctx, cx + 18, torsoY + 8, 7, 6, FUR_L)
@@ -477,11 +517,12 @@ function drawWolf(ctx: CanvasRenderingContext2D, ox: number, oy: number) {
 function drawPine(ctx: CanvasRenderingContext2D, ox: number, oy: number) {
   ctx.fillStyle = WOOD
   ctx.fillRect(ox + 29, oy + 44, 6, 14)
-  ctx.fillStyle = "#1f4a28"
+  ctx.fillStyle = "#163820"
   for (const [y, w] of [
-    [18, 22],
-    [28, 26],
-    [38, 22],
+    [14, 20],
+    [24, 26],
+    [34, 24],
+    [44, 20],
   ] as const) {
     ctx.beginPath()
     ctx.moveTo(ox + 32, oy + y)
@@ -578,6 +619,15 @@ function caveHall(ctx: CanvasRenderingContext2D, ox: number, oy: number, variant
     ctx.beginPath()
     ctx.arc(cx, oy + 22, 3.2, 0, Math.PI * 2)
     ctx.fill()
+    ctx.fillStyle = ROCK_L
+    ctx.fillRect(cx + 10, oy + 10, 6, 10)
+    ctx.fillStyle = "#c45c2a"
+    ctx.beginPath()
+    ctx.moveTo(cx + 8, oy + 10)
+    ctx.lineTo(cx + 13, oy + 2)
+    ctx.lineTo(cx + 18, oy + 10)
+    ctx.closePath()
+    ctx.fill()
   }
 }
 
@@ -608,26 +658,79 @@ function bakeAtlas() {
     ctx.lineTo(x + 47, y + 30)
     ctx.fill()
   })
-  put(SPR.lodge, (x, y) => caveHall(ctx, x, y, 2))
-  put(SPR.camp, (x, y) => {
+  put(SPR.lodge, (x, y) => {
+    caveHall(ctx, x, y, 2)
     ctx.fillStyle = WOOD
-    ctx.fillRect(x + 14, y + 36, 36, 8)
-    ctx.fillRect(x + 18, y + 28, 28, 8)
-    ctx.fillStyle = MOSS
-    ctx.fillRect(x + 20, y + 22, 8, 16)
-    ctx.fillRect(x + 36, y + 24, 10, 14)
+    ctx.fillRect(x + 14, y + 20, 4, 28)
+    ctx.fillRect(x + 46, y + 22, 4, 26)
+    ctx.fillStyle = FUR
+    ctx.fillRect(x + 16, y + 18, 32, 5)
+    ctx.fillStyle = FUR_L
+    ctx.beginPath()
+    ctx.moveTo(x + 22, y + 36)
+    ctx.lineTo(x + 32, y + 48)
+    ctx.lineTo(x + 42, y + 36)
+    ctx.closePath()
+    ctx.fill()
+  })
+  put(SPR.camp, (x, y) => {
     ellipse(ctx, x + 32, y + 52, 16, 5, "rgba(20,12,8,0.25)", false)
+    ctx.fillStyle = "#8a5a28"
+    ctx.beginPath()
+    ctx.moveTo(x + 32, y + 16)
+    ctx.lineTo(x + 54, y + 50)
+    ctx.lineTo(x + 10, y + 50)
+    ctx.closePath()
+    ctx.fill()
+    ctx.fillStyle = "#c49a5a"
+    ctx.beginPath()
+    ctx.moveTo(x + 32, y + 20)
+    ctx.lineTo(x + 46, y + 46)
+    ctx.lineTo(x + 18, y + 46)
+    ctx.closePath()
+    ctx.fill()
+    ctx.fillStyle = WOOD
+    ctx.fillRect(x + 30, y + 16, 4, 34)
+    ctx.fillStyle = DOOR
+    ctx.fillRect(x + 27, y + 38, 10, 12)
+    ctx.strokeStyle = "#3a2414"
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(x + 18, y + 46)
+    ctx.lineTo(x + 10, y + 54)
+    ctx.moveTo(x + 46, y + 46)
+    ctx.lineTo(x + 54, y + 54)
+    ctx.stroke()
+    ctx.fillStyle = ROCK
+    ctx.fillRect(x + 8, y + 53, 3, 2)
+    ctx.fillRect(x + 53, y + 53, 3, 2)
   })
   put(SPR.pit, (x, y) => {
     ellipse(ctx, x + 32, y + 40, 22, 12, "#5a6068")
     ellipse(ctx, x + 32, y + 40, 12, 6, "#2a2e34", false)
+    ctx.fillStyle = "#e07030"
+    ctx.beginPath()
+    ctx.ellipse(x + 32, y + 40, 6, 3, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = "#f3d48a"
+    ctx.beginPath()
+    ctx.ellipse(x + 32, y + 39, 3, 1.6, 0, 0, Math.PI * 2)
+    ctx.fill()
     ctx.fillStyle = ROCK_L
-    ctx.fillRect(x + 26, y + 28, 12, 8)
+    ctx.fillRect(x + 26, y + 26, 12, 8)
+    ctx.fillStyle = ROCK
+    ctx.fillRect(x + 18, y + 34, 6, 5)
+    ctx.fillRect(x + 40, y + 33, 5, 6)
     mossDots(ctx, x + 32, y + 22, 4)
   })
   put(SPR.granary, (x, y) => {
     ellipse(ctx, x + 32, y + 40, 18, 16, FUR_L)
     ellipse(ctx, x + 32, y + 32, 12, 10, "#8a6a28")
+    ctx.strokeStyle = WOOD
+    ctx.lineWidth = 1.4
+    ctx.beginPath()
+    ctx.ellipse(x + 32, y + 40, 16, 13, 0, 0, Math.PI * 2)
+    ctx.stroke()
     ctx.fillStyle = DOOR
     ctx.beginPath()
     ctx.arc(x + 32, y + 44, 5, 0, Math.PI * 2)
@@ -701,7 +804,12 @@ function bakeAtlas() {
   })
   put(SPR.palm, (x, y) => {
     ctx.fillStyle = WOOD
-    ctx.fillRect(x + 29, y + 28, 6, 26)
+    ctx.beginPath()
+    ctx.moveTo(x + 31, y + 54)
+    ctx.quadraticCurveTo(x + 26, y + 40, x + 32, y + 26)
+    ctx.quadraticCurveTo(x + 36, y + 40, x + 35, y + 54)
+    ctx.closePath()
+    ctx.fill()
     ctx.fillStyle = "#2f6a28"
     for (let i = 0; i < 6; i++) {
       const a = -2.4 + i * 0.8

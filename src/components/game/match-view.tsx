@@ -39,7 +39,7 @@ import {
   upgradeBuilding,
 } from "@/lib/sim/engine"
 import { tickAi } from "@/lib/sim/ai"
-import { type Cam, drawWorld, screenToWorld } from "@/lib/sim/draw"
+import { type Cam, drawWorld, nodeLabel, screenToWorld } from "@/lib/sim/draw"
 import { createTelemetry, pushEvent, pushFrame } from "@/lib/obs/telemetry"
 import { DEFAULT_TUNED, type DrawQuality, type Tuned } from "@/lib/ml/score"
 import { factionById } from "@/lib/game-data"
@@ -144,7 +144,7 @@ export function MatchView({
     if (obsLineRef.current) {
       const last = tel.frames.at(-1)
       obsLineRef.current.textContent = last
-        ? `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms\nsim ${simMs.toFixed(2)} ms · in ${tel.lastInputMs.toFixed(0)} ms\nclicks ${tel.clicks} · fail ${tel.failedOrders} · deaths ${tel.deaths}\npan ${tel.cameraMoves} · lod ${qualityRef.current}`
+        ? `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms\nsim ${simMs.toFixed(2)} ms · in ${tel.lastInputMs.toFixed(0)} ms\nclicks ${tel.clicks} · fail ${tel.failedOrders} · deaths ${tel.deaths}\npan ${tel.cameraMoves} · lod ${qualityRef.current}\ngather hop ${world.gather.hops} · idle ${world.gather.idleDeplete} · wrong ${world.gather.wrong}\nbanners ${world.units.filter((u) => u.owner === 0 && u.type !== "levy").length} · ashriders ${world.units.filter((u) => u.owner === 0 && u.type === "ashrider").length}`
         : "warming…"
     }
     setHudPulse((n) => n + 1)
@@ -283,6 +283,11 @@ export function MatchView({
             persona: world.persona,
             pop: popUsed(world, 0),
             popCap: world.popCap,
+            gatherTravel: world.gather.travel,
+            gatherNearest: world.gather.nearest,
+            gatherWrong: world.gather.wrong,
+            gatherHops: world.gather.hops,
+            gatherIdle: world.gather.idleDeplete,
           })
           if (navigator.sendBeacon) {
             navigator.sendBeacon("/api/obs", new Blob([body], { type: "application/json" }))
@@ -365,7 +370,7 @@ export function MatchView({
       return
     }
     if (hit && hit.kind === "node") {
-      if (!issueGather(world, own, hit.id)) pushEvent(telRef.current, "failed", "gather")
+      if (!issueGather(world, own, hit.id, { lock: true })) pushEvent(telRef.current, "failed", "gather")
     } else if (hit && hit.owner === 1) {
       issueAttack(world, own, hit.id)
     } else if (pending?.kind === "attackMove") {
@@ -487,7 +492,7 @@ export function MatchView({
 
       <footer className="relative z-20 shrink-0 border-t border-primary/25 bg-black/75">
         <div className="grid gap-2 p-2 lg:grid-cols-[minmax(0,1.1fr)_14rem_13rem]" data-hud={hudPulse}>
-          <Selection selectedUnits={selUnits} building={selBuild} />
+          <Selection world={world} selectedUnits={selUnits} building={selBuild} />
           <div className="rounded-sm border border-primary/20 bg-card/50 p-2">
             <p className="mb-2 font-heading text-xs tracking-widest text-primary uppercase">Orders</p>
             <div className="grid grid-cols-3 gap-1.5">
@@ -601,10 +606,20 @@ function Chip({
   )
 }
 
+function gatherLine(world: World, u: Unit) {
+  const order = u.order
+  if (order.t !== "gather") return "Gathering"
+  const n = world.nodes.find((q) => q.id === order.node)
+  const name = n ? nodeLabel(n) : "a node"
+  return order.lock ? `Locked on ${name}` : `Gathering nearest ${name}`
+}
+
 function Selection({
+  world,
   selectedUnits,
   building,
 }: {
+  world: World
   selectedUnits: Unit[]
   building?: Building
 }) {
@@ -628,8 +643,9 @@ function Selection({
   if (!selectedUnits.length) {
     return (
       <div className="rounded-sm border border-dashed border-primary/25 px-3 py-6 text-center text-sm text-muted-foreground">
-        Select a levy or hall. Right-click grain, timber, ore, or relics to gather. Raise a Banner Yard,
-        then Advance Age.
+        Select a levy or hall. Right-click grain, timber, ore, hunt, or relics to gather. In Forge Age
+        levies hop to the next nearest of that job; a right-click lock holds the node you picked.
+        Ashriders leave first when the march starts.
       </div>
     )
   }
@@ -641,7 +657,23 @@ function Selection({
         <Badge variant="outline">{selectedUnits.length} selected</Badge>
       </div>
       <p className="text-xs text-muted-foreground">
-        {u.order.t === "gather" ? "Gathering" : u.order.t === "build" ? "Raising" : u.order.t === "defend" ? "Holding the hearth" : u.order.t}
+        {u.order.t === "gather"
+          ? gatherLine(world, u)
+          : u.order.t === "return"
+            ? "Hauling home"
+            : u.order.t === "build"
+              ? "Raising"
+              : u.order.t === "defend"
+                ? "Holding the hearth"
+                : u.order.t === "attackMove"
+                  ? u.type === "ashrider"
+                    ? "Ashriders on the march"
+                    : "Marching"
+                  : u.order.t === "attack"
+                    ? "In the fray"
+                    : u.order.t === "move"
+                      ? "On the path"
+                      : "Idle"}
       </p>
       <Progress value={(u.hp / u.hpMax) * 100} className="mt-2" />
     </div>

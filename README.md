@@ -30,6 +30,7 @@ npm run lint
 npm run typecheck
 npm test
 npm run playtest       # short headless games (CI uses this)
+npm run playtest:gather  # Forge nearest-chain probe (travel / idle / wrong node)
 npm run benchmark      # wall-clock hour: BENCH_MINUTES=60 npm run benchmark
 ```
 
@@ -37,7 +38,7 @@ npm run benchmark      # wall-clock hour: BENCH_MINUTES=60 npm run benchmark
 
 - Playable skirmish on six maps (Lost Cartograph stays sealed).
 - Nine AI personas (challenging through random-dominant).
-- Observatory FPS / sim / input latency, posted to `/api/obs` for the tuner.
+- Observatory FPS / sim / input latency plus gather hop / idle / wrong-node counts, posted to `/api/obs` for the tuner.
 - Pearl flourish (center of screen, sparkle top-right) with original sea/bird audio at match start and end.
 
 ## CI/CD

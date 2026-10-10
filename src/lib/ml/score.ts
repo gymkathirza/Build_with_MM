@@ -27,6 +27,11 @@ export type LiveObs = {
   quality?: number
   lod?: number
   at?: number
+  gatherTravel?: number
+  gatherNearest?: number
+  gatherWrong?: number
+  gatherHops?: number
+  gatherIdle?: number
 }
 
 export type Tuned = {
@@ -86,6 +91,10 @@ export function scoreTelemetry(
     notes.push(`South win rate ${(southWinRate * 100).toFixed(0)}% — map bias, not P0/P1 swap.`)
   }
   if (inputMs > 40) notes.push("Input latency high; skip work on the click path.")
+  if ((live?.gatherWrong ?? 0) > 4) notes.push("Live gather picking far nodes.")
+  if ((live?.gatherIdle ?? 0) > 2 && (live?.gatherHops ?? 0) === 0) {
+    notes.push("Live Forge gather idling after deplete.")
+  }
   if (!notes.length) notes.push("Core loop within target smoothness.")
   return {
     fps,
@@ -149,6 +158,15 @@ export function improveFromScore(
   } else if (p1Wins > p0Wins + games.length * 0.25) {
     next.ai.attackAtArmy = Math.min(9, prev.ai.attackAtArmy + 1)
     next.ai.gatherBias = Math.min(0.84, prev.ai.gatherBias + 0.03)
+  }
+  if ((live?.gatherIdle ?? 0) > 2) {
+    next.ai.gatherBias = Math.min(0.86, next.ai.gatherBias + 0.01)
+  }
+  if ((live?.gatherWrong ?? 0) > 4) {
+    next.ai.gatherBias = Math.min(0.86, next.ai.gatherBias + 0.02)
+  }
+  if ((live?.gatherTravel ?? 0) > (live?.gatherNearest ?? 0) * 1.25 && (live?.gatherNearest ?? 0) > 0) {
+    next.ai.gatherBias = Math.min(0.86, next.ai.gatherBias + 0.01)
   }
   next.ai.gatherBias = Number(next.ai.gatherBias.toFixed(2))
   next.ai.militaryRatio = Number(next.ai.militaryRatio.toFixed(2))

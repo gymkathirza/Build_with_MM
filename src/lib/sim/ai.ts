@@ -212,7 +212,10 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
 
   const enemyHall = hall(w, owner === 0 ? 1 : 0)
   const guards = military.filter((u) => u.type === "guard")
-  const garrisonN = Math.min(guards.length, Math.max(2, Math.floor(guards.length * 0.4) || (guards.length ? 1 : 0)))
+  const attackAt = p.age >= 1 ? Math.max(2, tuned.attackAtArmy - 1) : tuned.attackAtArmy
+  const keepRaid = military.length >= attackAt ? 1 : 0
+  const wantHold = Math.max(1, Math.floor(guards.length * 0.35))
+  const garrisonN = Math.max(0, Math.min(guards.length - keepRaid, wantHold))
   const garrison = guards.slice(0, garrisonN)
   if (garrison.length && w.tick % 20 === owner) {
     issueDefend(
@@ -245,20 +248,53 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     }
   }
 
-  if (enemyHall && military.length >= tuned.attackAtArmy) {
+  if (enemyHall && military.length >= attackAt) {
     const soldiers = military.filter(
       (u) =>
-        (u.order.t === "idle" || u.order.t === "move" || u.order.t === "attackMove") &&
+        (u.order.t === "idle" || u.order.t === "move" || u.order.t === "attackMove" || u.order.t === "defend") &&
         !garrison.some((g) => g.id === u.id),
     )
     if (soldiers.length) {
+      const riders = soldiers.filter((u) => u.type === "ashrider")
+      const wave = riders.length ? riders : soldiers
+      const bend = riders.length ? (owner === 0 ? -6 : 6) : 0
       issueAttackMove(
         w,
-        soldiers.map((u) => u.id),
+        wave.map((u) => u.id),
+        enemyHall.x,
+        enemyHall.y + bend,
+      )
+    }
+  } else if (p.age >= 1 && enemyHall && levies.length >= 6 && w.tick % 80 === owner && p.timber >= 80 && p.ore >= 40) {
+    const militia = levies.filter((u) => u.order.t === "idle").slice(0, 2)
+    if (militia.length) {
+      issueAttackMove(
+        w,
+        militia.map((u) => u.id),
         enemyHall.x,
         enemyHall.y,
       )
     }
+  }
+
+  if (p.age >= 1 && w.tick % 60 === owner) {
+    let relic = null as (typeof w.nodes)[number] | null
+    let relicD = 1e9
+    for (const n of w.nodes) {
+      if (n.type !== "relics" || n.amount <= 0) continue
+      const d = Math.hypot(n.x - h.x, n.y - h.y)
+      if (d < relicD) {
+        relicD = d
+        relic = n
+      }
+    }
+    const scout = military.find(
+      (u) =>
+        u.type === "warden" &&
+        (u.order.t === "idle" || u.order.t === "move") &&
+        !garrison.some((g) => g.id === u.id),
+    )
+    if (relic && scout) issueMove(w, [scout.id], relic.x, relic.y)
   }
 }
 
