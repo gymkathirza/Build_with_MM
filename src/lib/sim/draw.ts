@@ -422,6 +422,14 @@ function drawBuilding(
     ctx.beginPath()
     ctx.arc(p.sx + s * 0.18, p.sy - s * 0.42, 4, 0, Math.PI * 2)
     ctx.fill()
+    const flap = Math.sin(now / 260 + b.id) * 3
+    ctx.fillStyle = "#8a4e2a"
+    ctx.beginPath()
+    ctx.moveTo(p.sx - s * 0.22, p.sy - s * 0.18)
+    ctx.lineTo(p.sx - s * 0.08 + flap, p.sy - s * 0.06)
+    ctx.lineTo(p.sx - s * 0.22, p.sy + s * 0.02)
+    ctx.closePath()
+    ctx.fill()
   }
   if (quality > 1 && b.done && b.type === "granary") {
     const bob = Math.sin(now / 280 + b.id) * 2
