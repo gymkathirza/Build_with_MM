@@ -696,6 +696,12 @@ function drawUnit(
   ctx.beginPath()
   ctx.ellipse(p.sx, y + size * 0.14, 5, 2.2, 0, 0, Math.PI * 2)
   ctx.fill()
+  if (quality > 1 && u.carry) {
+    ctx.fillStyle = u.carry.res === "relics" ? "rgba(255,230,140,0.7)" : u.carry.res === "ore" ? "rgba(180,190,200,0.55)" : "rgba(212,184,90,0.5)"
+    ctx.beginPath()
+    ctx.arc(p.sx + 8, y - size * 0.12, 2.2, 0, Math.PI * 2)
+    ctx.fill()
+  }
   if (quality > 1 && limp) {
     ctx.strokeStyle = "rgba(212,92,58,0.7)"
     ctx.lineWidth = 1.6
