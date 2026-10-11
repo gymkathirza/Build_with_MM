@@ -927,6 +927,27 @@ export function drawWorld(
           ctx.ellipse(w * (0.2 + i * 0.2), h * 0.72 + Math.sin(now / 1400 + i) * 8, 90, 16, 0, 0, Math.PI * 2)
           ctx.fill()
         }
+        ctx.strokeStyle = "rgba(40,70,50,0.28)"
+        ctx.lineWidth = 1
+        for (let i = 0; i < 7; i++) {
+          const x = w * (0.12 + i * 0.12)
+          ctx.beginPath()
+          ctx.moveTo(x, h * 0.08)
+          ctx.quadraticCurveTo(x + Math.sin(now / 900 + i) * 8, h * 0.22, x + 4, h * 0.32)
+          ctx.stroke()
+        }
+      } else {
+        for (let i = 0; i < 5; i++) {
+          const a = now / 1100 + i * 1.3
+          ctx.strokeStyle = `rgba(30,50,40,${0.22 + 0.1 * Math.sin(a)})`
+          ctx.lineWidth = 1.1
+          const dx = w * (0.2 + ((i * 17) % 60) / 100) + Math.sin(a) * 16
+          const dy = h * (0.28 + ((i * 9) % 40) / 100)
+          ctx.beginPath()
+          ctx.moveTo(dx - 4, dy)
+          ctx.quadraticCurveTo(dx, dy - 3, dx + 4, dy)
+          ctx.stroke()
+        }
       }
       for (let i = 0; i < 3; i++) {
         const a = now / 9000 + i * 2.1
