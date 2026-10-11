@@ -389,11 +389,12 @@ function drawBuilding(
   ctx.fillStyle = trim
   ctx.fillRect(p.sx + s * 0.16, p.sy - s * 0.62, 3, s * 0.26)
   if (b.type === "hearth" && quality > 0) {
-    const pulse = b.aging > 0 ? 0.4 + 0.4 * Math.sin(now / 180) : 0.16 + 0.08 * Math.sin(now / 420)
-    ctx.strokeStyle = `rgba(243,212,138,${pulse})`
-    ctx.lineWidth = b.aging > 0 ? 3 : 1.5
+    const wounded = b.hp < b.hpMax * 0.82
+    const pulse = b.aging > 0 ? 0.4 + 0.4 * Math.sin(now / 180) : wounded ? 0.28 + 0.22 * Math.sin(now / 160) : 0.16 + 0.08 * Math.sin(now / 420)
+    ctx.strokeStyle = wounded ? `rgba(212,92,58,${pulse})` : `rgba(243,212,138,${pulse})`
+    ctx.lineWidth = b.aging > 0 || wounded ? 3 : 1.5
     ctx.beginPath()
-    ctx.arc(p.sx, p.sy, r * (b.aging > 0 ? 1.05 : 0.92), 0, Math.PI * 2)
+    ctx.arc(p.sx, p.sy, r * (b.aging > 0 ? 1.05 : wounded ? 1.0 : 0.92), 0, Math.PI * 2)
     ctx.stroke()
     if (age >= 1) {
       ctx.strokeStyle = "rgba(180,150,90,0.45)"
@@ -484,9 +485,10 @@ function drawUnit(
   const size = Math.max(30, cam.z * 2.7)
   if (culled(p.sx, p.sy, size, w, h)) return
   const moving = u.order.t === "move" || u.order.t === "gather" || u.order.t === "return" || u.order.t === "attackMove"
+  const limp = u.hp < u.hpMax * 0.38
   const faceLeft = orderDestX(world, u) < u.x - 0.15
-  const bob = quality > 0 ? Math.sin(t / (moving ? 90 : 180) + u.id) * (moving ? 2.2 : 1.2) : 0
-  const sway = quality > 0 && moving ? Math.sin(t / 70 + u.id) * 1.6 : 0
+  const bob = quality > 0 ? Math.sin(t / (moving ? (limp ? 140 : 90) : 180) + u.id) * (moving ? (limp ? 1.2 : 2.2) : 1.2) : 0
+  const sway = quality > 0 && moving ? Math.sin(t / (limp ? 110 : 70) + u.id) * (limp ? 0.8 : 1.6) : 0
   const y = p.sy + bob
   ctx.fillStyle = "rgba(18,12,8,0.28)"
   ctx.beginPath()

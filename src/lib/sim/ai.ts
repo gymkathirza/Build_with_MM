@@ -228,7 +228,12 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
   }
 
   const ageReady = p.age === 0 && has("yard", true) && p.grain >= COSTS.age1.grain && p.ore >= COSTS.age1.ore
-  if (ageReady && h.aging <= 0 && (persona.coach || tuned.agePriority > 0.32)) {
+  if (
+    ageReady &&
+    h.aging <= 0 &&
+    (persona.coach || tuned.agePriority > 0.32) &&
+    foesNear(w, h.x, h.y, 18, owner).length === 0
+  ) {
     startAge(w, owner)
   }
 

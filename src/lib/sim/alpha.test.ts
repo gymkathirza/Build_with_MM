@@ -114,6 +114,31 @@ test("age rite completes after a finished yard and stores", () => {
   assert.ok((h.tier ?? 0) >= 1)
 })
 
+test("age rite waits while banners press the hearth", () => {
+  const params = { ...personaById("balanced").params, agePriority: 0.9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 400
+  w.players[0].ore = 200
+  w.players[0].timber = 200
+  const yard = placeBuilding(
+    w,
+    0,
+    "yard",
+    h.x + 8,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  yard.done = true
+  yard.construct = yard.constructMax
+  pushBanner(w, "guard", 1, h.x + 2, h.y)
+  for (let i = 0; i < 12; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  assert.ok(h.aging <= 0 && w.players[0].age === 0, "rite should wait while the hearth is pressed")
+})
+
 test("coach AI reaches Forge Age on a small plate", () => {
   const persona = personaById("coach")
   const w = createWorld("ashen", "gilded", persona.params, {
