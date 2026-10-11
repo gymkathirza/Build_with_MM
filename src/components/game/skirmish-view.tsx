@@ -19,6 +19,7 @@ import {
 } from "@/lib/game-data"
 import { PERSONAS, type PersonaId } from "@/lib/sim/personas"
 import { hallPositions, specFor } from "@/lib/sim/maps"
+import { plateGround } from "@/lib/sim/draw"
 import { cn } from "@/lib/utils"
 
 const OPENING_AGES = AGES.filter((age) => age.id !== "dominion")
@@ -256,8 +257,19 @@ function MapPreview({ mapId, accent }: { mapId: string; accent: string }) {
   const scale = spec.size / 100
   const lakeRx = 36 + scale * 22
   const lakeRy = 18 + scale * 8
-  const moss =
-    mapId === "sunvault" ? "#5a6a3a" : mapId === "nightgrove" ? "#243526" : mapId === "emberglass" ? "#3a4a32" : "#35502f"
+  const moss = plateGround(mapId)
+  const weather =
+    mapId === "nightgrove"
+      ? "rain"
+      : mapId === "emberglass"
+        ? "embers"
+        : mapId === "shattercoast"
+          ? "spray"
+          : mapId === "sunvault"
+            ? "shafts"
+            : mapId === "hollowmere"
+              ? "mist"
+              : "mere"
   const waterId = `water-${mapId}`
   const mossId = `moss-${mapId}`
   const trees = [
@@ -313,8 +325,22 @@ function MapPreview({ mapId, accent }: { mapId: string; accent: string }) {
       />
       <CaveHall x={toX(halls.p0.x)} y={toY(halls.p0.y)} fill={accent} />
       <CaveHall x={toX(halls.p1.x)} y={toY(halls.p1.y)} fill="#7a3a2a" />
+      {mapId === "nightgrove"
+        ? [0, 1, 2, 3, 4, 5, 6].map((i) => (
+            <line
+              key={`rain-${i}`}
+              x1={80 + i * 80}
+              y1={20}
+              x2={72 + i * 80}
+              y2={48}
+              stroke="#a8c0c8"
+              strokeWidth="1"
+              opacity="0.35"
+            />
+          ))
+        : null}
       <text x="16" y="24" fill="#f3d48a" fontSize="12">
-        {spec.size} · pop {spec.popCap}
+        {spec.size} · pop {spec.popCap} · {weather}
       </text>
     </svg>
   )

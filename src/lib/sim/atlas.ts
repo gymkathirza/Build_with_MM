@@ -2,7 +2,7 @@
 
 export const CELL = 64
 const COLS = 8
-const ROWS = 4
+const ROWS = 5
 
 export const SPR = {
   levyClub: 0,
@@ -37,6 +37,7 @@ export const SPR = {
   levyStride: 29,
   guardStride: 30,
   wardenStride: 31,
+  ashriderStride: 32,
 } as const
 
 const SKIN = "#f0c09a"
@@ -278,11 +279,12 @@ function caveHuman(
   ctx.fill()
 
   if (kind === "ride") {
-    ellipse(ctx, cx + 2, feet - 10, 18, 10, "#6a4428")
+    const kick = gait === "stride" ? 4 : 0
+    ellipse(ctx, cx + 2, feet - 10 - kick * 0.2, 18, 10, "#6a4428")
     ellipse(ctx, cx + 16, feet - 14, 8, 6, "#5a341c")
     ctx.fillStyle = HAIR
-    ctx.fillRect(cx - 16, feet - 14, 6, 8)
-    ctx.fillRect(cx + 10, feet - 8, 5, 8)
+    ctx.fillRect(cx - 16, feet - 14 + kick * 0.4, 6, 8)
+    ctx.fillRect(cx + 10, feet - 8 - kick, 5, 8)
     ctx.fillStyle = "#3a2414"
     ctx.fillRect(cx - 6, feet - 16, 14, 5)
     ctx.fillStyle = "#c49a5a"
@@ -990,6 +992,7 @@ function bakeAtlas() {
   put(SPR.levyStride, (x, y) => caveHuman(ctx, x, y, "club", "stride"))
   put(SPR.guardStride, (x, y) => caveHuman(ctx, x, y, "spear", "stride"))
   put(SPR.wardenStride, (x, y) => caveHuman(ctx, x, y, "bow", "stride"))
+  put(SPR.ashriderStride, (x, y) => caveHuman(ctx, x, y, "ride", "stride"))
   put(SPR.fern, (x, y) => {
     ctx.fillStyle = "#3d6a32"
     for (let i = 0; i < 5; i++) {

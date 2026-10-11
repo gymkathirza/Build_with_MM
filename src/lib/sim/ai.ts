@@ -278,12 +278,10 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
   const garrisonN = Math.max(0, Math.min(guards.length - keepRaid, wantHold))
   const garrison = guards.slice(0, garrisonN)
   if (garrison.length && w.tick % 20 === owner) {
-    issueDefend(
-      w,
-      garrison.map((u) => u.id),
-      h.x,
-      h.y,
-    )
+    garrison.forEach((g, i) => {
+      const a = (i / Math.max(1, garrison.length)) * Math.PI * 2
+      issueDefend(w, [g.id], h.x + Math.cos(a) * 5, h.y + Math.sin(a) * 4)
+    })
   }
   if (hallPressed && w.tick % 10 === owner) {
     const prey = weakest(raiders)
@@ -461,13 +459,37 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
           (u) => u.owner !== owner && u.order.t === "gather" && u.order.node === n.id,
         ),
     )
-    const taker = military.find(
+    const takers = military.filter(
       (u) =>
         (u.type === "warden" || u.type === "guard") &&
         !garrison.some((g) => g.id === u.id) &&
         (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+    ).slice(0, 2)
+    if (contested && takers.length && !hallPressed) {
+      issueAttackMove(
+        w,
+        takers.map((u) => u.id),
+        contested.x,
+        contested.y,
+      )
+    }
+  }
+
+  if (!hallPressed && w.tick % 40 === owner) {
+    const outpost = w.buildings.find(
+      (b) =>
+        b.owner === owner &&
+        b.done &&
+        (b.type === "camp" || b.type === "pit" || b.type === "granary") &&
+        foesNear(w, b.x, b.y, 10, owner).length > 0,
     )
-    if (contested && taker && !hallPressed) issueAttackMove(w, [taker.id], contested.x, contested.y)
+    const sentry = military.find(
+      (u) =>
+        u.type === "guard" &&
+        !garrison.some((g) => g.id === u.id) &&
+        (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+    )
+    if (outpost && sentry) issueDefend(w, [sentry.id], outpost.x, outpost.y)
   }
 }
 

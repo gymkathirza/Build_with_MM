@@ -161,7 +161,7 @@ export function MatchView({
               (u) => u.owner === 1 && Math.hypot(u.x - hall.x, u.y - hall.y) < 22,
             ).length
             return press ? `hearth pressed ×${press}` : "hearth clear"
-          })()}`
+          })()}\nplate ${mapId}`
         : "warming…"
     }
     setHudPulse((n) => n + 1)
@@ -448,10 +448,14 @@ export function MatchView({
         </Button>
       </header>
 
-      <div className="relative min-h-0 flex-1 overflow-hidden bg-[#3d5a32]">
+      <div
+        className="relative min-h-0 flex-1 overflow-hidden"
+        style={{ background: plateGround(mapId) }}
+      >
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 block h-full w-full cursor-crosshair bg-[#3d5a32]"
+          className="absolute inset-0 block h-full w-full cursor-crosshair"
+          style={{ background: plateGround(mapId) }}
           onContextMenu={(e) => e.preventDefault()}
           onPointerDown={(e) => {
             const r = e.currentTarget.getBoundingClientRect()

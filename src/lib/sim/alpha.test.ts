@@ -567,6 +567,39 @@ test("warden steps off a melee that closes in", () => {
   )
 })
 
+test("a pressed camp draws a sentry", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 400
+  w.players[0].ore = 200
+  w.players[0].timber = 200
+  const camp = placeBuilding(
+    w,
+    0,
+    "camp",
+    h.x + 18,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  camp.done = true
+  camp.construct = camp.constructMax
+  pushBanner(w, "guard", 0, h.x + 2, h.y)
+  pushBanner(w, "guard", 0, h.x + 3, h.y)
+  pushBanner(w, "guard", 1, camp.x + 2, camp.y)
+  for (let i = 0; i < 16; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const sentry = w.units.find((u) => u.owner === 0 && u.type === "guard")
+  assert.ok(sentry, "need a home guard")
+  const near = Math.hypot(sentry.x - camp.x, sentry.y - camp.y)
+  assert.ok(
+    sentry.order.t === "defend" || sentry.order.t === "attack" || sentry.order.t === "attackMove" || near < 14,
+    `camp should pull a sentry, order ${sentry.order.t} dist ${near}`,
+  )
+})
+
 test("student recalls the wave when banners press the hearth", () => {
   const params = { ...personaById("balanced").params, attackAtArmy: 2 }
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
