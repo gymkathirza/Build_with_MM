@@ -917,3 +917,35 @@ test("extra levies walk a far camp", () => {
   assert.ok(walker, "an extra levy should walk the far camp")
 })
 
+test("a fourth ashrider patrols a far camp", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  w.players[0].grain = 400
+  w.players[0].timber = 200
+  const camp = placeBuilding(
+    w,
+    0,
+    "camp",
+    h.x + 22,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  camp.done = true
+  camp.construct = camp.constructMax
+  for (let i = 0; i < 4; i++) pushBanner(w, "ashrider", 0, h.x + 2 + i, h.y)
+  for (let i = 0; i < 50; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const patrol = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "ashrider" &&
+      ((u.order.t === "defend" && Math.hypot(u.order.x - camp.x, u.order.y - camp.y) < 4) ||
+        Math.hypot(u.x - camp.x, u.y - camp.y) < 10),
+  )
+  assert.ok(patrol, "a spare ashrider should patrol the far camp")
+})
+

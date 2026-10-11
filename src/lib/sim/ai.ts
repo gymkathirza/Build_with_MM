@@ -586,6 +586,19 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     if (farCamp && extra) {
       issueMove(w, [extra.id], farCamp.x, farCamp.y)
     }
+    const riderCount = military.filter((u) => u.type === "ashrider").length
+    const spareRider =
+      riderCount >= 4
+        ? military.find(
+            (u) =>
+              u.type === "ashrider" &&
+              !garrison.some((g) => g.id === u.id) &&
+              (u.order.t === "idle" || u.order.t === "defend" || u.order.t === "move"),
+          )
+        : undefined
+    if (farCamp && spareRider) {
+      issueDefend(w, [spareRider.id], farCamp.x, farCamp.y)
+    }
   }
 }
 

@@ -239,6 +239,17 @@ function drawTerrain(
       ctx.ellipse(hp.sx, hp.sy, 22 * cam.z * 0.2, 10 * cam.z * 0.2, 0.2, 0, Math.PI * 2)
       ctx.fill()
     }
+    const t = performance.now()
+    for (let i = 0; i < 10; i++) {
+      const a = t / 1400 + i * 0.7
+      const fx = ((hash(i * 17, 71) % 1000) / 1000) * size
+      const fy = ((hash(i * 31, 43) % 1000) / 1000) * size
+      const fp = worldToScreen(cam, fx + Math.cos(a) * 3, fy + Math.sin(a * 1.3) * 2)
+      ctx.fillStyle = `rgba(190,255,170,${0.16 + 0.2 * Math.sin(t / 280 + i)})`
+      ctx.beginPath()
+      ctx.arc(fp.sx, fp.sy, 1.6, 0, Math.PI * 2)
+      ctx.fill()
+    }
   }
   if (quality > 1 && world.mapId === "sunvault") {
     for (let i = 0; i < 10; i++) {
