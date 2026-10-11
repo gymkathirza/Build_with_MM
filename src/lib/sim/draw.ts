@@ -828,6 +828,13 @@ export function drawWorld(
           ctx.lineTo(w * (0.22 + i * 0.16), 0)
           ctx.fill()
         }
+        for (let i = 0; i < 8; i++) {
+          const a = now / 1400 + i
+          ctx.fillStyle = `rgba(255,230,140,${0.08 + 0.08 * Math.sin(a)})`
+          ctx.beginPath()
+          ctx.arc(w * (0.2 + ((i * 11) % 60) / 100), h * (0.3 + ((i * 7) % 40) / 100) + Math.sin(a) * 8, 1.4, 0, Math.PI * 2)
+          ctx.fill()
+        }
       } else if (plate === "hollowmere") {
         for (let i = 0; i < 4; i++) {
           ctx.fillStyle = `rgba(180,210,200,${0.05 + 0.03 * Math.sin(now / 1600 + i)})`
