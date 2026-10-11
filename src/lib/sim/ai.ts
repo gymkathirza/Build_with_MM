@@ -24,20 +24,57 @@ function idleLevies(w: World, owner: Owner) {
   )
 }
 
-function nearestNode(w: World, x: number, y: number, type?: Res) {
-  let best = w.nodes.find((n) => n.amount > 0 && (!type || n.type === type)) ?? null
-  if (!best) return w.nodes.find((n) => n.amount > 0) ?? null
-  let bestD = Math.hypot(best.x - x, best.y - y)
+function nearestNode(w: World, x: number, y: number, type?: Res, hunt?: boolean) {
+  let best = null as (typeof w.nodes)[number] | null
+  let bestD = 1e9
   for (const n of w.nodes) {
     if (n.amount <= 0) continue
     if (type && n.type !== type) continue
+    if (hunt === true && !n.fauna) continue
+    if (hunt === false && n.fauna) continue
     const d = Math.hypot(n.x - x, n.y - y)
     if (d < bestD) {
       bestD = d
       best = n
     }
   }
-  return best
+  if (best) return best
+  if (hunt != null) return nearestNode(w, x, y, type)
+  return w.nodes.find((n) => n.amount > 0) ?? null
+}
+
+function pickGatherNode(w: World, x: number, y: number, need?: Res) {
+  if (need === "grain") {
+    const hunt = nearestNode(w, x, y, "grain", true)
+    const field = nearestNode(w, x, y, "grain", false)
+    if (hunt && field) {
+      const hd = Math.hypot(hunt.x - x, hunt.y - y)
+      const fd = Math.hypot(field.x - x, field.y - y)
+      return hd <= fd + 10 ? hunt : field
+    }
+    return hunt ?? field ?? nearestNode(w, x, y)
+  }
+  return nearestNode(w, x, y, need)
+}
+
+function adaptToRival(params: AiParams, rivalId: string): AiParams {
+  if (rivalId === "rand-aggro" || rivalId === "challenging" || rivalId === "rand-dominant") {
+    return {
+      ...params,
+      attackAtArmy: Math.max(3, params.attackAtArmy - 3),
+      kite: Math.max(params.kite, 0.78),
+      militaryRatio: Math.max(params.militaryRatio, 0.72),
+      gatherBias: Math.min(params.gatherBias, 0.78),
+    }
+  }
+  if (rivalId === "forgiving" || rivalId === "coach") {
+    return {
+      ...params,
+      agePriority: Math.max(params.agePriority, 0.85),
+      attackAtArmy: Math.max(params.attackAtArmy, 6),
+    }
+  }
+  return params
 }
 
 function hall(w: World, owner: Owner) {
@@ -111,7 +148,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
   const p = w.players[owner]
   const h = hall(w, owner)
   if (!h) return
-  const tuned = applyNoise(params, persona, w.tick)
+  const tuned = adaptToRival(applyNoise(params, persona, w.tick), owner === 0 ? w.persona : persona.id)
 
   const levies = w.units.filter((u) => u.owner === owner && u.type === "levy")
   const military = w.units.filter((u) => u.owner === owner && u.type !== "levy")
@@ -137,7 +174,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         const bag: Res[] = ["grain", "timber", "ore", "relics"]
         need = bag[(w.tick + u.id) % 4]
       }
-      const n = nearestNode(w, u.x, u.y, need)
+      const n = pickGatherNode(w, u.x, u.y, need)
       if (n) {
         issueGather(w, [u.id], n.id)
         gathering.push(u)
@@ -248,11 +285,33 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     }
   }
 
+  if (tuned.kite > 0.5 && w.tick % 20 === owner) {
+    const wounded = military.filter((u) => u.hp < u.hpMax * 0.38 && !garrison.some((g) => g.id === u.id))
+    if (wounded.length) {
+      issueMove(
+        w,
+        wounded.map((u) => u.id),
+        h.x + (owner === 0 ? 3 : -3),
+        h.y,
+      )
+    }
+  }
+
+  const foeMilitaryHome = enemyHall
+    ? w.units.filter(
+        (u) =>
+          u.owner !== owner &&
+          u.type !== "levy" &&
+          Math.hypot(u.x - enemyHall.x, u.y - enemyHall.y) < 18,
+      ).length
+    : 99
+
   if (enemyHall && military.length >= attackAt) {
     const soldiers = military.filter(
       (u) =>
         (u.order.t === "idle" || u.order.t === "move" || u.order.t === "attackMove" || u.order.t === "defend") &&
-        !garrison.some((g) => g.id === u.id),
+        !garrison.some((g) => g.id === u.id) &&
+        u.hp >= u.hpMax * 0.38,
     )
     if (soldiers.length) {
       const riders = soldiers.filter((u) => u.type === "ashrider")
@@ -274,7 +333,16 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         )
       }
     }
-  } else if (p.age >= 1 && enemyHall && levies.length >= 6 && w.tick % 80 === owner && p.timber >= 80 && p.ore >= 40) {
+  } else if (
+    p.age >= 1 &&
+    enemyHall &&
+    military.length >= 2 &&
+    levies.length >= 10 &&
+    w.tick % 80 === owner &&
+    p.timber >= 80 &&
+    p.ore >= 40 &&
+    foeMilitaryHome === 0
+  ) {
     const militia = levies.filter((u) => u.order.t === "idle").slice(0, 2)
     if (militia.length) {
       issueAttackMove(

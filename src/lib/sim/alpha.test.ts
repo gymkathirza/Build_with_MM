@@ -420,6 +420,63 @@ test("player gather override sticks until that node depletes", () => {
   if (levy.order.t === "gather") assert.equal(levy.order.node, near.id)
 })
 
+test("student hunts nearby fauna when grain is short", () => {
+  const params = personaById("balanced").params
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 20
+  w.players[0].timber = 200
+  w.players[0].ore = 200
+  for (const n of w.nodes) n.amount = 0
+  const hunt = w.nodes.find((n) => n.type === "grain")!
+  const field = w.nodes.find((n) => n.type === "grain" && n.id !== hunt.id)!
+  hunt.x = h.x + 5
+  hunt.y = h.y
+  hunt.amount = 80
+  hunt.fauna = "deer"
+  field.x = h.x + 28
+  field.y = h.y
+  field.amount = 400
+  field.fauna = null
+  const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")!
+  levy.x = h.x
+  levy.y = h.y
+  levy.order = { t: "idle" }
+  for (let i = 0; i < 12; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const gatherer = w.units.find((u) => u.owner === 0 && u.order.t === "gather")
+  assert.ok(gatherer, "levy should gather")
+  if (gatherer && gatherer.order.t === "gather") {
+    assert.equal(gatherer.order.node, hunt.id, "prefer the nearby hunt over the far field")
+  }
+})
+
+test("student lowers attackAtArmy against rand-aggro", () => {
+  const student = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", student, { mapId: "emberglass", persona: "rand-aggro" })
+  w.players[0].age = 1
+  w.players[0].grain = 800
+  w.players[0].ore = 400
+  w.players[0].timber = 400
+  const h = hall(w, 0)
+  // adapt 9→6, Forge uses attackAt-1 = 5, so the wave needs five banners.
+  pushBanner(w, "guard", 0, h.x + 2, h.y)
+  pushBanner(w, "guard", 0, h.x + 3, h.y)
+  pushBanner(w, "guard", 0, h.x + 4, h.y)
+  pushBanner(w, "ashrider", 0, h.x + 5, h.y)
+  pushBanner(w, "ashrider", 0, h.x + 6, h.y)
+  for (let i = 0; i < 10; i++) {
+    tickAi(w, 0, student, personaById("balanced"))
+    tick(w)
+  }
+  const march = w.units.filter(
+    (u) => u.owner === 0 && (u.order.t === "attackMove" || u.order.t === "attack"),
+  )
+  assert.ok(march.length >= 1, "rand-aggro should draw an earlier march than attackAt 9")
+})
+
 test("Forge Age hunt hops to the next hunt, not a grain field", () => {
   const w = createWorld("ashen", "gilded", undefined, { mapId: "emberglass" })
   w.players[0].age = 1
