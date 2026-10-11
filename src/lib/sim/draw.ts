@@ -520,6 +520,11 @@ function drawBuilding(
     ctx.beginPath()
     ctx.ellipse(p.sx, p.sy - s * 0.08, 5, 3.2, 0, 0, Math.PI * 2)
     ctx.fill()
+    const slag = (now / 90 + b.id * 5) % 16
+    ctx.fillStyle = `rgba(80,70,60,${0.2 - slag * 0.008})`
+    ctx.beginPath()
+    ctx.arc(p.sx - 4, p.sy - s * 0.16 - slag * 0.5, 2, 0, Math.PI * 2)
+    ctx.fill()
   }
   if (quality > 1 && b.done && b.type === "yard") {
     const flap = Math.sin(now / 220 + b.id) * 3
