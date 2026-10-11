@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react"
 import { PearlLogo } from "@/components/game/pearl-logo"
-import { playSeaCrestFromContext, SEA_CREST_SECONDS } from "@/lib/audio/sea-crest"
+import { playSeaCrestFromContext, safeCloseAudioContext, SEA_CREST_SECONDS } from "@/lib/audio/sea-crest"
 import { cn } from "@/lib/utils"
 
 export function PearlFlourish({
@@ -18,10 +18,22 @@ export function PearlFlourish({
     if (!play) return
     let stop: (() => void) | null = null
     let ctx: AudioContext | null = null
+    let closed = false
+    const release = () => {
+      if (closed) return
+      closed = true
+      stop?.()
+      stopRef.current = null
+      safeCloseAudioContext(ctx)
+    }
     const run = async () => {
       const AC = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
       if (!AC) return
       ctx = new AC()
+      if (closed) {
+        safeCloseAudioContext(ctx)
+        return
+      }
       if (ctx.state === "suspended") {
         try {
           await ctx.resume()
@@ -29,19 +41,18 @@ export function PearlFlourish({
           /* autoplay blocked until a later gesture */
         }
       }
+      if (closed) {
+        safeCloseAudioContext(ctx)
+        return
+      }
       stop = playSeaCrestFromContext(ctx)
       stopRef.current = stop
     }
     void run()
-    const kill = window.setTimeout(() => {
-      stop?.()
-      void ctx?.close()
-    }, SEA_CREST_SECONDS * 1000 + 80)
+    const kill = window.setTimeout(release, SEA_CREST_SECONDS * 1000 + 80)
     return () => {
       window.clearTimeout(kill)
-      stop?.()
-      stopRef.current = null
-      void ctx?.close()
+      release()
     }
   }, [play, variant])
 

@@ -477,6 +477,91 @@ test("student lowers attackAtArmy against rand-aggro", () => {
   assert.ok(march.length >= 1, "rand-aggro should draw an earlier march than attackAt 9")
 })
 
+test("ashrider peels a gathering rival levy", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 2 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  w.players[0].age = 1
+  const h = hall(w, 0)
+  pushBanner(w, "ashrider", 0, h.x + 3, h.y)
+  pushBanner(w, "guard", 0, h.x + 2, h.y)
+  pushBanner(w, "guard", 0, h.x + 4, h.y)
+  const node = w.nodes.find((n) => n.amount > 0 && Math.hypot(n.x - h.x, n.y - h.y) > 24)
+  assert.ok(node)
+  pushBanner(w, "levy", 1, node.x, node.y)
+  const levy = w.units.find((u) => u.owner === 1 && u.type === "levy")!
+  assert.ok(issueGather(w, [levy.id], node.id))
+  for (let i = 0; i < 12; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const rider = w.units.find((u) => u.owner === 0 && u.type === "ashrider")!
+  assert.ok(
+    rider.order.t === "attack" || rider.order.t === "attackMove",
+    `rider should peel or still march, got ${rider.order.t}`,
+  )
+})
+
+test("wounded hearth keeps the banners home", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 2 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  w.players[0].age = 1
+  const h = hall(w, 0)
+  h.hp = h.hpMax * 0.7
+  pushBanner(w, "guard", 0, h.x + 2, h.y)
+  pushBanner(w, "guard", 0, h.x + 3, h.y)
+  pushBanner(w, "ashrider", 0, h.x + 4, h.y)
+  for (let i = 0; i < 10; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const march = w.units.filter(
+    (u) => u.owner === 0 && u.type !== "levy" && (u.order.t === "attackMove" || u.order.t === "attack"),
+  )
+  assert.equal(march.length, 0, "a wounded hearth should not send the wave")
+})
+
+test("warden steps off a melee that closes in", () => {
+  const params = { ...personaById("balanced").params, kite: 0.8, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  pushBanner(w, "warden", 0, h.x + 28, h.y)
+  pushBanner(w, "guard", 1, h.x + 30, h.y)
+  const warden = w.units.find((u) => u.owner === 0 && u.type === "warden")!
+  const foe = w.units.find((u) => u.owner === 1 && u.type === "guard")!
+  for (let i = 0; i < 24; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const away = Math.hypot(warden.x - foe.x, warden.y - foe.y)
+  assert.ok(
+    away > 3.2 || warden.order.t === "move",
+    `warden should kite, dist ${away} order ${warden.order.t}`,
+  )
+})
+
+test("student recalls the wave when banners press the hearth", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 2 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  w.players[0].age = 1
+  const h = hall(w, 0)
+  pushBanner(w, "guard", 0, h.x + 3, h.y)
+  pushBanner(w, "guard", 0, h.x + 4, h.y)
+  pushBanner(w, "ashrider", 0, h.x + 5, h.y)
+  pushBanner(w, "guard", 1, h.x + 6, h.y)
+  pushBanner(w, "guard", 1, h.x + 7, h.y)
+  for (let i = 0; i < 12; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const home = w.units.filter(
+    (u) =>
+      u.owner === 0 &&
+      u.type !== "levy" &&
+      (u.order.t === "attack" || u.order.t === "defend" || Math.hypot(u.x - h.x, u.y - h.y) < 16),
+  )
+  assert.ok(home.length >= 2, "pressed hearth should keep or recall banners")
+})
+
 test("Forge Age hunt hops to the next hunt, not a grain field", () => {
   const w = createWorld("ashen", "gilded", undefined, { mapId: "emberglass" })
   w.players[0].age = 1

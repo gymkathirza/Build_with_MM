@@ -43,7 +43,7 @@ import { tickAi } from "@/lib/sim/ai"
 import { type Cam, drawWorld, nodeLabel, screenToWorld } from "@/lib/sim/draw"
 import { createTelemetry, pushEvent, pushFrame } from "@/lib/obs/telemetry"
 import { DEFAULT_TUNED, type DrawQuality, type Tuned } from "@/lib/ml/score"
-import { factionById } from "@/lib/game-data"
+import { factionById, mapById } from "@/lib/game-data"
 import { hallPositions, specFor } from "@/lib/sim/maps"
 import { personaById } from "@/lib/sim/personas"
 import tunedJson from "@/lib/ml/tuned.json"
@@ -136,16 +136,32 @@ export function MatchView({
   const paintHud = useCallback((fps: number, frameMs: number, simMs: number) => {
     const tel = telRef.current
     const p0 = world.players[0]
-    if (grainRef.current) grainRef.current.textContent = String(Math.floor(p0.grain))
-    if (timberRef.current) timberRef.current.textContent = String(Math.floor(p0.timber))
-    if (oreRef.current) oreRef.current.textContent = String(Math.floor(p0.ore))
+    if (grainRef.current) {
+      grainRef.current.textContent = String(Math.floor(p0.grain))
+      grainRef.current.classList.toggle("text-destructive", p0.grain < 80)
+    }
+    if (timberRef.current) {
+      timberRef.current.textContent = String(Math.floor(p0.timber))
+      timberRef.current.classList.toggle("text-destructive", p0.timber < 60)
+    }
+    if (oreRef.current) {
+      oreRef.current.textContent = String(Math.floor(p0.ore))
+      oreRef.current.classList.toggle("text-destructive", p0.ore < 40)
+    }
     if (relicsRef.current) relicsRef.current.textContent = String(Math.floor(p0.relics))
     if (ageRef.current) ageRef.current.textContent = AGE_NAMES[p0.age]
     if (popRef.current) popRef.current.textContent = `Banners ${popUsed(world, 0)}/${world.popCap}`
     if (obsLineRef.current) {
       const last = tel.frames.at(-1)
       obsLineRef.current.textContent = last
-        ? `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms\nsim ${simMs.toFixed(2)} ms · in ${tel.lastInputMs.toFixed(0)} ms\nclicks ${tel.clicks} · fail ${tel.failedOrders} · deaths ${tel.deaths}\npan ${tel.cameraMoves} · lod ${qualityRef.current}\ngather hop ${world.gather.hops} · idle ${world.gather.idleDeplete} · wrong ${world.gather.wrong}\nbanners ${world.units.filter((u) => u.owner === 0 && u.type !== "levy").length} · ashriders ${world.units.filter((u) => u.owner === 0 && u.type === "ashrider").length}`
+        ? `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms\nsim ${simMs.toFixed(2)} ms · in ${tel.lastInputMs.toFixed(0)} ms\nclicks ${tel.clicks} · fail ${tel.failedOrders} · deaths ${tel.deaths}\npan ${tel.cameraMoves} · lod ${qualityRef.current}\ngather hop ${world.gather.hops} · idle ${world.gather.idleDeplete} · wrong ${world.gather.wrong}\nbanners ${world.units.filter((u) => u.owner === 0 && u.type !== "levy").length} · ashriders ${world.units.filter((u) => u.owner === 0 && u.type === "ashrider").length}\n${(() => {
+            const hall = world.buildings.find((b) => b.owner === 0 && b.type === "hearth" && b.done)
+            if (!hall) return "hearth lost"
+            const press = world.units.filter(
+              (u) => u.owner === 1 && Math.hypot(u.x - hall.x, u.y - hall.y) < 22,
+            ).length
+            return press ? `hearth pressed ×${press}` : "hearth clear"
+          })()}`
         : "warming…"
     }
     setHudPulse((n) => n + 1)
@@ -329,6 +345,16 @@ export function MatchView({
         else setPaused((p) => !p)
       }
       if (e.code === "KeyH") issueHalt(world, selectedDrawRef.current.size ? [...selectedDrawRef.current] : [])
+      if (e.code === "KeyG") {
+        const hall = world.buildings.find((b) => b.owner === 0 && b.type === "hearth" && b.done)
+        const ids = selectedDrawRef.current.size ? [...selectedDrawRef.current] : []
+        if (hall && ids.length) issueDefend(world, ids, hall.x, hall.y)
+      }
+      if (e.code === "KeyF") setPending({ kind: "attackMove" })
+      if (e.code === "Space") {
+        e.preventDefault()
+        setPaused((p) => !p)
+      }
     }
     const up = (e: KeyboardEvent) => keysRef.current.delete(e.code)
     const wheel = (e: WheelEvent) => {
@@ -398,6 +424,9 @@ export function MatchView({
         <PearlLogo size={28} className="hidden shrink-0 sm:block" />
         <p className="font-heading hidden text-[11px] tracking-[0.28em] text-primary uppercase sm:block">
           {faction.name}
+        </p>
+        <p className="hidden max-w-[12rem] truncate text-[11px] text-muted-foreground sm:block">
+          {mapById(mapId).name} · {personaById(personaId).name}
         </p>
         <Chip icon={<Wheat className="size-3.5" />} label="Grain" valueRef={grainRef} initial={240} />
         <Chip icon={<Trees className="size-3.5" />} label="Timber" valueRef={timberRef} initial={220} />
@@ -576,7 +605,8 @@ export function MatchView({
           <TrainPanel world={world} selected={selBuild} onTrain={() => paintHud(60, 16, 0)} />
         </div>
         <p className="px-3 pb-1.5 text-[11px] text-muted-foreground">
-          WASD pan · wheel zoom · left select · right order · Build with Manon Mani
+          WASD pan · wheel zoom · left select · right order · F strike-move · G defend hearth · H hold ·
+          Space pause · Esc cancel
         </p>
       </footer>
 
@@ -656,10 +686,10 @@ function Selection({
   }
   if (!selectedUnits.length) {
     return (
-      <div className="rounded-sm border border-dashed border-primary/25 px-3 py-6 text-center text-sm text-muted-foreground">
-        Select a levy or hall. Right-click grain, timber, ore, hunt, or relics to gather. In Forge Age
+      <div className="rounded-sm border border-dashed border-primary/25 px-3 py-5 text-center text-sm text-muted-foreground">
+        Select a levy or hall. Right-click grain, timber, ore, hunt, or relics to gather. Forge Age
         levies hop to the next nearest of that job; a right-click lock holds the node you picked.
-        Ashriders leave first when the march starts.
+        Ashriders ride first. If banners press your hearth, the student recalls the wave.
       </div>
     )
   }
@@ -737,7 +767,7 @@ function TrainPanel({
       <ul className="mt-2 space-y-1">
         {(b?.queue ?? []).map((q, i) => (
           <li key={i} className="text-xs">
-            {UNIT_LABEL[q.type]}
+            {UNIT_LABEL[q.type]} · {Math.max(0, q.max - q.t).toFixed(0)}s
             <Progress value={(q.t / q.max) * 100} className="mt-1" />
           </li>
         ))}

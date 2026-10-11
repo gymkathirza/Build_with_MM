@@ -36,6 +36,21 @@ function gullCry(t: number): number {
   return pulse * Math.sin(2 * Math.PI * freq * t)
 }
 
+export type CloseableAudio = {
+  state: string
+  close: () => void | Promise<void>
+}
+
+/** No-op if missing or already closed. Never throws InvalidStateError. */
+export function safeCloseAudioContext(ctx: CloseableAudio | null | undefined) {
+  if (!ctx || ctx.state === "closed") return
+  try {
+    void ctx.close()
+  } catch {
+    /* already closed */
+  }
+}
+
 export function playSeaCrestFromContext(ctx: AudioContext) {
   const rate = ctx.sampleRate
   const samples = generateSeaCrest(rate)

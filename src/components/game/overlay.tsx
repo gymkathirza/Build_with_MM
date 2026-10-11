@@ -13,12 +13,12 @@ export function Overlay({
 }) {
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 p-4"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4 backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="overlay-title"
     >
-      <div className="gold-trim w-full max-w-md rounded-sm bg-card p-5 shadow-2xl">
+      <div className="gold-trim w-full max-w-md rounded-sm bg-card/95 p-5 shadow-2xl ring-1 ring-primary/20">
         <h2 id="overlay-title" className="font-heading text-xl tracking-wide text-primary">
           {title}
         </h2>

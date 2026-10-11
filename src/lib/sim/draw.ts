@@ -45,7 +45,16 @@ function drawTerrain(
   world: World,
 ) {
   const size = world.size
-  ctx.fillStyle = "#3d5a32"
+  ctx.fillStyle =
+    world.mapId === "nightgrove"
+      ? "#243526"
+      : world.mapId === "sunvault"
+        ? "#5a6a3a"
+        : world.mapId === "emberglass"
+          ? "#4a3a28"
+          : world.mapId === "shattercoast"
+            ? "#3a4a42"
+            : "#3d5a32"
   ctx.fillRect(0, 0, w, h)
   const c0 = worldToScreen(cam, 0, 0)
   const c1 = worldToScreen(cam, size, size)
@@ -110,6 +119,10 @@ function drawTerrain(
     ctx.beginPath()
     ctx.ellipse(lake.sx + 8, lake.sy + 3, lrx * 0.52, lry * 0.28, -0.2, 0, Math.PI * 2)
     ctx.stroke()
+    ctx.fillStyle = `rgba(230,250,245,${0.08 + 0.06 * Math.sin(t / 520)})`
+    ctx.beginPath()
+    ctx.ellipse(lake.sx - lrx * 0.22, lake.sy - lry * 0.28, lrx * 0.18, lry * 0.1, 0.4, 0, Math.PI * 2)
+    ctx.fill()
     if (quality > 1) {
       for (let i = 0; i < 6; i++) {
         const a = (i / 6) * Math.PI * 2
@@ -120,7 +133,16 @@ function drawTerrain(
         )
         blit(ctx, SPR.palm, palm.sx - 16, palm.sy - 28, 32, 32)
       }
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2 + 0.4
+        const reed = worldToScreen(
+          cam,
+          size / 2 + Math.cos(a) * lakeR * 1.28,
+          size / 2 + Math.sin(a) * lakeR * 0.78,
+        )
+        blit(ctx, SPR.reed, reed.sx - 10, reed.sy - 18, 20, 20)
+      }
+      for (let i = 0; i < 4; i++) {
         const a = t / 1800 + i * 2.1
         const bird = worldToScreen(
           cam,
@@ -130,8 +152,8 @@ function drawTerrain(
         ctx.strokeStyle = `rgba(30,24,18,${0.35 + 0.2 * Math.sin(t / 400 + i)})`
         ctx.lineWidth = 1.2
         ctx.beginPath()
-        ctx.moveTo(bird.sx - 4, bird.sy)
-        ctx.quadraticCurveTo(bird.sx, bird.sy - 3 - Math.sin(t / 180 + i) * 2, bird.sx + 4, bird.sy)
+        ctx.moveTo(bird.sx - 5, bird.sy)
+        ctx.quadraticCurveTo(bird.sx, bird.sy - 4 - Math.sin(t / 180 + i) * 2.4, bird.sx + 5, bird.sy)
         ctx.stroke()
       }
     }
@@ -149,15 +171,18 @@ function drawTerrain(
   }
 
   if (quality > 0) {
-    for (let i = 0; i < 11; i++) {
+    for (let i = 0; i < 16; i++) {
       const hx = ((hash(i * 19, 41) % 1000) / 1000) * size
       const hy = ((hash(i * 29, 17) % 1000) / 1000) * size
       if (Math.hypot(hx - size / 2, hy - size / 2) < lakeR * 2.4) continue
       const hp = worldToScreen(cam, hx, hy)
-      ctx.fillStyle = i % 3 === 0 ? "rgba(62,52,32,0.28)" : "rgba(28,46,22,0.22)"
+      ctx.fillStyle = i % 3 === 0 ? "rgba(62,52,32,0.32)" : "rgba(28,46,22,0.24)"
       ctx.beginPath()
-      ctx.ellipse(hp.sx, hp.sy, (26 + (i % 4) * 4) * cam.z * 0.22, (11 + (i % 3) * 2) * cam.z * 0.22, 0.18, 0, Math.PI * 2)
+      ctx.ellipse(hp.sx, hp.sy, (30 + (i % 4) * 5) * cam.z * 0.24, (12 + (i % 3) * 2) * cam.z * 0.24, 0.18, 0, Math.PI * 2)
       ctx.fill()
+      if (quality > 1 && i % 4 === 0) {
+        blit(ctx, SPR.cliff, hp.sx - 18, hp.sy - 28, 36, 32)
+      }
     }
     const halls = world.buildings.filter((b) => b.type === "hearth" && b.done)
     if (halls.length >= 2) {
@@ -189,7 +214,7 @@ function drawTerrain(
         if (hsh % 9 > 1) continue
         const p = worldToScreen(cam, gx + (hsh % 5), gy + ((hsh >> 3) % 5))
         if (culled(p.sx, p.sy, deco, w, h)) continue
-        const spr = hsh % 9 === 0 ? SPR.grass : SPR.rock
+        const spr = hsh % 9 === 0 ? SPR.grass : hsh % 11 === 0 ? SPR.flower : hsh % 13 === 0 ? SPR.fern : SPR.rock
         blit(ctx, spr, p.sx - deco / 2, p.sy - deco * 0.65, deco, deco)
       }
     }
@@ -222,8 +247,18 @@ function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: Dra
   const p = worldToScreen(cam, n.x, n.y)
   const s = Math.max(n.fauna ? 40 : 34, cam.z * (n.fauna ? 2.8 : 2.35))
   if (culled(p.sx, p.sy, s, w, h)) return
-  const bob = n.fauna && quality > 0 ? Math.sin(n.id + performance.now() / 320) * 2.1 : 0
-  blit(ctx, nodeSpr(n), p.sx - s / 2, p.sy - s * 0.72 + bob, s, s)
+  const now = performance.now()
+  const bob = n.fauna && quality > 0 ? Math.sin(n.id + now / 320) * 2.1 : 0
+  const wander = n.fauna && quality > 1 ? Math.sin(n.id * 1.7 + now / 900) * 2.4 : 0
+  blit(ctx, nodeSpr(n), p.sx - s / 2 + wander, p.sy - s * 0.72 + bob, s, s)
+  if (quality > 1 && n.type === "relics") {
+    const gleam = 0.18 + 0.22 * Math.sin(now / 240 + n.id)
+    ctx.strokeStyle = `rgba(255,246,212,${gleam})`
+    ctx.lineWidth = 1.4
+    ctx.beginPath()
+    ctx.arc(p.sx + wander, p.sy - s * 0.2 + bob, s * 0.28, 0, Math.PI * 2)
+    ctx.stroke()
+  }
   if (quality > 0) {
     ctx.fillStyle = "rgba(20,12,8,0.82)"
     ctx.font = `${Math.max(11, Math.min(15, cam.z * 0.7))}px sans-serif`
@@ -266,8 +301,22 @@ function drawBuilding(
   const s = Math.max(52, r * 2.05)
   if (culled(p.sx, p.sy, s, w, h)) return
   if (!b.done) ctx.globalAlpha = 0.58
+  ctx.fillStyle = "rgba(18,12,8,0.28)"
+  ctx.beginPath()
+  ctx.ellipse(p.sx, p.sy + s * 0.08, s * 0.38, s * 0.12, 0, 0, Math.PI * 2)
+  ctx.fill()
   blit(ctx, buildingSpr(b.type), p.sx - s / 2, p.sy - s * 0.78, s, s)
   ctx.globalAlpha = 1
+  if (!b.done && quality > 0) {
+    ctx.strokeStyle = "rgba(196,154,90,0.55)"
+    ctx.lineWidth = 1.5
+    ctx.strokeRect(p.sx - r * 0.7, p.sy - r * 0.9, r * 1.4, r * 1.3)
+    ctx.beginPath()
+    ctx.moveTo(p.sx - r * 0.7, p.sy - r * 0.9)
+    ctx.lineTo(p.sx, p.sy - r * 1.25)
+    ctx.lineTo(p.sx + r * 0.7, p.sy - r * 0.9)
+    ctx.stroke()
+  }
   if (quality > 0 && b.done && (b.type === "hearth" || b.type === "camp" || b.type === "pit")) {
     const rise = (now / 18 + b.id * 13) % 28
     ctx.fillStyle = `rgba(220,210,200,${0.18 + (b.type === "pit" ? 0.12 : 0)})`
@@ -281,6 +330,27 @@ function drawBuilding(
       ctx.ellipse(p.sx - s * 0.16, p.sy - s * 0.22, 7, 5, 0, 0, Math.PI * 2)
       ctx.fill()
     }
+  }
+  if (quality > 1 && b.done && b.type === "lodge") {
+    const glow = 0.2 + 0.18 * Math.sin(now / 160 + b.id)
+    ctx.fillStyle = `rgba(255,190,90,${glow})`
+    ctx.beginPath()
+    ctx.arc(p.sx + s * 0.18, p.sy - s * 0.42, 4, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  if (quality > 1 && b.done && b.type === "granary") {
+    const bob = Math.sin(now / 280 + b.id) * 2
+    ctx.fillStyle = "#d4b85a"
+    ctx.beginPath()
+    ctx.ellipse(p.sx - s * 0.16, p.sy - s * 0.08 + bob, 5, 4, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  if (quality > 1 && b.done && b.type === "camp") {
+    const flicker = 0.28 + 0.22 * Math.sin(now / 90 + b.id)
+    ctx.fillStyle = `rgba(255,140,50,${flicker})`
+    ctx.beginPath()
+    ctx.ellipse(p.sx - s * 0.06, p.sy - s * 0.12, 4, 5, 0, 0, Math.PI * 2)
+    ctx.fill()
   }
   if (quality > 1 && b.done && b.type === "yard") {
     const flap = Math.sin(now / 220 + b.id) * 3
@@ -308,6 +378,27 @@ function drawBuilding(
     ctx.beginPath()
     ctx.arc(p.sx, p.sy, r * (b.aging > 0 ? 1.05 : 0.92), 0, Math.PI * 2)
     ctx.stroke()
+    if (age >= 1) {
+      ctx.strokeStyle = "rgba(180,150,90,0.45)"
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.arc(p.sx, p.sy + 2, r * 0.78, 0.2, Math.PI - 0.2)
+      ctx.stroke()
+      ctx.fillStyle = trim
+      ctx.fillRect(p.sx - s * 0.28, p.sy - s * 0.72, 3, s * 0.22)
+      ctx.beginPath()
+      ctx.moveTo(p.sx - s * 0.28, p.sy - s * 0.72)
+      ctx.lineTo(p.sx - s * 0.12, p.sy - s * 0.62)
+      ctx.lineTo(p.sx - s * 0.28, p.sy - s * 0.52)
+      ctx.fill()
+    }
+  }
+  if (quality > 0 && b.done && b.tier >= 1) {
+    ctx.strokeStyle = "rgba(154,163,173,0.55)"
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.ellipse(p.sx, p.sy + s * 0.02, r * 0.95, r * 0.38, 0, 0, Math.PI * 2)
+    ctx.stroke()
   }
   if (!b.done) {
     hpBar(ctx, p.sx - r, p.sy + r * 0.8, r * 2, b.construct / b.constructMax)
@@ -328,11 +419,13 @@ function drawBuilding(
   }
 }
 
-function unitSpr(u: Unit) {
-  if (u.type === "guard") return SPR.guard
-  if (u.type === "warden") return SPR.warden
+function unitSpr(u: Unit, moving: boolean, t: number) {
+  const stride = moving && Math.sin(t / 70 + u.id) > 0
+  if (u.type === "guard") return stride ? SPR.guardStride : SPR.guard
+  if (u.type === "warden") return stride ? SPR.wardenStride : SPR.warden
   if (u.type === "ashrider") return SPR.ashrider
   if (u.carry) return SPR.levyCarry
+  if (stride) return SPR.levyStride
   return u.id & 1 ? SPR.levyAxe : SPR.levyClub
 }
 
@@ -378,17 +471,27 @@ function drawUnit(
   const bob = quality > 0 ? Math.sin(t / (moving ? 90 : 180) + u.id) * (moving ? 2.2 : 1.2) : 0
   const sway = quality > 0 && moving ? Math.sin(t / 70 + u.id) * 1.6 : 0
   const y = p.sy + bob
+  ctx.fillStyle = "rgba(18,12,8,0.28)"
+  ctx.beginPath()
+  ctx.ellipse(p.sx, y + size * 0.16, size * 0.28, size * 0.08, 0, 0, Math.PI * 2)
+  ctx.fill()
   if (quality > 1 && moving) {
     const puff = (t / 40 + u.id * 3) % 10
     ctx.fillStyle = `rgba(90,70,40,${0.16 - puff * 0.012})`
     ctx.beginPath()
     ctx.ellipse(p.sx - sway * 1.4, y + size * 0.16 + puff * 0.6, 4 + puff * 0.35, 1.8, 0, 0, Math.PI * 2)
     ctx.fill()
+    if (u.type === "ashrider") {
+      ctx.fillStyle = `rgba(120,80,40,${0.12 - puff * 0.008})`
+      ctx.beginPath()
+      ctx.ellipse(p.sx - sway * 2.2, y + size * 0.18 + puff, 6 + puff * 0.4, 2.2, 0, 0, Math.PI * 2)
+      ctx.fill()
+    }
   }
   ctx.save()
   ctx.translate(p.sx, 0)
   ctx.scale(faceLeft ? -1 : 1, 1)
-  blit(ctx, unitSpr(u), -size / 2 + sway, y - size * 0.82, size, size)
+  blit(ctx, unitSpr(u, moving, t), -size / 2 + sway, y - size * 0.82, size, size)
   ctx.restore()
   if (quality > 1 && (u.order.t === "attack" || u.order.t === "attackMove") && u.atkCd > 0.65) {
     const dir = faceLeft ? -1 : 1
@@ -404,10 +507,10 @@ function drawUnit(
   ctx.ellipse(p.sx, y + size * 0.14, 5, 2.2, 0, 0, Math.PI * 2)
   ctx.fill()
   if (selected) {
-    ctx.strokeStyle = "#fff6d4"
-    ctx.lineWidth = 1.5
+    ctx.strokeStyle = `rgba(255,246,212,${0.55 + 0.35 * Math.sin(t / 160)})`
+    ctx.lineWidth = 1.8
     ctx.beginPath()
-    ctx.arc(p.sx, y, size * 0.48, 0, Math.PI * 2)
+    ctx.arc(p.sx, y, size * 0.5, 0, Math.PI * 2)
     ctx.stroke()
     hpBar(ctx, p.sx - size * 0.35, y + size * 0.22, size * 0.7, u.hp / u.hpMax)
   } else if (u.hp < u.hpMax && quality > 0) {
@@ -420,13 +523,17 @@ function drawMinimap(ctx: CanvasRenderingContext2D, world: World, cam: Cam, w: n
   const mh = 90
   const x = w - mw - 12
   const y = h - mh - 12
-  ctx.fillStyle = "rgba(8,6,4,0.72)"
+  ctx.fillStyle = "rgba(8,6,4,0.78)"
   ctx.fillRect(x, y, mw, mh)
-  ctx.strokeStyle = "rgba(243,212,138,0.45)"
+  ctx.strokeStyle = "rgba(243,212,138,0.5)"
   ctx.strokeRect(x, y, mw, mh)
   const size = Math.max(1, world.size)
   const sx = mw / size
   const sy = mh / size
+  ctx.fillStyle = "rgba(45,106,120,0.55)"
+  ctx.beginPath()
+  ctx.ellipse(x + size * 0.5 * sx, y + size * 0.5 * sy, mw * 0.08, mh * 0.07, 0.2, 0, Math.PI * 2)
+  ctx.fill()
   for (const n of world.nodes) {
     if (n.amount <= 0) continue
     ctx.fillStyle = n.fauna
@@ -540,9 +647,35 @@ export function drawWorld(
   if (quality > 0) {
     const dusk = ctx.createRadialGradient(w * 0.5, h * 0.42, Math.min(w, h) * 0.28, w * 0.5, h * 0.5, Math.max(w, h) * 0.72)
     dusk.addColorStop(0, "rgba(0,0,0,0)")
-    dusk.addColorStop(1, "rgba(12,8,4,0.28)")
+    dusk.addColorStop(1, "rgba(12,8,4,0.32)")
     ctx.fillStyle = dusk
     ctx.fillRect(0, 0, w, h)
+    if (quality > 1) {
+      for (let i = 0; i < 3; i++) {
+        const a = now / 9000 + i * 2.1
+        ctx.fillStyle = `rgba(12,10,8,${0.07 + 0.03 * Math.sin(now / 1400 + i)})`
+        ctx.beginPath()
+        ctx.ellipse(
+          w * (0.22 + 0.28 * i) + Math.sin(a) * 40,
+          h * (0.18 + 0.12 * i),
+          70 + i * 12,
+          18,
+          0.1,
+          0,
+          Math.PI * 2,
+        )
+        ctx.fill()
+      }
+      for (let i = 0; i < 10; i++) {
+        const a = now / 2400 + i * 0.62
+        const mx = w * (0.12 + ((i * 17) % 80) / 100) + Math.sin(a) * 18
+        const my = h * (0.18 + ((i * 13) % 60) / 100) + Math.cos(a * 0.8) * 10
+        ctx.fillStyle = `rgba(255,220,140,${0.08 + 0.1 * (0.5 + 0.5 * Math.sin(now / 300 + i))})`
+        ctx.beginPath()
+        ctx.arc(mx, my, 1.4, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
     drawMinimap(ctx, world, cam, w, h)
   }
 }

@@ -107,7 +107,10 @@ function WorldPlate() {
           d="M240 90 C300 70 360 120 340 180 C320 230 280 210 250 240 C220 270 260 330 220 360 C170 400 120 350 150 300 C180 250 160 180 200 140 C220 118 210 100 240 90Z"
           fill="#4a3a28"
         />
+        <ellipse cx="200" cy="250" rx="36" ry="18" fill="#2d6a78" opacity="0.55" />
         <path d="M70 220 C140 200 200 250 260 240" fill="none" stroke="#c4a35a" strokeWidth="1.2" opacity="0.55" />
+        <path d="M168 262 C176 248 184 266 190 250" fill="none" stroke="#3d6a32" strokeWidth="1.4" opacity="0.7" />
+        <path d="M204 264 C212 250 220 266 228 252" fill="none" stroke="#3d6a32" strokeWidth="1.4" opacity="0.7" />
         <circle cx="118" cy="168" r="5" fill="#c45c2a" />
         <circle cx="214" cy="248" r="5" fill="#2f6a45" />
         <circle cx="286" cy="176" r="5" fill="#b8862b" />
@@ -128,7 +131,7 @@ function WorldPlate() {
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4">
         <p className="font-heading text-sm tracking-widest text-primary uppercase">The Inner Sea, Ember year 412</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Four capitals still fly. The fords will not.
+          Four capitals still fly. Reeds hold the mere. The fords will not.
         </p>
       </div>
     </aside>
