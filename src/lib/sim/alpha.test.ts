@@ -1225,3 +1225,24 @@ test("a wounded ashrider peels to the lodge", () => {
   )
 })
 
+test("a wounded levy under a banner runs home", () => {
+  const params = { ...personaById("balanced").params, kite: 0.6 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")!
+  levy.hp = levy.hpMax * 0.2
+  levy.x = h.x + 16
+  levy.y = h.y
+  levy.order = { t: "gather", node: w.nodes[0]!.id }
+  pushBanner(w, "guard", 1, levy.x + 2, levy.y)
+  for (let i = 0; i < 30; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const live = w.units.find((u) => u.id === levy.id)!
+  assert.ok(
+    live.order.t === "move" || Math.hypot(live.x - h.x, live.y - h.y) < 8,
+    "a wounded levy should run home when a banner closes",
+  )
+})
+

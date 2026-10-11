@@ -752,6 +752,12 @@ function drawBuilding(
       ctx.beginPath()
       ctx.arc(p.sx - s * 0.1, p.sy - s * 0.18, 3.2, 0, Math.PI * 2)
       ctx.fill()
+      const clang = (now / 40 + b.id) % 12
+      ctx.strokeStyle = `rgba(255,220,140,${0.28 - clang * 0.02})`
+      ctx.lineWidth = 1.2
+      ctx.beginPath()
+      ctx.arc(p.sx - s * 0.1, p.sy - s * 0.18, 4 + clang * 0.35, 0, Math.PI * 2)
+      ctx.stroke()
     }
   }
   ctx.fillStyle = color

@@ -819,7 +819,9 @@ function Selection({
         {u.hp < u.hpMax * 0.38
           ? u.type === "ashrider"
             ? "Wounded — peeling to the lodge"
-            : "Wounded — falling back if the student holds the kite"
+            : u.type === "levy"
+              ? "Wounded — running home"
+              : "Wounded — falling back if the student holds the kite"
           : u.order.t === "gather"
             ? gatherLine(world, u)
             : u.order.t === "return"

@@ -394,6 +394,13 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
       }
       if (rest.length) issueMove(w, rest.map((u) => u.id), h.x + (owner === 0 ? 3 : -3), h.y)
     }
+    const scared = levies.filter(
+      (u) =>
+        u.hp < u.hpMax * 0.38 &&
+        !isFarCampCrew(w, u, owner) &&
+        foesNear(w, u.x, u.y, 8, owner).length > 0,
+    )
+    if (scared.length) issueMove(w, scared.map((u) => u.id), h.x, h.y)
   }
 
   const foeMilitaryHome = enemyHall
