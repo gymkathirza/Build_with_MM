@@ -467,7 +467,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     }
     const scout = military.find(
       (u) =>
-        u.type === "warden" &&
+        (u.type === "warden" || u.type === "ashrider") &&
         (u.order.t === "idle" || u.order.t === "move") &&
         !garrison.some((g) => g.id === u.id),
     )
