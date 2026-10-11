@@ -986,3 +986,36 @@ test("extra levies walk a far pit", () => {
   assert.ok(walker, "an extra levy should walk the far pit")
 })
 
+test("age rite pulls banners home to hold the hearth", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 400
+  w.players[0].ore = 200
+  w.players[0].timber = 200
+  const yard = placeBuilding(
+    w,
+    0,
+    "yard",
+    h.x + 8,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  yard.done = true
+  yard.construct = yard.constructMax
+  for (let i = 0; i < 4; i++) pushBanner(w, "guard", 0, h.x + 20, h.y + i)
+  assert.equal(startAge(w, 0), true)
+  for (let i = 0; i < 40; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const holding = w.units.filter(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "guard" &&
+      u.order.t === "defend" &&
+      Math.hypot(u.order.x - h.x, u.order.y - h.y) < 8,
+  )
+  assert.ok(holding.length >= 2, "the rite should pull banners onto the hearth")
+})
+

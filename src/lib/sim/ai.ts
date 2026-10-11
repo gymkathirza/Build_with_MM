@@ -309,7 +309,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
   }
   const attackAt = p.age >= 1 ? Math.max(2, tuned.attackAtArmy - 1) : tuned.attackAtArmy
   const keepRaid = !hallPressed && military.length >= attackAt ? 1 : 0
-  const wantHold = Math.max(1, Math.floor(guards.length * (hallPressed ? 0.7 : 0.35)))
+  const wantHold = Math.max(1, Math.floor(guards.length * (hallPressed || h.aging > 0 ? 0.7 : 0.35)))
   const garrisonN = Math.max(0, Math.min(guards.length - keepRaid, wantHold))
   const garrison = guards.slice(0, garrisonN)
   if (garrison.length && w.tick % 20 === owner) {

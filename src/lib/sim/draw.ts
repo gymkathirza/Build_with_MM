@@ -406,7 +406,27 @@ function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: Dra
     blit(ctx, nodeSpr(n), -s / 2, p.sy - s * 0.72 + bob, s, s)
     ctx.restore()
   } else {
-    blit(ctx, nodeSpr(n), p.sx - s / 2 + wander, p.sy - s * 0.72 + bob, s, s)
+    const grainSway = !n.fauna && n.type === "grain" && quality > 1 ? Math.sin(now / 380 + n.id) * 1.8 : 0
+    blit(ctx, nodeSpr(n), p.sx - s / 2 + wander + grainSway, p.sy - s * 0.72 + bob, s, s)
+    if (quality > 1 && !n.fauna && n.type === "grain") {
+      ctx.strokeStyle = `rgba(180,150,50,${0.28 + 0.12 * Math.sin(now / 320 + n.id)})`
+      ctx.lineWidth = 1.2
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath()
+        ctx.moveTo(p.sx - 4 + i * 4, p.sy + 2)
+        ctx.quadraticCurveTo(p.sx - 3 + i * 4 + grainSway, p.sy - 6, p.sx - 2 + i * 4 + grainSway, p.sy - 12)
+        ctx.stroke()
+      }
+    }
+    if (quality > 1 && n.type === "timber") {
+      const needle = (now / 80 + n.id * 3) % 16
+      ctx.strokeStyle = `rgba(40,70,30,${0.28 - needle * 0.012})`
+      ctx.lineWidth = 1.1
+      ctx.beginPath()
+      ctx.moveTo(p.sx + 6, p.sy - s * 0.4)
+      ctx.lineTo(p.sx + 8, p.sy - s * 0.4 + needle)
+      ctx.stroke()
+    }
   }
   if (quality > 1 && n.type === "relics") {
     const gleam = 0.18 + 0.22 * Math.sin(now / 240 + n.id)

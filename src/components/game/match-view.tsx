@@ -798,8 +798,8 @@ function Selection({
         levies hop to the next nearest of that job; a right-click lock holds the node you picked.
         Ashriders ride first. Three riders hook an empty hearth. Idle levies walk a relic if no
         scout is free. A spare levy crews a far camp or pit. Pressed camps and pits draw a sentry.
-        Recall
-        walks banners home. The age rite waits if the hearth is struck.
+        Recall walks banners home. The age rite waits if the hearth is struck; extra banners hold
+        the hearth while it burns.
       </div>
     )
   }
@@ -825,7 +825,9 @@ function Selection({
                       u.y - (world.buildings.find((b) => b.owner === 0 && b.type === "hearth")?.y ?? u.y),
                     ) > 12
                     ? "Sentry on an outpost"
-                    : "Holding the hearth"
+                    : world.buildings.find((b) => b.owner === 0 && b.type === "hearth")?.aging
+                      ? "Holding the age rite"
+                      : "Holding the hearth"
                   : u.order.t === "attackMove"
                     ? u.type === "ashrider"
                       ? "Ashriders on the march"
