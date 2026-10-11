@@ -496,6 +496,13 @@ function drawBuilding(
     ctx.lineTo(p.sx + s * 0.28, p.sy - s * 0.42)
     ctx.closePath()
     ctx.fill()
+    if (b.queue.length) {
+      const spark = 0.25 + 0.25 * Math.sin(now / 90 + b.id)
+      ctx.fillStyle = `rgba(255,200,90,${spark})`
+      ctx.beginPath()
+      ctx.arc(p.sx - s * 0.1, p.sy - s * 0.18, 3.2, 0, Math.PI * 2)
+      ctx.fill()
+    }
   }
   ctx.fillStyle = color
   ctx.beginPath()
