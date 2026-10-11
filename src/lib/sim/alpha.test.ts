@@ -139,6 +139,35 @@ test("age rite waits while banners press the hearth", () => {
   assert.ok(h.aging <= 0 && w.players[0].age === 0, "rite should wait while the hearth is pressed")
 })
 
+test("pressed hearth skips ashrider queues", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  w.players[0].grain = 400
+  w.players[0].ore = 200
+  w.players[0].timber = 200
+  const lodge = placeBuilding(
+    w,
+    0,
+    "lodge",
+    h.x + 10,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  lodge.done = true
+  lodge.construct = lodge.constructMax
+  pushBanner(w, "guard", 1, h.x + 3, h.y)
+  for (let i = 0; i < 10; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  assert.ok(
+    !lodge.queue.some((q) => q.type === "ashrider"),
+    "pressed hearth should not raise riders",
+  )
+})
+
 test("shore waits while banners press the hearth", () => {
   const params = { ...personaById("balanced").params, attackAtArmy: 9 }
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })

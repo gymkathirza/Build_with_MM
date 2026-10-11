@@ -205,7 +205,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
   const camps = w.buildings.filter((b) => b.owner === owner && b.type === "camp").length
   const wantCamps = w.size >= 200 ? 3 : tuned.expandCamps > 0 ? 1 : 0
 
-  if (!incomplete.length && ids.length && !noiseRoll(persona.noise * 0.4, w.tick)) {
+  if (!incomplete.length && ids.length && !noiseRoll(persona.noise * 0.4, w.tick) && foesNear(w, h.x, h.y, 18, owner).length === 0) {
     if (!has("yard") && p.timber >= 90 && p.ore >= 20) {
       const site = findBuildSite(w, "yard", h.x, h.y)
       if (site) placeBuilding(w, owner, "yard", site.x, site.y, ids)
@@ -249,31 +249,31 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
   const pop = popUsed(w, owner)
   const wantMil = pop < w.popCap * tuned.militaryRatio
   const levyTarget = Math.max(8, Math.floor(w.popCap * 0.22))
+  const raiders = foesNear(w, h.x, h.y, 22, owner)
+  const hallWounded = h.hp < h.hpMax * 0.82
+  const hallPressed = raiders.length > 0 || hallWounded
   const savingForAge =
     p.age === 0 &&
     tuned.agePriority > 0.35 &&
     (h.aging > 0 ||
       (has("yard", true) && (p.grain < COSTS.age1.grain || p.ore < COSTS.age1.ore)))
 
-  if (h.queue.length < 2 && levies.length < levyTarget && p.grain >= 50 && !savingForAge) {
+  if (h.queue.length < 2 && levies.length < levyTarget && p.grain >= 50 && !savingForAge && !hallPressed) {
     queueTrain(w, h.id, "levy")
   }
   if (yard && wantMil && yard.queue.length < 4 && !savingForAge) {
-    if (countType(w, owner, "warden") < Math.max(2, Math.floor(w.popCap / 20)) && p.timber >= 35) {
+    if (countType(w, owner, "warden") < Math.max(2, Math.floor(w.popCap / 20)) && p.timber >= 35 && !hallPressed) {
       queueTrain(w, yard.id, "warden")
     } else if (p.grain >= 55 && p.ore >= 20) {
       queueTrain(w, yard.id, "guard")
     }
   }
-  if (lodge && wantMil && lodge.queue.length < 3 && p.age >= 1) {
+  if (lodge && wantMil && lodge.queue.length < 3 && p.age >= 1 && !hallPressed) {
     queueTrain(w, lodge.id, "ashrider")
   }
 
   const enemyHall = hall(w, owner === 0 ? 1 : 0)
   const guards = military.filter((u) => u.type === "guard")
-  const raiders = foesNear(w, h.x, h.y, 22, owner)
-  const hallWounded = h.hp < h.hpMax * 0.82
-  const hallPressed = raiders.length > 0 || hallWounded
   if (hallPressed && yard && yard.queue.length < 4 && p.grain >= 55 && p.ore >= 20) {
     queueTrain(w, yard.id, "guard")
   }

@@ -354,6 +354,13 @@ function drawBuilding(
     ctx.lineTo(p.sx, p.sy - r * 1.25)
     ctx.lineTo(p.sx + r * 0.7, p.sy - r * 0.9)
     ctx.stroke()
+    ctx.strokeStyle = "rgba(196,154,90,0.35)"
+    ctx.beginPath()
+    ctx.moveTo(p.sx - r * 0.55, p.sy - r * 0.2)
+    ctx.lineTo(p.sx + r * 0.55, p.sy - r * 0.2)
+    ctx.moveTo(p.sx, p.sy - r * 0.9)
+    ctx.lineTo(p.sx, p.sy + r * 0.2)
+    ctx.stroke()
   }
   if (quality > 0 && b.done && (b.type === "hearth" || b.type === "camp" || b.type === "pit")) {
     const rise = (now / 18 + b.id * 13) % 28
@@ -516,7 +523,7 @@ function drawUnit(
   const limp = u.hp < u.hpMax * 0.38
   const faceLeft = orderDestX(world, u) < u.x - 0.15
   const bob = quality > 0 ? Math.sin(t / (moving ? (limp ? 140 : 90) : 180) + u.id) * (moving ? (limp ? 1.2 : 2.2) : u.carry ? 1.8 : 1.2) : 0
-  const sway = quality > 0 && moving ? Math.sin(t / (limp ? 110 : 70) + u.id) * (limp ? 0.8 : 1.6) : 0
+  const sway = quality > 0 ? Math.sin(t / (moving ? (limp ? 110 : 70) : 220) + u.id) * (moving ? (limp ? 0.8 : 1.6) : 0.6) : 0
   const y = p.sy + bob
   ctx.fillStyle = "rgba(18,12,8,0.28)"
   ctx.beginPath()
@@ -717,6 +724,13 @@ export function drawWorld(
           ctx.moveTo(rx, ry)
           ctx.lineTo(rx - 4, ry + 14)
           ctx.stroke()
+        }
+        for (let i = 0; i < 8; i++) {
+          const a = now / 900 + i * 0.8
+          ctx.fillStyle = `rgba(180,255,160,${0.08 + 0.12 * (0.5 + 0.5 * Math.sin(now / 280 + i))})`
+          ctx.beginPath()
+          ctx.arc(w * (0.15 + ((i * 19) % 70) / 100), h * (0.25 + ((i * 11) % 50) / 100) + Math.sin(a) * 6, 1.5, 0, Math.PI * 2)
+          ctx.fill()
         }
       } else if (plate === "emberglass") {
         for (let i = 0; i < 12; i++) {
