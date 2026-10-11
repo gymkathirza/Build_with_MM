@@ -1171,3 +1171,28 @@ test("four banners escort the far-camp crew", () => {
   assert.ok(escort, "a spare banner should walk with the far-camp crew")
 })
 
+test("a relic hauler draws a banner on the walk home", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")!
+  levy.order = { t: "return", drop: h.id }
+  levy.carry = { res: "relics", amt: 4 }
+  levy.x = h.x + 18
+  levy.y = h.y
+  for (let i = 0; i < 5; i++) pushBanner(w, "guard", 0, h.x + 2 + i, h.y)
+  for (let i = 0; i < 20; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const escort = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "guard" &&
+      u.order.t === "defend" &&
+      Math.hypot(u.order.x - levy.x, u.order.y - levy.y) < 10,
+  )
+  assert.ok(escort, "a banner should walk the relic home")
+})
+

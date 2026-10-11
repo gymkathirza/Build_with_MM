@@ -308,6 +308,26 @@ function drawTerrain(
       ctx.arc(fp.sx, fp.sy, 1.6, 0, Math.PI * 2)
       ctx.fill()
     }
+    const beam = worldToScreen(cam, size * 0.28, size * 0.22)
+    ctx.fillStyle = `rgba(180,210,220,${0.05 + 0.03 * Math.sin(t / 1100)})`
+    ctx.beginPath()
+    ctx.moveTo(beam.sx - 8, beam.sy - 40)
+    ctx.lineTo(beam.sx + 18, beam.sy + 50)
+    ctx.lineTo(beam.sx - 14, beam.sy + 50)
+    ctx.closePath()
+    ctx.fill()
+    const perch = worldToScreen(cam, size * 0.62, size * 0.3)
+    ctx.fillStyle = "rgba(20,24,22,0.55)"
+    ctx.beginPath()
+    ctx.ellipse(perch.sx, perch.sy, 4.2, 2.4, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.beginPath()
+    ctx.arc(perch.sx + 3, perch.sy - 2, 1.8, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = `rgba(255,210,90,${0.35 + 0.25 * Math.sin(t / 240)})`
+    ctx.beginPath()
+    ctx.arc(perch.sx + 4, perch.sy - 2.2, 0.8, 0, Math.PI * 2)
+    ctx.fill()
   }
   if (quality > 1 && world.mapId === "sunvault") {
     for (let i = 0; i < 10; i++) {

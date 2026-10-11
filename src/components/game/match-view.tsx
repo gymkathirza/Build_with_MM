@@ -184,7 +184,9 @@ export function MatchView({
           u.order.t === "gather"
             ? gatherLine(world, u)
             : u.order.t === "return"
-              ? "Hauling home"
+              ? u.carry?.res === "relics"
+                ? "Hauling a relic home"
+                : "Hauling home"
               : u.order.t === "attack"
                 ? "In the fray"
                 : u.order.t === "attackMove"
@@ -818,18 +820,39 @@ function Selection({
           : u.order.t === "gather"
             ? gatherLine(world, u)
             : u.order.t === "return"
-              ? "Hauling home"
+              ? u.carry?.res === "relics"
+                ? "Hauling a relic home"
+                : "Hauling home"
               : u.order.t === "build"
                 ? "Raising"
                 : u.order.t === "defend"
-                  ? Math.hypot(
-                      u.x - (world.buildings.find((b) => b.owner === 0 && b.type === "hearth")?.x ?? u.x),
-                      u.y - (world.buildings.find((b) => b.owner === 0 && b.type === "hearth")?.y ?? u.y),
-                    ) > 12
-                    ? "Sentry on an outpost"
-                    : world.buildings.find((b) => b.owner === 0 && b.type === "hearth")?.aging
-                      ? "Holding the age rite"
-                      : "Holding the hearth"
+                  ? (() => {
+                      const hearth = world.buildings.find((b) => b.owner === 0 && b.type === "hearth")
+                      const outpost = world.buildings.find(
+                        (b) =>
+                          b.owner === 0 &&
+                          b.done &&
+                          (b.type === "camp" || b.type === "pit" || b.type === "granary") &&
+                          hearth &&
+                          Math.hypot(b.x - hearth.x, b.y - hearth.y) > 16 &&
+                          Math.hypot(u.x - b.x, u.y - b.y) < 12,
+                      )
+                      if (outpost) {
+                        const crew = world.units.some(
+                          (q) =>
+                            q.owner === 0 &&
+                            q.type === "levy" &&
+                            Math.hypot(q.x - u.x, q.y - u.y) < 10,
+                        )
+                        return crew ? "Escorting the camp crew" : "Sentry on an outpost"
+                      }
+                      if (hearth && hearth.aging > 0 && Math.hypot(u.x - hearth.x, u.y - hearth.y) <= 12) {
+                        return "Holding the age rite"
+                      }
+                      return hearth && Math.hypot(u.x - hearth.x, u.y - hearth.y) > 12
+                        ? "Sentry on an outpost"
+                        : "Holding the hearth"
+                    })()
                   : u.order.t === "attackMove"
                     ? u.type === "ashrider"
                       ? "Ashriders on the march"

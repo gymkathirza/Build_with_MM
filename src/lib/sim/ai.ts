@@ -556,6 +556,17 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
           (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
       )
       if (relicLevy && escort) issueDefend(w, [escort.id], relicLevy.x, relicLevy.y)
+      const hauler = levies.find((u) => u.order.t === "return" && u.carry?.res === "relics")
+      const haulEscort =
+        hauler && guards.length >= 5
+          ? military.find(
+              (u) =>
+                u.type === "guard" &&
+                !garrison.some((g) => g.id === u.id) &&
+                (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+            )
+          : undefined
+      if (hauler && haulEscort) issueDefend(w, [haulEscort.id], hauler.x, hauler.y)
     }
   }
 
