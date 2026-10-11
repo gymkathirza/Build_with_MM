@@ -150,13 +150,21 @@ function drawTerrain(
         ctx.fill()
       }
     }
-    if (world.mapId === "shattercoast" && quality > 1) {
-      for (let i = 0; i < 5; i++) {
-        const foam = 0.1 + 0.08 * Math.sin(t / 380 + i)
-        ctx.strokeStyle = `rgba(230,245,245,${foam})`
-        ctx.lineWidth = 1.2
+    if (quality > 1) {
+      for (let i = 0; i < 6; i++) {
+        const foam = 0.07 + 0.08 * Math.sin(t / 380 + i)
+        ctx.strokeStyle = `rgba(230,245,245,${world.mapId === "shattercoast" ? foam + 0.04 : foam})`
+        ctx.lineWidth = 1.15
         ctx.beginPath()
-        ctx.ellipse(lake.sx + (i - 2) * lrx * 0.18, lake.sy + lry * 0.35, lrx * 0.16, lry * 0.08, 0.15, 0, Math.PI * 2)
+        ctx.ellipse(
+          lake.sx + Math.cos(t / 1400 + i) * lrx * 0.22,
+          lake.sy + lry * (0.28 + 0.08 * Math.sin(t / 900 + i)),
+          lrx * (0.14 + (i % 3) * 0.03),
+          lry * 0.07,
+          0.15,
+          0,
+          Math.PI * 2,
+        )
         ctx.stroke()
       }
     }
@@ -401,6 +409,13 @@ function drawBuilding(
     ctx.moveTo(p.sx, p.sy - r * 0.9)
     ctx.lineTo(p.sx, p.sy + r * 0.2)
     ctx.stroke()
+    if (quality > 1) {
+      const dust = (now / 16 + b.id * 11) % 20
+      ctx.fillStyle = `rgba(196,154,90,${0.22 - dust * 0.008})`
+      ctx.beginPath()
+      ctx.ellipse(p.sx + 6, p.sy - r * 0.4 - dust * 0.4, 3 + dust * 0.08, 1.6, 0, 0, Math.PI * 2)
+      ctx.fill()
+    }
   }
   if (quality > 0 && b.done && (b.type === "hearth" || b.type === "camp" || b.type === "pit")) {
     const rise = (now / 18 + b.id * 13) % 28
@@ -617,15 +632,18 @@ function drawUnit(
   ctx.restore()
   if (quality > 1 && (u.order.t === "attack" || u.order.t === "attackMove") && u.atkCd > 0.65) {
     const dir = faceLeft ? -1 : 1
-    ctx.strokeStyle = u.type === "warden" ? "rgba(160,210,255,0.75)" : "rgba(255,214,120,0.7)"
-    ctx.lineWidth = 2
+    const reach = u.type === "ashrider" ? 22 : u.type === "guard" ? 12 : 16
+    ctx.strokeStyle =
+      u.type === "warden" ? "rgba(160,210,255,0.75)" : u.type === "ashrider" ? "rgba(255,170,90,0.8)" : "rgba(255,214,120,0.7)"
+    ctx.lineWidth = u.type === "ashrider" ? 2.4 : 2
     ctx.beginPath()
     ctx.moveTo(p.sx + sway * dir + 4 * dir, y - size * 0.2)
-    ctx.lineTo(p.sx + sway * dir + 14 * dir, y - size * 0.48)
+    ctx.lineTo(p.sx + sway * dir + reach * dir, y - size * (u.type === "ashrider" ? 0.36 : 0.48))
     ctx.stroke()
-    ctx.fillStyle = u.type === "warden" ? "rgba(190,230,255,0.55)" : "rgba(255,230,160,0.55)"
+    ctx.fillStyle =
+      u.type === "warden" ? "rgba(190,230,255,0.55)" : u.type === "guard" ? "rgba(210,190,140,0.5)" : "rgba(255,230,160,0.55)"
     ctx.beginPath()
-    ctx.arc(p.sx + sway * dir + 12 * dir, y - size * 0.46, 2.4, 0, Math.PI * 2)
+    ctx.arc(p.sx + sway * dir + (reach - 2) * dir, y - size * (u.type === "ashrider" ? 0.34 : 0.46), u.type === "guard" ? 3.4 : 2.4, 0, Math.PI * 2)
     ctx.fill()
   }
   ctx.fillStyle = color
@@ -657,6 +675,16 @@ function drawMinimap(ctx: CanvasRenderingContext2D, world: World, cam: Cam, w: n
   ctx.globalAlpha = 1
   ctx.strokeStyle = "rgba(243,212,138,0.5)"
   ctx.strokeRect(x, y, mw, mh)
+  if (world.mapId === "nightgrove") {
+    ctx.fillStyle = "rgba(80,120,140,0.12)"
+    ctx.fillRect(x + 1, y + 1, mw - 2, mh - 2)
+  } else if (world.mapId === "emberglass") {
+    ctx.fillStyle = "rgba(180,70,30,0.1)"
+    ctx.fillRect(x + 1, y + 1, mw - 2, mh - 2)
+  } else if (world.mapId === "sunvault") {
+    ctx.fillStyle = "rgba(255,210,90,0.08)"
+    ctx.fillRect(x + 1, y + 1, mw - 2, mh - 2)
+  }
   const size = Math.max(1, world.size)
   const sx = mw / size
   const sy = mh / size

@@ -736,3 +736,91 @@ test("Forge Age hunt hops to the next hunt, not a grain field", () => {
   if (levy.order.t === "gather") assert.equal(levy.order.node, huntB.id)
 })
 
+test("empty rival hearth hooks a third ashrider wide", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 2 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  w.players[0].age = 1
+  w.players[0].grain = 800
+  w.players[0].ore = 400
+  w.players[0].timber = 400
+  const h = hall(w, 0)
+  const foe = hall(w, 1)
+  pushBanner(w, "guard", 0, h.x + 2, h.y)
+  pushBanner(w, "ashrider", 0, h.x + 3, h.y)
+  pushBanner(w, "ashrider", 0, h.x + 4, h.y)
+  pushBanner(w, "ashrider", 0, h.x + 5, h.y)
+  let hooked = 0
+  for (let i = 0; i < 80; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    hooked = w.units.filter(
+      (u) =>
+        u.owner === 0 &&
+        u.type === "ashrider" &&
+        u.order.t === "attackMove" &&
+        Math.abs(u.order.y - (foe.y + 10)) < 0.01,
+    ).length
+    if (hooked) break
+    tick(w)
+  }
+  assert.ok(hooked >= 1, "a spare rider should hook south of an empty hearth")
+})
+
+test("a pressed pit draws a sentry", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 400
+  w.players[0].ore = 200
+  w.players[0].timber = 200
+  const pit = placeBuilding(
+    w,
+    0,
+    "pit",
+    h.x + 18,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  pit.done = true
+  pit.construct = pit.constructMax
+  pushBanner(w, "guard", 0, h.x + 2, h.y)
+  pushBanner(w, "guard", 0, h.x + 3, h.y)
+  pushBanner(w, "guard", 1, pit.x + 2, pit.y)
+  for (let i = 0; i < 16; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const sentry = w.units.find((u) => u.owner === 0 && u.type === "guard")
+  assert.ok(sentry, "need a home guard")
+  const near = Math.hypot(sentry.x - pit.x, sentry.y - pit.y)
+  assert.ok(
+    sentry.order.t === "defend" || sentry.order.t === "attack" || sentry.order.t === "attackMove" || near < 14,
+    `pit should pull a sentry, order ${sentry.order.t} dist ${near}`,
+  )
+})
+
+test("idle levy walks a relic when no scout is free", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  w.players[0].age = 1
+  const h = hall(w, 0)
+  const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")
+  assert.ok(levy)
+  levy.order = { t: "idle" }
+  levy.x = h.x
+  levy.y = h.y
+  const relic = w.nodes.find((n) => n.type === "relics" && n.amount > 0)
+  assert.ok(relic)
+  for (let i = 0; i < 20; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const order = w.units.find((u) => u.id === levy.id)?.order
+  assert.ok(order, "levy still on the field")
+  assert.ok(
+    (order.t === "gather" && order.node === relic.id) ||
+      order.t === "return" ||
+      Math.hypot(levy.x - relic.x, levy.y - relic.y) < 8,
+    `levy should walk a relic, order ${order.t}`,
+  )
+})
+

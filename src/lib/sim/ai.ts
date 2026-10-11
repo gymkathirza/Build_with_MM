@@ -433,6 +433,14 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
             )
           }
         }
+        if (foeMilitaryHome === 0 && riders.length >= 3 && w.tick % 40 === owner) {
+          issueAttackMove(
+            w,
+            riders.slice(-2).map((u) => u.id),
+            enemyHall.x + (owner === 0 ? 8 : -8),
+            enemyHall.y + (owner === 0 ? 10 : -10),
+          )
+        }
       }
     }
   } else if (
@@ -472,6 +480,13 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         !garrison.some((g) => g.id === u.id),
     )
     if (relic && scout) issueMove(w, [scout.id], relic.x, relic.y)
+    else if (relic && !scout && !hallPressed) {
+      const already = levies.some((u) => u.order.t === "gather" && u.order.node === relic.id)
+      const levyScout = already
+        ? null
+        : levies.find((u) => u.order.t === "idle" || u.order.t === "move" || u.order.t === "gather")
+      if (levyScout) issueGather(w, [levyScout.id], relic.id)
+    }
     const contested = w.nodes.find(
       (n) =>
         n.type === "relics" &&

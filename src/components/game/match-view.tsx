@@ -739,7 +739,8 @@ function Selection({
       <div className="rounded-sm border border-dashed border-primary/25 px-3 py-5 text-center text-sm text-muted-foreground">
         Select a levy or hall. Right-click grain, timber, ore, hunt, or relics to gather. Forge Age
         levies hop to the next nearest of that job; a right-click lock holds the node you picked.
-        Ashriders ride first. Pressed camps draw a sentry. The age rite waits if the hearth is struck.
+        Ashriders ride first. Three riders hook an empty hearth. Idle levies walk a relic if no
+        scout is free. Pressed camps and pits draw a sentry. The age rite waits if the hearth is struck.
       </div>
     )
   }
@@ -760,7 +761,12 @@ function Selection({
               : u.order.t === "build"
                 ? "Raising"
                 : u.order.t === "defend"
-                  ? "Holding the hearth"
+                  ? Math.hypot(
+                      u.x - (world.buildings.find((b) => b.owner === 0 && b.type === "hearth")?.x ?? u.x),
+                      u.y - (world.buildings.find((b) => b.owner === 0 && b.type === "hearth")?.y ?? u.y),
+                    ) > 12
+                    ? "Sentry on an outpost"
+                    : "Holding the hearth"
                   : u.order.t === "attackMove"
                     ? u.type === "ashrider"
                       ? "Ashriders on the march"
