@@ -215,6 +215,28 @@ function drawTerrain(
     }
   }
 
+  if (quality > 1 && world.mapId === "nightgrove") {
+    for (let i = 0; i < 8; i++) {
+      const hx = ((hash(i * 53, 19) % 1000) / 1000) * size
+      const hy = ((hash(i * 37, 29) % 1000) / 1000) * size
+      const hp = worldToScreen(cam, hx, hy)
+      ctx.fillStyle = `rgba(160,200,210,${0.04 + 0.04 * Math.sin(performance.now() / 900 + i)})`
+      ctx.beginPath()
+      ctx.ellipse(hp.sx, hp.sy, 22 * cam.z * 0.2, 10 * cam.z * 0.2, 0.2, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  }
+  if (quality > 1 && world.mapId === "sunvault") {
+    for (let i = 0; i < 10; i++) {
+      const hx = ((hash(i * 11, 61) % 1000) / 1000) * size
+      const hy = ((hash(i * 43, 13) % 1000) / 1000) * size
+      const hp = worldToScreen(cam, hx, hy)
+      ctx.fillStyle = `rgba(255,220,120,${0.06 + 0.06 * Math.sin(performance.now() / 700 + i)})`
+      ctx.beginPath()
+      ctx.arc(hp.sx, hp.sy, 1.6, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  }
   if (quality > 0 && world.mapId === "emberglass") {
     for (let i = 0; i < 7; i++) {
       const hx = ((hash(i * 41, 7) % 1000) / 1000) * size
@@ -445,6 +467,13 @@ function drawBuilding(
     ctx.lineTo(p.sx - s * 0.22, p.sy + s * 0.02)
     ctx.closePath()
     ctx.fill()
+    for (let i = 0; i < 3; i++) {
+      const bead = Math.sin(now / 180 + b.id + i) * 2
+      ctx.fillStyle = i === 1 ? trim : "#d4b85a"
+      ctx.beginPath()
+      ctx.arc(p.sx - s * 0.12 + i * 4, p.sy - s * 0.08 + bead, 1.8, 0, Math.PI * 2)
+      ctx.fill()
+    }
   }
   if (quality > 1 && b.done && b.type === "granary") {
     const bob = Math.sin(now / 280 + b.id) * 2

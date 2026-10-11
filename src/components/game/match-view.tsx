@@ -99,6 +99,7 @@ export function MatchView({
   const ageRef = useRef<HTMLSpanElement>(null)
   const popRef = useRef<HTMLSpanElement>(null)
   const pressRef = useRef<HTMLSpanElement>(null)
+  const orderChipRef = useRef<HTMLSpanElement>(null)
   const camEventAt = useRef(0)
 
   const [tuned] = useState<Tuned>(() => {
@@ -172,6 +173,38 @@ export function MatchView({
         : 0
       pressRef.current.hidden = press === 0
       pressRef.current.textContent = press ? `Hearth pressed ×${press}` : ""
+    }
+    if (orderChipRef.current) {
+      const id = [...selectedDrawRef.current][0]
+      const u = world.units.find((x) => x.id === id)
+      const b = world.buildings.find((x) => x.id === id)
+      if (u) {
+        orderChipRef.current.hidden = false
+        orderChipRef.current.textContent =
+          u.order.t === "gather"
+            ? gatherLine(world, u)
+            : u.order.t === "return"
+              ? "Hauling home"
+              : u.order.t === "attack"
+                ? "In the fray"
+                : u.order.t === "attackMove"
+                  ? u.type === "ashrider"
+                    ? "Riders hooking"
+                    : "Marching"
+                  : u.order.t === "defend"
+                    ? "Holding"
+                    : u.order.t === "build"
+                      ? "Raising"
+                      : u.order.t === "move"
+                        ? "On the path"
+                        : "Idle"
+      } else if (b) {
+        orderChipRef.current.hidden = false
+        orderChipRef.current.textContent = BUILDING_LABEL[b.type]
+      } else {
+        orderChipRef.current.hidden = true
+        orderChipRef.current.textContent = ""
+      }
     }
     setHudPulse((n) => n + 1)
   }, [world, mapId])
@@ -480,6 +513,11 @@ export function MatchView({
         <Badge variant="outline" className="hidden tabular-nums sm:inline-flex">
           {selected.length ? `${selected.length} selected` : "none selected"}
         </Badge>
+        <span
+          ref={orderChipRef}
+          hidden
+          className="hidden max-w-[10rem] truncate text-[11px] text-primary sm:inline"
+        />
         <span
           ref={pressRef}
           hidden

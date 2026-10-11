@@ -850,3 +850,33 @@ test("a relic levy draws a banner escort", () => {
   assert.ok(escort, "a banner should walk with the relic levy")
 })
 
+test("Forge Age with fat stores sends a levy to relics", () => {
+  const params = personaById("balanced").params
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  w.players[0].age = 1
+  w.players[0].grain = 240
+  w.players[0].timber = 180
+  w.players[0].ore = 140
+  w.players[0].relics = 0
+  const h = hall(w, 0)
+  const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")
+  const relic = w.nodes.find((n) => n.type === "relics" && n.amount > 0)
+  assert.ok(levy && relic)
+  levy.x = h.x
+  levy.y = h.y
+  levy.order = { t: "idle" }
+  for (let i = 0; i < 20; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const live = w.units.find((u) => u.id === levy.id)
+  assert.ok(live)
+  const order = live.order
+  assert.ok(
+    (order.t === "gather" && order.node === relic.id) ||
+      order.t === "return" ||
+      Math.hypot(live.x - relic.x, live.y - relic.y) < 10,
+    `fat stores should walk relics, order ${order.t}`,
+  )
+})
+

@@ -285,6 +285,13 @@ function caveHuman(
     ctx.fillStyle = HAIR
     ctx.fillRect(cx - 16, feet - 14 + kick * 0.4, 6, 8)
     ctx.fillRect(cx + 10, feet - 8 - kick, 5, 8)
+    ctx.fillStyle = HAIR_B
+    ctx.beginPath()
+    ctx.moveTo(cx - 18, feet - 20 - kick * 0.3)
+    ctx.lineTo(cx - 10, feet - 16)
+    ctx.lineTo(cx - 16, feet - 12)
+    ctx.closePath()
+    ctx.fill()
     ctx.fillStyle = "#3a2414"
     ctx.fillRect(cx - 6, feet - 16, 14, 5)
     ctx.fillStyle = "#c49a5a"

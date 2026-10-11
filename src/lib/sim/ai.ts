@@ -141,6 +141,9 @@ function gatherNeed(w: World, owner: Owner, persona: Persona): Res | undefined {
   if (p.timber < 80) return "timber"
   if (p.grain < 140) return "grain"
   if (p.ore < 90) return "ore"
+  if (p.age >= 1 && p.relics < 1 && p.grain >= 180 && p.timber >= 100 && p.ore >= 80) {
+    return "relics"
+  }
   const order: Res[] = ["grain", "timber", "ore", "relics"]
   order.sort((a, b) => counts[a] - counts[b])
   return order[0]
