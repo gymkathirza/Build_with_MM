@@ -983,6 +983,38 @@ test("a fourth ashrider patrols a far camp", () => {
   assert.ok(patrol, "a spare ashrider should patrol the far camp")
 })
 
+test("a fourth ashrider patrols a far lodge", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  w.players[0].grain = 400
+  w.players[0].timber = 200
+  const lodge = placeBuilding(
+    w,
+    0,
+    "lodge",
+    h.x + 22,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  lodge.done = true
+  lodge.construct = lodge.constructMax
+  for (let i = 0; i < 4; i++) pushBanner(w, "ashrider", 0, h.x + 2 + i, h.y)
+  for (let i = 0; i < 50; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const patrol = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "ashrider" &&
+      ((u.order.t === "defend" && Math.hypot(u.order.x - lodge.x, u.order.y - lodge.y) < 4) ||
+        Math.hypot(u.x - lodge.x, u.y - lodge.y) < 10),
+  )
+  assert.ok(patrol, "a spare ashrider should patrol the far lodge")
+})
+
 test("extra levies walk a far pit", () => {
   const params = personaById("balanced").params
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })

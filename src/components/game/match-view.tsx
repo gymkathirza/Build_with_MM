@@ -804,7 +804,7 @@ function Selection({
         Ashriders ride first. A lone rider scouts an empty hearth. Three riders hook an empty
         hearth. Idle levies walk a relic if no
         scout is free. A spare levy crews a far camp, pit, or granary. A third warden overwatches
-        the camp. A relic levy does not steal that crew; a spare banner walks with them. Pressed
+        the camp. A fourth ashrider patrols a far lodge. A relic levy does not steal that crew; a spare banner walks with them. Pressed
         camps, pits, and lodges draw a sentry.
         Recall walks banners home. Wounded ashriders peel to the lodge. The age rite waits if the
         hearth is struck; extra banners hold

@@ -635,7 +635,16 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
               (u.order.t === "idle" || u.order.t === "defend" || u.order.t === "move"),
           )
         : undefined
-    if (farCamp && spareRider) {
+    const farLodge = w.buildings.find(
+      (b) =>
+        b.owner === owner &&
+        b.done &&
+        b.type === "lodge" &&
+        Math.hypot(b.x - h.x, b.y - h.y) > 16,
+    )
+    if (farLodge && spareRider) {
+      issueDefend(w, [spareRider.id], farLodge.x, farLodge.y)
+    } else if (farCamp && spareRider) {
       issueDefend(w, [spareRider.id], farCamp.x, farCamp.y)
     }
     const wardenCount = military.filter((u) => u.type === "warden").length
