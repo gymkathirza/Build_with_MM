@@ -181,6 +181,22 @@ function drawTerrain(
         ctx.quadraticCurveTo(rx + sway, ry - 7, rx + sway * 0.35, ry - 15)
         ctx.stroke()
       }
+      const heron = lake.sx + lrx * 0.82
+      const heronY = lake.sy + lry * 0.7 + Math.sin(t / 900) * 1.2
+      ctx.strokeStyle = "rgba(30,40,38,0.55)"
+      ctx.lineWidth = 1.4
+      ctx.beginPath()
+      ctx.moveTo(heron, heronY)
+      ctx.lineTo(heron, heronY - 10)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(heron, heronY - 10)
+      ctx.quadraticCurveTo(heron + 5, heronY - 12, heron + 8, heronY - 9)
+      ctx.stroke()
+      ctx.fillStyle = "rgba(40,50,48,0.55)"
+      ctx.beginPath()
+      ctx.arc(heron, heronY - 11, 1.6, 0, Math.PI * 2)
+      ctx.fill()
       for (let i = 0; i < 4; i++) {
         const a = t / 2400 + i * 1.4
         ctx.fillStyle = `rgba(210,230,220,${0.05 + 0.04 * Math.sin(t / 900 + i)})`
@@ -589,6 +605,11 @@ function drawBuilding(
       ctx.fillStyle = `rgba(196,154,90,${0.22 - dust * 0.008})`
       ctx.beginPath()
       ctx.ellipse(p.sx + 6, p.sy - r * 0.4 - dust * 0.4, 3 + dust * 0.08, 1.6, 0, 0, Math.PI * 2)
+      ctx.fill()
+      const chip = (now / 22 + b.id * 7) % 16
+      ctx.fillStyle = `rgba(160,120,60,${0.2 - chip * 0.01})`
+      ctx.beginPath()
+      ctx.arc(p.sx - 5, p.sy - r * 0.2 - chip * 0.35, 1.6, 0, Math.PI * 2)
       ctx.fill()
     }
   }

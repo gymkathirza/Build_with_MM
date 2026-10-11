@@ -1128,3 +1128,46 @@ test("relic scout leaves the far-camp crew on the trail", () => {
   assert.ok(walker, "camp crew should stay even when a relic levy is wanted")
 })
 
+test("four banners escort the far-camp crew", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 400
+  w.players[0].timber = 200
+  const camp = placeBuilding(
+    w,
+    0,
+    "camp",
+    h.x + 22,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  camp.done = true
+  camp.construct = camp.constructMax
+  for (let i = 0; i < 8; i++) {
+    const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")
+    if (!levy) break
+    w.units.push({ ...levy, id: w.nextId++, x: h.x + 1, y: h.y + 1, order: { t: "idle" }, carry: null })
+  }
+  for (const u of w.units) {
+    if (u.owner === 0 && u.type === "levy") u.order = { t: "idle" }
+  }
+  for (let i = 0; i < 4; i++) pushBanner(w, "guard", 0, h.x + 3 + i, h.y)
+  for (let i = 0; i < 50; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const crew = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "levy" &&
+      (u.order.t === "move" || Math.hypot(u.x - camp.x, u.y - camp.y) < 8),
+  )
+  const escort = w.units.find((u) => {
+    if (u.owner !== 0 || u.type !== "guard" || u.order.t !== "defend") return false
+    if (Math.hypot(u.order.x - camp.x, u.order.y - camp.y) < 12) return true
+    return !!crew && Math.hypot(u.order.x - crew.x, u.order.y - crew.y) < 8
+  })
+  assert.ok(escort, "a spare banner should walk with the far-camp crew")
+})
+

@@ -622,6 +622,19 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     if (farCamp && spareWarden) {
       issueDefend(w, [spareWarden.id], farCamp.x, farCamp.y)
     }
+    const crewLevy = levies.find((u) => isFarCampCrew(w, u, owner))
+    const escortGuard =
+      guards.length >= 4 && crewLevy
+        ? military.find(
+            (u) =>
+              u.type === "guard" &&
+              !garrison.some((g) => g.id === u.id) &&
+              (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+          )
+        : undefined
+    if (crewLevy && escortGuard) {
+      issueDefend(w, [escortGuard.id], crewLevy.x, crewLevy.y)
+    }
   }
 }
 
