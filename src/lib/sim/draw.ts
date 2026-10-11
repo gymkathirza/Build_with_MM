@@ -465,6 +465,13 @@ function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: Dra
       ctx.lineTo(p.sx + 8, p.sy - s * 0.4 + needle)
       ctx.stroke()
     }
+    if (quality > 1 && n.type === "ore") {
+      const spark = 0.2 + 0.25 * Math.sin(now / 160 + n.id)
+      ctx.fillStyle = `rgba(200,210,220,${spark})`
+      ctx.beginPath()
+      ctx.arc(p.sx + 4, p.sy - s * 0.22, 1.6, 0, Math.PI * 2)
+      ctx.fill()
+    }
   }
   if (quality > 1 && n.type === "relics") {
     const gleam = 0.18 + 0.22 * Math.sin(now / 240 + n.id)
