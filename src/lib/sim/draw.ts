@@ -274,6 +274,15 @@ function drawTerrain(
         ctx.arc(lake.sx + Math.cos(i * 0.9) * lrx * 0.92, lake.sy + lry * 0.72 - spray, 1.5, 0, Math.PI * 2)
         ctx.fill()
       }
+      const gullX = lake.sx + Math.sin(t / 1600) * lrx * 0.7
+      const gullY = lake.sy - lry * 0.55 + Math.sin(t / 420) * 6
+      ctx.strokeStyle = "rgba(240,246,248,0.55)"
+      ctx.lineWidth = 1.3
+      ctx.beginPath()
+      ctx.moveTo(gullX - 7, gullY)
+      ctx.quadraticCurveTo(gullX - 2, gullY - 4, gullX, gullY)
+      ctx.quadraticCurveTo(gullX + 2, gullY - 4, gullX + 7, gullY)
+      ctx.stroke()
     }
     if (quality > 1) {
       for (let i = 0; i < 6; i++) {
@@ -1008,6 +1017,16 @@ function drawUnit(
     ctx.beginPath()
     ctx.arc(p.sx + 8, y - size * 0.12, 2.2, 0, Math.PI * 2)
     ctx.fill()
+    if (u.carry.res === "timber" || u.carry.res === "ore") {
+      const drop = (t / 40 + u.id * 3) % 10
+      ctx.fillStyle =
+        u.carry.res === "ore"
+          ? `rgba(180,190,200,${0.22 - drop * 0.016})`
+          : `rgba(90,60,30,${0.2 - drop * 0.014})`
+      ctx.beginPath()
+      ctx.arc(p.sx - (faceLeft ? -4 : 4), y + 3 + drop * 0.35, 1.3, 0, Math.PI * 2)
+      ctx.fill()
+    }
   }
   if (quality > 1 && u.type === "warden" && u.order.t !== "attack") {
     const glint = 0.18 + 0.22 * Math.sin(t / 200 + u.id)

@@ -657,7 +657,9 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
               (u.order.t === "idle" || u.order.t === "defend" || u.order.t === "move"),
           )
         : undefined
-    if (farCamp && spareWarden) {
+    if (farLodge && spareWarden) {
+      issueDefend(w, [spareWarden.id], farLodge.x, farLodge.y)
+    } else if (farCamp && spareWarden) {
       issueDefend(w, [spareWarden.id], farCamp.x, farCamp.y)
     }
     const crewLevy = levies.find((u) => isFarCampCrew(w, u, owner))
