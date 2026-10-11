@@ -1289,9 +1289,10 @@ test("starving stores pull a levy onto grain", () => {
   }
   const walker = w.units.find((u) => {
     if (u.owner !== 0 || u.type !== "levy") return false
-    if (u.order.t === "return" && u.carry?.res === "grain") return true
-    if (u.order.t !== "gather") return false
-    const n = w.nodes.find((q) => q.id === u.order.node)
+    const order = u.order
+    if (order.t === "return" && u.carry?.res === "grain") return true
+    if (order.t !== "gather") return false
+    const n = w.nodes.find((q) => q.id === order.node)
     return n?.type === "grain"
   })
   assert.ok(walker, "starving stores should walk grain")
