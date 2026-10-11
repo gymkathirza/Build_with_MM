@@ -290,6 +290,15 @@ function drawTerrain(
       ctx.moveTo(a.sx, a.sy)
       ctx.lineTo(b.sx, b.sy)
       ctx.stroke()
+      if (quality > 1) {
+        const wobble = Math.sin(performance.now() / 180 + i) * 3
+        ctx.strokeStyle = `rgba(255,140,60,${0.12 + 0.1 * Math.sin(performance.now() / 260 + i)})`
+        ctx.beginPath()
+        ctx.moveTo(a.sx + 2, a.sy - 4)
+        ctx.quadraticCurveTo((a.sx + b.sx) / 2 + wobble, (a.sy + b.sy) / 2 - 8, b.sx, b.sy - 6)
+        ctx.stroke()
+        ctx.strokeStyle = `rgba(180,70,30,${0.18 + 0.1 * Math.sin(performance.now() / 400 + i)})`
+      }
     }
   }
   if (quality > 0) {
