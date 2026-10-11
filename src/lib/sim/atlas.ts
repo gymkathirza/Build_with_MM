@@ -278,11 +278,24 @@ function caveHuman(
     ctx.fillRect(cx - 6, feet - 16, 14, 5)
     ctx.fillStyle = "#c49a5a"
     ctx.fillRect(cx - 4, feet - 17, 10, 2)
+    ctx.strokeStyle = "#8a2c18"
+    ctx.lineWidth = 1.4
+    ctx.beginPath()
+    ctx.moveTo(cx - 8, feet - 12)
+    ctx.lineTo(cx + 10, feet - 12)
+    ctx.stroke()
     ctx.strokeStyle = "#3a2414"
     ctx.lineWidth = 1.2
     ctx.beginPath()
     ctx.arc(cx + 16, feet - 14, 6, -0.4, 1.2)
     ctx.stroke()
+    ctx.fillStyle = "#2a1810"
+    ctx.beginPath()
+    ctx.moveTo(cx - 18, feet - 16)
+    ctx.quadraticCurveTo(cx - 24, feet - 28, cx - 10, feet - 20)
+    ctx.lineTo(cx - 12, feet - 14)
+    ctx.closePath()
+    ctx.fill()
     ctx.fillStyle = "#5a341c"
     ctx.beginPath()
     ctx.moveTo(cx + 12, feet - 18)
@@ -659,6 +672,16 @@ function caveHall(ctx: CanvasRenderingContext2D, ox: number, oy: number, variant
     ctx.beginPath()
     ctx.ellipse(cx - 10, base - 18, 1.6, 2.2, 0, 0, Math.PI * 2)
     ctx.fill()
+    ctx.fillStyle = "#e07030"
+    ctx.beginPath()
+    ctx.ellipse(cx - 10, base - 18, 2.4, 3.2, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.strokeStyle = "#8a2c18"
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(cx + 18, oy + 18)
+    ctx.lineTo(cx + 22, oy + 8)
+    ctx.stroke()
   }
 }
 
@@ -780,6 +803,12 @@ function bakeAtlas() {
     ctx.beginPath()
     ctx.arc(x + 32, y + 44, 5, 0, Math.PI * 2)
     ctx.fill()
+    ctx.fillStyle = "#d4b85a"
+    for (let i = 0; i < 5; i++) {
+      ctx.beginPath()
+      ctx.ellipse(x + 20 + i * 6, y + 22, 2.2, 5, -0.3 + i * 0.12, 0, Math.PI * 2)
+      ctx.fill()
+    }
   })
   put(SPR.grain, (x, y) => {
     ctx.fillStyle = "#d4b85a"

@@ -409,6 +409,9 @@ export function MatchView({
         <span ref={popRef} className="text-xs tabular-nums text-muted-foreground">
           Banners {popUsed(world, 0)}/{world.popCap}
         </span>
+        <Badge variant="outline" className="hidden tabular-nums sm:inline-flex">
+          {selected.length ? `${selected.length} selected` : "none selected"}
+        </Badge>
         <Button size="icon-sm" variant="outline" aria-label="Pause" onClick={() => setPaused(true)}>
           <Pause />
         </Button>
@@ -464,12 +467,22 @@ export function MatchView({
             setSelected(ids)
           }}
         />
-        <aside className="pointer-events-none absolute top-2 right-2 z-10 hidden w-44 rounded-sm border border-primary/25 bg-black/60 p-2 text-[10px] whitespace-pre-line text-primary sm:block">
+        <aside className="pointer-events-none absolute top-2 right-2 z-10 w-[min(11rem,42vw)] rounded-sm border border-primary/25 bg-black/60 p-2 text-[10px] whitespace-pre-line text-primary">
           <p className="font-heading tracking-widest uppercase">Observatory</p>
           <p ref={obsLineRef} className="mt-1 tabular-nums text-muted-foreground">
             60 fps
           </p>
         </aside>
+        {pending ? (
+          <div className="pointer-events-none absolute top-2 left-2 z-10 max-w-[min(18rem,70vw)] rounded-sm border border-primary/40 bg-black/70 px-3 py-2 text-xs text-primary">
+            <p className="font-heading tracking-widest uppercase">
+              {pending.kind === "build" ? `Raise ${BUILDING_LABEL[pending.type]}` : "Strike-move"}
+            </p>
+            <p className="mt-0.5 text-muted-foreground">
+              Click the field to place the order. Esc cancels.
+            </p>
+          </div>
+        ) : null}
         <PearlFlourish play={startPearl} variant="start" />
         <PearlFlourish play={endPearl} variant="end" />
         {winner !== null ? (

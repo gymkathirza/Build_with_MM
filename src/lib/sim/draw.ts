@@ -75,13 +75,18 @@ function drawTerrain(
   const lakeR = Math.max(6, size * 0.045)
   const lrx = lakeR * cam.z
   const lry = lakeR * 0.55 * cam.z
-  ctx.fillStyle = "rgba(138,106,64,0.42)"
+  ctx.fillStyle = "rgba(196,154,90,0.5)"
   ctx.beginPath()
-  ctx.ellipse(lake.sx, lake.sy, lrx * 1.14, lry * 1.2, 0.2, 0, Math.PI * 2)
+  ctx.ellipse(lake.sx, lake.sy, lrx * 1.22, lry * 1.32, 0.2, 0, Math.PI * 2)
   ctx.fill()
-  const water = ctx.createRadialGradient(lake.sx, lake.sy, 2, lake.sx, lake.sy, lrx)
-  water.addColorStop(0, "#4a8a9a")
-  water.addColorStop(0.45, "#1e4a54")
+  ctx.fillStyle = "rgba(168,128,72,0.38)"
+  ctx.beginPath()
+  ctx.ellipse(lake.sx + lrx * 0.08, lake.sy + lry * 0.12, lrx * 1.08, lry * 1.1, 0.18, 0, Math.PI * 2)
+  ctx.fill()
+  const water = ctx.createRadialGradient(lake.sx - lrx * 0.12, lake.sy - lry * 0.18, 2, lake.sx, lake.sy, lrx)
+  water.addColorStop(0, "#6aa8b4")
+  water.addColorStop(0.35, "#2d6a78")
+  water.addColorStop(0.72, "#1e4a54")
   water.addColorStop(1, "#16343c")
   ctx.fillStyle = water
   ctx.beginPath()
@@ -115,28 +120,43 @@ function drawTerrain(
         )
         blit(ctx, SPR.palm, palm.sx - 16, palm.sy - 28, 32, 32)
       }
+      for (let i = 0; i < 3; i++) {
+        const a = t / 1800 + i * 2.1
+        const bird = worldToScreen(
+          cam,
+          size / 2 + Math.cos(a) * lakeR * 1.35,
+          size / 2 + Math.sin(a * 0.7) * lakeR * 0.45 - 4,
+        )
+        ctx.strokeStyle = `rgba(30,24,18,${0.35 + 0.2 * Math.sin(t / 400 + i)})`
+        ctx.lineWidth = 1.2
+        ctx.beginPath()
+        ctx.moveTo(bird.sx - 4, bird.sy)
+        ctx.quadraticCurveTo(bird.sx, bird.sy - 3 - Math.sin(t / 180 + i) * 2, bird.sx + 4, bird.sy)
+        ctx.stroke()
+      }
     }
-    for (let i = 0; i < 10; i++) {
-      const a = (i / 10) * Math.PI * 2 + 0.3
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2 + 0.3
+      const sway = Math.sin(t / 420 + i) * 2.4
       const rp = worldToScreen(cam, size / 2 + Math.cos(a) * lakeR * 1.15, size / 2 + Math.sin(a) * lakeR * 0.7)
-      ctx.strokeStyle = "rgba(40,80,36,0.55)"
-      ctx.lineWidth = 1.4
+      ctx.strokeStyle = `rgba(40,90,40,${0.45 + 0.2 * Math.sin(t / 380 + i)})`
+      ctx.lineWidth = 1.5
       ctx.beginPath()
       ctx.moveTo(rp.sx, rp.sy)
-      ctx.lineTo(rp.sx + Math.cos(a) * 5, rp.sy - 9)
+      ctx.quadraticCurveTo(rp.sx + sway * 0.4, rp.sy - 5, rp.sx + Math.cos(a) * 5 + sway, rp.sy - 11)
       ctx.stroke()
     }
   }
 
   if (quality > 0) {
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 11; i++) {
       const hx = ((hash(i * 19, 41) % 1000) / 1000) * size
       const hy = ((hash(i * 29, 17) % 1000) / 1000) * size
       if (Math.hypot(hx - size / 2, hy - size / 2) < lakeR * 2.4) continue
       const hp = worldToScreen(cam, hx, hy)
-      ctx.fillStyle = "rgba(28,46,22,0.2)"
+      ctx.fillStyle = i % 3 === 0 ? "rgba(62,52,32,0.28)" : "rgba(28,46,22,0.22)"
       ctx.beginPath()
-      ctx.ellipse(hp.sx, hp.sy, 22 * cam.z * 0.22, 10 * cam.z * 0.22, 0.18, 0, Math.PI * 2)
+      ctx.ellipse(hp.sx, hp.sy, (26 + (i % 4) * 4) * cam.z * 0.22, (11 + (i % 3) * 2) * cam.z * 0.22, 0.18, 0, Math.PI * 2)
       ctx.fill()
     }
     const halls = world.buildings.filter((b) => b.type === "hearth" && b.done)
@@ -254,6 +274,23 @@ function drawBuilding(
     ctx.beginPath()
     ctx.ellipse(p.sx + s * 0.08, p.sy - s * 0.72 - rise, 5 + rise * 0.08, 3.2 + rise * 0.05, 0, 0, Math.PI * 2)
     ctx.fill()
+    if (b.type === "hearth" && quality > 1) {
+      const glow = 0.22 + 0.18 * Math.sin(now / 140 + b.id)
+      ctx.fillStyle = `rgba(255,170,70,${glow})`
+      ctx.beginPath()
+      ctx.ellipse(p.sx - s * 0.16, p.sy - s * 0.22, 7, 5, 0, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  }
+  if (quality > 1 && b.done && b.type === "yard") {
+    const flap = Math.sin(now / 220 + b.id) * 3
+    ctx.fillStyle = trim
+    ctx.beginPath()
+    ctx.moveTo(p.sx + s * 0.28, p.sy - s * 0.58)
+    ctx.lineTo(p.sx + s * 0.42 + flap, p.sy - s * 0.5)
+    ctx.lineTo(p.sx + s * 0.28, p.sy - s * 0.42)
+    ctx.closePath()
+    ctx.fill()
   }
   ctx.fillStyle = color
   ctx.beginPath()
@@ -299,6 +336,28 @@ function unitSpr(u: Unit) {
   return u.id & 1 ? SPR.levyAxe : SPR.levyClub
 }
 
+function orderDestX(world: World, u: Unit): number {
+  const order = u.order
+  if (order.t === "move" || order.t === "attackMove" || order.t === "defend") return order.x
+  if (order.t === "gather") {
+    const n = world.nodes.find((q) => q.id === order.node)
+    return n?.x ?? u.x
+  }
+  if (order.t === "return") {
+    const drop = world.buildings.find((b) => b.id === order.drop)
+    return drop?.x ?? u.x
+  }
+  if (order.t === "attack") {
+    const t = world.units.find((x) => x.id === order.target) ?? world.buildings.find((x) => x.id === order.target)
+    return t?.x ?? u.x
+  }
+  if (order.t === "build") {
+    const b = world.buildings.find((q) => q.id === order.building)
+    return b?.x ?? u.x
+  }
+  return u.x
+}
+
 function drawUnit(
   ctx: CanvasRenderingContext2D,
   u: Unit,
@@ -309,11 +368,13 @@ function drawUnit(
   t: number,
   w: number,
   h: number,
+  world: World,
 ) {
   const p = worldToScreen(cam, u.x, u.y)
   const size = Math.max(30, cam.z * 2.7)
   if (culled(p.sx, p.sy, size, w, h)) return
   const moving = u.order.t === "move" || u.order.t === "gather" || u.order.t === "return" || u.order.t === "attackMove"
+  const faceLeft = orderDestX(world, u) < u.x - 0.15
   const bob = quality > 0 ? Math.sin(t / (moving ? 90 : 180) + u.id) * (moving ? 2.2 : 1.2) : 0
   const sway = quality > 0 && moving ? Math.sin(t / 70 + u.id) * 1.6 : 0
   const y = p.sy + bob
@@ -324,13 +385,18 @@ function drawUnit(
     ctx.ellipse(p.sx - sway * 1.4, y + size * 0.16 + puff * 0.6, 4 + puff * 0.35, 1.8, 0, 0, Math.PI * 2)
     ctx.fill()
   }
-  blit(ctx, unitSpr(u), p.sx - size / 2 + sway, y - size * 0.82, size, size)
+  ctx.save()
+  ctx.translate(p.sx, 0)
+  ctx.scale(faceLeft ? -1 : 1, 1)
+  blit(ctx, unitSpr(u), -size / 2 + sway, y - size * 0.82, size, size)
+  ctx.restore()
   if (quality > 1 && (u.order.t === "attack" || u.order.t === "attackMove") && u.atkCd > 0.65) {
-    ctx.strokeStyle = "rgba(243,212,138,0.55)"
-    ctx.lineWidth = 1.4
+    const dir = faceLeft ? -1 : 1
+    ctx.strokeStyle = "rgba(255,214,120,0.7)"
+    ctx.lineWidth = 2
     ctx.beginPath()
-    ctx.moveTo(p.sx + sway + 4, y - size * 0.2)
-    ctx.lineTo(p.sx + sway + 12, y - size * 0.42)
+    ctx.moveTo(p.sx + sway * dir + 4 * dir, y - size * 0.2)
+    ctx.lineTo(p.sx + sway * dir + 14 * dir, y - size * 0.48)
     ctx.stroke()
   }
   ctx.fillStyle = color
@@ -426,7 +492,7 @@ export function drawWorld(
     )
   }
   for (const u of world.units) {
-    drawUnit(ctx, u, cam, team(world, u.owner), selected.has(u.id), quality, now, w, h)
+    drawUnit(ctx, u, cam, team(world, u.owner), selected.has(u.id), quality, now, w, h, world)
   }
   if (quality > 1) {
     ctx.lineWidth = 1
@@ -471,5 +537,12 @@ export function drawWorld(
     }
     ctx.setLineDash([])
   }
-  if (quality > 0) drawMinimap(ctx, world, cam, w, h)
+  if (quality > 0) {
+    const dusk = ctx.createRadialGradient(w * 0.5, h * 0.42, Math.min(w, h) * 0.28, w * 0.5, h * 0.5, Math.max(w, h) * 0.72)
+    dusk.addColorStop(0, "rgba(0,0,0,0)")
+    dusk.addColorStop(1, "rgba(12,8,4,0.28)")
+    ctx.fillStyle = dusk
+    ctx.fillRect(0, 0, w, h)
+    drawMinimap(ctx, world, cam, w, h)
+  }
 }
