@@ -177,11 +177,11 @@ export function MatchView({
   }, [world])
 
   useLayoutEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
+    let canvas = canvasRef.current
+    let ctx = canvas?.getContext("2d") ?? null
     let raf = 0
+    let watchdog = 0
+    let retry = 0
     let last = performance.now()
     let acc = 0
     let frames = 0
@@ -191,10 +191,25 @@ export function MatchView({
     let postedWin = false
     let sampleN = 0
     let lastObsPost = 0
+    let stopped = false
     const p0Ai = bot
       ? { ...tuned.ai, gatherBias: 0.8, attackAtArmy: tuned.ai.attackAtArmy + 2 }
       : null
+
+    const attach = () => {
+      if (stopped) return false
+      canvas = canvasRef.current
+      ctx = canvas?.getContext("2d") ?? null
+      return Boolean(canvas && ctx)
+    }
+
     const loop = (now: number) => {
+      if (stopped) return
+      if (!canvas || !ctx) {
+        attach()
+        raf = requestAnimationFrame(loop)
+        return
+      }
       try {
       const dt = Math.min(0.033, (now - last) / 1000)
       last = now
@@ -296,7 +311,11 @@ export function MatchView({
       }
       if (now - hudAt > 400) {
         hudAt = now
-        paintHud(fps, frameMs, simMs)
+        try {
+          paintHud(fps, frameMs, simMs)
+        } catch (err) {
+          console.error(err)
+        }
         if (now - lastObsPost > 2500) {
           lastObsPost = now
           const body = JSON.stringify({
@@ -331,19 +350,28 @@ export function MatchView({
       }
       } catch (err) {
         console.error(err)
-        ctx.setTransform(1, 0, 0, 1, 0, 0)
-        ctx.fillStyle = "#3d5a32"
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
       }
       raf = requestAnimationFrame(loop)
     }
-    loop(performance.now())
-    const watchdog = window.setInterval(() => {
-      if (performance.now() - last > 250) loop(performance.now())
+    if (!attach()) {
+      retry = window.setInterval(() => {
+        if (attach()) {
+          window.clearInterval(retry)
+          retry = 0
+          loop(performance.now())
+        }
+      }, 50)
+    } else {
+      loop(performance.now())
+    }
+    watchdog = window.setInterval(() => {
+      if (!stopped && performance.now() - last > 250) loop(performance.now())
     }, 100)
     return () => {
+      stopped = true
       cancelAnimationFrame(raf)
       window.clearInterval(watchdog)
+      if (retry) window.clearInterval(retry)
     }
   }, [bot, paintHud, personaId, tuned, world])
 
@@ -467,7 +495,9 @@ export function MatchView({
         style={{ background: plateGround(mapId) }}
       >
         <canvas
-          ref={canvasRef}
+          ref={(el) => {
+            canvasRef.current = el
+          }}
           className="absolute inset-0 block h-full w-full cursor-crosshair"
           style={{ background: plateGround(mapId) }}
           onContextMenu={(e) => e.preventDefault()}
