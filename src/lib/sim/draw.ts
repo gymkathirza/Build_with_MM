@@ -505,6 +505,12 @@ function drawNode(
     }
   }
   if (quality > 1 && n.fauna) {
+    ctx.fillStyle = "rgba(40,28,16,0.22)"
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath()
+      ctx.ellipse(p.sx - wander * 0.4 - 6 - i * 5, p.sy + 4 + (i % 2), 2.2, 1.1, 0.2, 0, Math.PI * 2)
+      ctx.fill()
+    }
     const eye = 0.35 + 0.35 * Math.sin(now / 180 + n.id)
     ctx.fillStyle =
       n.fauna === "wolf" || n.fauna === "bear" ? `rgba(255,210,90,${eye})` : `rgba(255,246,212,${eye * 0.7})`
