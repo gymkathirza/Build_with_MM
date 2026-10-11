@@ -564,13 +564,13 @@ function drawUnit(
   ctx.restore()
   if (quality > 1 && (u.order.t === "attack" || u.order.t === "attackMove") && u.atkCd > 0.65) {
     const dir = faceLeft ? -1 : 1
-    ctx.strokeStyle = "rgba(255,214,120,0.7)"
+    ctx.strokeStyle = u.type === "warden" ? "rgba(160,210,255,0.75)" : "rgba(255,214,120,0.7)"
     ctx.lineWidth = 2
     ctx.beginPath()
     ctx.moveTo(p.sx + sway * dir + 4 * dir, y - size * 0.2)
     ctx.lineTo(p.sx + sway * dir + 14 * dir, y - size * 0.48)
     ctx.stroke()
-    ctx.fillStyle = "rgba(255,230,160,0.55)"
+    ctx.fillStyle = u.type === "warden" ? "rgba(190,230,255,0.55)" : "rgba(255,230,160,0.55)"
     ctx.beginPath()
     ctx.arc(p.sx + sway * dir + 12 * dir, y - size * 0.46, 2.4, 0, Math.PI * 2)
     ctx.fill()

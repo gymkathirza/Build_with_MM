@@ -721,23 +721,25 @@ function Selection({
         <Badge variant="outline">{selectedUnits.length} selected</Badge>
       </div>
       <p className="text-xs text-muted-foreground">
-        {u.order.t === "gather"
-          ? gatherLine(world, u)
-          : u.order.t === "return"
-            ? "Hauling home"
-            : u.order.t === "build"
-              ? "Raising"
-              : u.order.t === "defend"
-                ? "Holding the hearth"
-                : u.order.t === "attackMove"
-                  ? u.type === "ashrider"
-                    ? "Ashriders on the march"
-                    : "Marching"
-                  : u.order.t === "attack"
-                    ? "In the fray"
-                    : u.order.t === "move"
-                      ? "On the path"
-                      : "Idle"}
+        {u.hp < u.hpMax * 0.38
+          ? "Wounded — falling back if the student holds the kite"
+          : u.order.t === "gather"
+            ? gatherLine(world, u)
+            : u.order.t === "return"
+              ? "Hauling home"
+              : u.order.t === "build"
+                ? "Raising"
+                : u.order.t === "defend"
+                  ? "Holding the hearth"
+                  : u.order.t === "attackMove"
+                    ? u.type === "ashrider"
+                      ? "Ashriders on the march"
+                      : "Marching"
+                    : u.order.t === "attack"
+                      ? "In the fray"
+                      : u.order.t === "move"
+                        ? "On the path"
+                        : "Idle"}
       </p>
       <Progress value={(u.hp / u.hpMax) * 100} className="mt-2" />
     </div>
@@ -791,7 +793,11 @@ function TrainPanel({
             <Progress value={(q.t / q.max) * 100} className="mt-1" />
           </li>
         ))}
-        {b && !b.queue.length ? <li className="text-xs text-muted-foreground">Yard idle.</li> : null}
+        {b && !b.queue.length ? (
+          <li className="text-xs text-muted-foreground">
+            {b.type === "yard" ? "Yard idle." : b.type === "lodge" ? "Lodge idle." : "Hall idle."}
+          </li>
+        ) : null}
       </ul>
     </div>
   )

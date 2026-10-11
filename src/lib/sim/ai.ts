@@ -407,7 +407,11 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
           (u) => u.owner !== owner && (u.order.t === "gather" || u.order.t === "return"),
         )
         if (riders.length && preyLevy && w.tick % 40 === owner) {
-          issueAttack(w, [riders[0].id], preyLevy.id)
+          issueAttack(
+            w,
+            riders.slice(0, 2).map((u) => u.id),
+            preyLevy.id,
+          )
         }
         if (riders.length && foot.length && w.tick % 40 === owner) {
           const shields = foot.filter((u) => u.type === "guard")
