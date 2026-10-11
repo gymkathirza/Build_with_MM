@@ -802,7 +802,8 @@ function Selection({
         scout is free. A spare levy crews a far camp, pit, or granary. A third warden overwatches
         the camp. A relic levy does not steal that crew; a spare banner walks with them. Pressed
         camps and pits draw a sentry.
-        Recall walks banners home. The age rite waits if the hearth is struck; extra banners hold
+        Recall walks banners home. Wounded ashriders peel to the lodge. The age rite waits if the
+        hearth is struck; extra banners hold
         the hearth while it burns.
       </div>
     )
@@ -816,7 +817,9 @@ function Selection({
       </div>
       <p className="text-xs text-muted-foreground">
         {u.hp < u.hpMax * 0.38
-          ? "Wounded — falling back if the student holds the kite"
+          ? u.type === "ashrider"
+            ? "Wounded — peeling to the lodge"
+            : "Wounded — falling back if the student holds the kite"
           : u.order.t === "gather"
             ? gatherLine(world, u)
             : u.order.t === "return"

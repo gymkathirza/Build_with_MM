@@ -653,6 +653,11 @@ function drawBuilding(
     ctx.beginPath()
     ctx.arc(p.sx + s * 0.18, p.sy - s * 0.42, 4, 0, Math.PI * 2)
     ctx.fill()
+    const smoke = (now / 20 + b.id * 9) % 24
+    ctx.fillStyle = `rgba(200,190,180,${0.16 - smoke * 0.005})`
+    ctx.beginPath()
+    ctx.ellipse(p.sx + s * 0.12, p.sy - s * 0.7 - smoke * 0.45, 3.4 + smoke * 0.06, 2.2, 0, 0, Math.PI * 2)
+    ctx.fill()
     const flap = Math.sin(now / 260 + b.id) * 3
     ctx.fillStyle = "#8a4e2a"
     ctx.beginPath()

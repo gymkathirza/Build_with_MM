@@ -1196,3 +1196,32 @@ test("a relic hauler draws a banner on the walk home", () => {
   assert.ok(escort, "a banner should walk the relic home")
 })
 
+test("a wounded ashrider peels to the lodge", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9, kite: 0.6 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  const lodge = placeBuilding(
+    w,
+    0,
+    "lodge",
+    h.x + 10,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  lodge.done = true
+  lodge.construct = lodge.constructMax
+  pushBanner(w, "ashrider", 0, h.x + 22, h.y)
+  const rider = w.units.find((u) => u.owner === 0 && u.type === "ashrider")!
+  rider.hp = rider.hpMax * 0.2
+  for (let i = 0; i < 30; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const live = w.units.find((u) => u.id === rider.id)!
+  assert.ok(
+    live.order.t === "move" || Math.hypot(live.x - lodge.x, live.y - lodge.y) < 8,
+    "a wounded ashrider should peel to the lodge",
+  )
+})
+
