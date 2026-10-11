@@ -508,6 +508,11 @@ function drawBuilding(
       ctx.lineTo(p.sx + Math.cos(a) * s * 0.3, p.sy + Math.sin(a) * s * 0.14 - 6)
       ctx.stroke()
     }
+    const spark = (now / 70 + b.id) % 14
+    ctx.fillStyle = `rgba(255,180,70,${0.28 - spark * 0.015})`
+    ctx.beginPath()
+    ctx.arc(p.sx + 3, p.sy - s * 0.2 - spark * 0.7, 1.6, 0, Math.PI * 2)
+    ctx.fill()
   }
   if (quality > 1 && b.done && b.type === "pit") {
     const ember = 0.2 + 0.2 * Math.sin(now / 110 + b.id)

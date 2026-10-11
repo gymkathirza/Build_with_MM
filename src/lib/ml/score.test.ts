@@ -1,7 +1,13 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { DEFAULT_TUNED, improveFromScore, scoreTelemetry } from "./score"
+import { trustedLive } from "./live-obs"
 import { createTelemetry } from "../obs/telemetry"
+
+test("trustedLive drops hidden-tab fps", () => {
+  assert.equal(trustedLive({ fps: 1, frameMs: 800, simMs: 0.02, inputMs: 8, entities: 40, at: Date.now() }), null)
+  assert.ok(trustedLive({ fps: 60, frameMs: 16, simMs: 0.02, inputMs: 8, entities: 40, at: Date.now() }))
+})
 
 test("live gather idle and wrong move gatherBias", () => {
   const tel = createTelemetry()

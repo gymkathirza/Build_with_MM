@@ -349,7 +349,7 @@ export function MatchView({
         } catch (err) {
           console.error(err)
         }
-        if (now - lastObsPost > 2500) {
+        if (now - lastObsPost > 2500 && fps >= 24) {
           lastObsPost = now
           const body = JSON.stringify({
             fps,
