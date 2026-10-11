@@ -381,6 +381,15 @@ function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: Dra
     ctx.arc(p.sx + wander, p.sy - s * 0.2 + bob, s * 0.28, 0, Math.PI * 2)
     ctx.stroke()
   }
+  if (quality > 1 && n.fauna) {
+    const eye = 0.35 + 0.35 * Math.sin(now / 180 + n.id)
+    ctx.fillStyle =
+      n.fauna === "wolf" || n.fauna === "bear" ? `rgba(255,210,90,${eye})` : `rgba(255,246,212,${eye * 0.7})`
+    ctx.beginPath()
+    ctx.arc(p.sx + wander - 3, p.sy - s * 0.28 + bob, 1.5, 0, Math.PI * 2)
+    ctx.arc(p.sx + wander + 3, p.sy - s * 0.28 + bob, 1.5, 0, Math.PI * 2)
+    ctx.fill()
+  }
   if (quality > 0) {
     ctx.fillStyle = "rgba(20,12,8,0.82)"
     ctx.font = `${Math.max(11, Math.min(15, cam.z * 0.7))}px sans-serif`
@@ -717,6 +726,13 @@ function drawUnit(
   ctx.beginPath()
   ctx.ellipse(p.sx, y + size * 0.14, 5, 2.2, 0, 0, Math.PI * 2)
   ctx.fill()
+  if (quality > 1 && u.order.t === "build") {
+    const spark = 0.22 + 0.32 * Math.sin(t / 70 + u.id)
+    ctx.fillStyle = `rgba(255,200,90,${spark})`
+    ctx.beginPath()
+    ctx.arc(p.sx + 7, y - size * 0.3, 2.1, 0, Math.PI * 2)
+    ctx.fill()
+  }
   if (quality > 1 && u.carry) {
     ctx.fillStyle = u.carry.res === "relics" ? "rgba(255,230,140,0.7)" : u.carry.res === "ore" ? "rgba(180,190,200,0.55)" : "rgba(212,184,90,0.5)"
     ctx.beginPath()
