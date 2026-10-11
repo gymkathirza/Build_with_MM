@@ -1326,3 +1326,32 @@ test("a wolf hunt draws a banner escort", () => {
   assert.ok(escort, "a banner should walk with a wolf hunt")
 })
 
+test("bare timber pulls a levy onto pine", () => {
+  const params = personaById("balanced").params
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 80
+  w.players[0].timber = 15
+  w.players[0].ore = 180
+  for (const u of w.units) {
+    if (u.owner === 0 && u.type === "levy") {
+      u.x = h.x
+      u.y = h.y
+      u.order = { t: "idle" }
+    }
+  }
+  for (let i = 0; i < 20; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const walker = w.units.find((u) => {
+    if (u.owner !== 0 || u.type !== "levy") return false
+    const order = u.order
+    if (order.t === "return" && u.carry?.res === "timber") return true
+    if (order.t !== "gather") return false
+    const n = w.nodes.find((q) => q.id === order.node)
+    return n?.type === "timber"
+  })
+  assert.ok(walker, "bare timber should walk pine")
+})
+

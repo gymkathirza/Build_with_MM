@@ -500,6 +500,7 @@ function drawNode(
   h: number,
   contested = false,
   hunted = false,
+  worked = false,
 ) {
   const p = worldToScreen(cam, n.x, n.y)
   const s = Math.max(n.fauna ? 40 : 34, cam.z * (n.fauna ? 2.8 : 2.35))
@@ -534,6 +535,13 @@ function drawNode(
       ctx.moveTo(p.sx + 6, p.sy - s * 0.4)
       ctx.lineTo(p.sx + 8, p.sy - s * 0.4 + needle)
       ctx.stroke()
+      if (worked) {
+        const chip = (now / 50 + n.id) % 12
+        ctx.fillStyle = `rgba(90,60,30,${0.22 - chip * 0.012})`
+        ctx.beginPath()
+        ctx.arc(p.sx - 3, p.sy + 2 + chip * 0.3, 1.5, 0, Math.PI * 2)
+        ctx.fill()
+      }
     }
     if (quality > 1 && n.type === "ore") {
       const spark = 0.2 + 0.25 * Math.sin(now / 160 + n.id)
@@ -1125,7 +1133,7 @@ export function drawWorld(
           .filter((u) => u.order.t === "gather" && u.order.node === n.id)
           .map((u) => u.owner),
       )
-      drawNode(ctx, n, cam, quality, w, h, owners.size > 1, owners.size > 0 && !!n.fauna)
+      drawNode(ctx, n, cam, quality, w, h, owners.size > 1, owners.size > 0 && !!n.fauna, owners.size > 0)
     }
   }
   for (const b of world.buildings) {
@@ -1151,7 +1159,12 @@ export function drawWorld(
     for (const hearth of world.buildings) {
       if (hearth.type !== "hearth" || !hearth.done) continue
       for (const camp of world.buildings) {
-        if (camp.owner !== hearth.owner || !camp.done || camp.type !== "camp") continue
+        if (
+          camp.owner !== hearth.owner ||
+          !camp.done ||
+          (camp.type !== "camp" && camp.type !== "pit" && camp.type !== "granary")
+        )
+          continue
         if (Math.hypot(camp.x - hearth.x, camp.y - hearth.y) <= 16) continue
         const a = worldToScreen(cam, hearth.x, hearth.y)
         const b = worldToScreen(cam, camp.x, camp.y)

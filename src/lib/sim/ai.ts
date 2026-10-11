@@ -146,6 +146,7 @@ function noiseRoll(noise: number, salt: number) {
 function gatherNeed(w: World, owner: Owner, persona: Persona): Res | undefined {
   const p = w.players[owner]
   if (p.grain < 40 && persona.gather !== "skewed") return "grain"
+  if (p.timber < 25 && persona.gather !== "skewed") return "timber"
   if (persona.gather === "skewed") return persona.skewRes
   const counts: Record<Res, number> = { grain: 0, timber: 0, ore: 0, relics: 0 }
   for (const u of w.units) {
