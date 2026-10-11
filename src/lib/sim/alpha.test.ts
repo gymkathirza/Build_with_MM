@@ -477,6 +477,30 @@ test("student lowers attackAtArmy against rand-aggro", () => {
   assert.ok(march.length >= 1, "rand-aggro should draw an earlier march than attackAt 9")
 })
 
+test("ashrider peels a gathering rival levy", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 2 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  w.players[0].age = 1
+  const h = hall(w, 0)
+  pushBanner(w, "ashrider", 0, h.x + 3, h.y)
+  pushBanner(w, "guard", 0, h.x + 2, h.y)
+  pushBanner(w, "guard", 0, h.x + 4, h.y)
+  const node = w.nodes.find((n) => n.amount > 0 && Math.hypot(n.x - h.x, n.y - h.y) > 24)
+  assert.ok(node)
+  pushBanner(w, "levy", 1, node.x, node.y)
+  const levy = w.units.find((u) => u.owner === 1 && u.type === "levy")!
+  assert.ok(issueGather(w, [levy.id], node.id))
+  for (let i = 0; i < 12; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const rider = w.units.find((u) => u.owner === 0 && u.type === "ashrider")!
+  assert.ok(
+    rider.order.t === "attack" || rider.order.t === "attackMove",
+    `rider should peel or still march, got ${rider.order.t}`,
+  )
+})
+
 test("wounded hearth keeps the banners home", () => {
   const params = { ...personaById("balanced").params, attackAtArmy: 2 }
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })

@@ -329,6 +329,20 @@ function drawBuilding(
     ctx.arc(p.sx + s * 0.18, p.sy - s * 0.42, 4, 0, Math.PI * 2)
     ctx.fill()
   }
+  if (quality > 1 && b.done && b.type === "granary") {
+    const bob = Math.sin(now / 280 + b.id) * 2
+    ctx.fillStyle = "#d4b85a"
+    ctx.beginPath()
+    ctx.ellipse(p.sx - s * 0.16, p.sy - s * 0.08 + bob, 5, 4, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  if (quality > 1 && b.done && b.type === "camp") {
+    const flicker = 0.28 + 0.22 * Math.sin(now / 90 + b.id)
+    ctx.fillStyle = `rgba(255,140,50,${flicker})`
+    ctx.beginPath()
+    ctx.ellipse(p.sx - s * 0.06, p.sy - s * 0.12, 4, 5, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
   if (quality > 1 && b.done && b.type === "yard") {
     const flap = Math.sin(now / 220 + b.id) * 3
     ctx.fillStyle = trim
@@ -458,6 +472,12 @@ function drawUnit(
     ctx.beginPath()
     ctx.ellipse(p.sx - sway * 1.4, y + size * 0.16 + puff * 0.6, 4 + puff * 0.35, 1.8, 0, 0, Math.PI * 2)
     ctx.fill()
+    if (u.type === "ashrider") {
+      ctx.fillStyle = `rgba(120,80,40,${0.12 - puff * 0.008})`
+      ctx.beginPath()
+      ctx.ellipse(p.sx - sway * 2.2, y + size * 0.18 + puff, 6 + puff * 0.4, 2.2, 0, 0, Math.PI * 2)
+      ctx.fill()
+    }
   }
   ctx.save()
   ctx.translate(p.sx, 0)

@@ -397,6 +397,12 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
           enemyHall.y + bend,
         )
         const foot = soldiers.filter((u) => u.type !== "ashrider")
+        const preyLevy = w.units.find(
+          (u) => u.owner !== owner && (u.order.t === "gather" || u.order.t === "return"),
+        )
+        if (riders.length && preyLevy && w.tick % 40 === owner) {
+          issueAttack(w, [riders[0].id], preyLevy.id)
+        }
         if (riders.length && foot.length && w.tick % 40 === owner) {
           issueAttackMove(
             w,

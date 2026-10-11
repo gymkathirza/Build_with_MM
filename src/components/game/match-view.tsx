@@ -136,9 +136,18 @@ export function MatchView({
   const paintHud = useCallback((fps: number, frameMs: number, simMs: number) => {
     const tel = telRef.current
     const p0 = world.players[0]
-    if (grainRef.current) grainRef.current.textContent = String(Math.floor(p0.grain))
-    if (timberRef.current) timberRef.current.textContent = String(Math.floor(p0.timber))
-    if (oreRef.current) oreRef.current.textContent = String(Math.floor(p0.ore))
+    if (grainRef.current) {
+      grainRef.current.textContent = String(Math.floor(p0.grain))
+      grainRef.current.classList.toggle("text-destructive", p0.grain < 80)
+    }
+    if (timberRef.current) {
+      timberRef.current.textContent = String(Math.floor(p0.timber))
+      timberRef.current.classList.toggle("text-destructive", p0.timber < 60)
+    }
+    if (oreRef.current) {
+      oreRef.current.textContent = String(Math.floor(p0.ore))
+      oreRef.current.classList.toggle("text-destructive", p0.ore < 40)
+    }
     if (relicsRef.current) relicsRef.current.textContent = String(Math.floor(p0.relics))
     if (ageRef.current) ageRef.current.textContent = AGE_NAMES[p0.age]
     if (popRef.current) popRef.current.textContent = `Banners ${popUsed(world, 0)}/${world.popCap}`
