@@ -649,6 +649,17 @@ export function MatchView({
               </Button>
               <Button
                 size="sm"
+                variant="outline"
+                onClick={() => {
+                  const h = world.buildings.find((b) => b.owner === 0 && b.type === "hearth" && b.done)
+                  const ids = selected.length ? selected : [...selectedDrawRef.current]
+                  if (h && ids.length) issueMove(world, ids, h.x + 2, h.y)
+                }}
+              >
+                Recall
+              </Button>
+              <Button
+                size="sm"
                 variant="secondary"
                 disabled={
                   p.age >= 1 ||
