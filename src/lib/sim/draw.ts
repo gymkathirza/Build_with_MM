@@ -209,6 +209,16 @@ function drawTerrain(
         ctx.arc(lake.sx - lrx * 0.35, lake.sy + lry * 0.15 - jump * 0.7, 1.8, 0, Math.PI * 2)
         ctx.fill()
       }
+      const frogX = lake.sx + lrx * 0.55
+      const frogY = lake.sy + lry * 0.62 + Math.sin(t / 640) * 1.4
+      ctx.fillStyle = "rgba(48,92,52,0.55)"
+      ctx.beginPath()
+      ctx.ellipse(frogX, frogY, 3.2, 2.1, 0.15, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = "rgba(220,230,120,0.42)"
+      ctx.beginPath()
+      ctx.arc(frogX + 2.2, frogY - 1.2, 1.1, 0, Math.PI * 2)
+      ctx.fill()
       for (let i = 0; i < 5; i++) {
         const a = t / 900 + i * 1.3
         ctx.fillStyle = `rgba(255,230,160,${0.1 + 0.1 * Math.sin(t / 260 + i)})`

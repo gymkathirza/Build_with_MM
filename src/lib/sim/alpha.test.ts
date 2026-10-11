@@ -1326,6 +1326,34 @@ test("a wolf hunt draws a banner escort", () => {
   assert.ok(escort, "a banner should walk with a wolf hunt")
 })
 
+test("a boar hunt draws a banner escort", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")!
+  const boar = w.nodes.find((n) => n.type === "grain") ?? w.nodes[0]!
+  boar.fauna = "boar"
+  boar.amount = 80
+  boar.x = h.x + 10
+  boar.y = h.y
+  levy.order = { t: "gather", node: boar.id }
+  levy.x = boar.x
+  levy.y = boar.y
+  for (let i = 0; i < 3; i++) pushBanner(w, "guard", 0, h.x + 2 + i, h.y)
+  for (let i = 0; i < 50; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const escort = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "guard" &&
+      u.order.t === "defend" &&
+      Math.hypot(u.order.x - levy.x, u.order.y - levy.y) < 10,
+  )
+  assert.ok(escort, "a banner should walk with a boar hunt")
+})
+
 test("bare timber pulls a levy onto pine", () => {
   const params = personaById("balanced").params
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })

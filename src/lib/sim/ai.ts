@@ -668,7 +668,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
       const order = u.order
       if (order.t !== "gather") return false
       const n = w.nodes.find((q) => q.id === order.node)
-      return n?.fauna === "wolf" || n?.fauna === "bear"
+      return n?.fauna === "wolf" || n?.fauna === "bear" || n?.fauna === "boar"
     })
     const huntGuard =
       hunter && guards.length >= 3
