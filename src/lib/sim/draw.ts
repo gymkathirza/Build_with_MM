@@ -45,7 +45,16 @@ function drawTerrain(
   world: World,
 ) {
   const size = world.size
-  ctx.fillStyle = "#3d5a32"
+  ctx.fillStyle =
+    world.mapId === "nightgrove"
+      ? "#243526"
+      : world.mapId === "sunvault"
+        ? "#5a6a3a"
+        : world.mapId === "emberglass"
+          ? "#4a3a28"
+          : world.mapId === "shattercoast"
+            ? "#3a4a42"
+            : "#3d5a32"
   ctx.fillRect(0, 0, w, h)
   const c0 = worldToScreen(cam, 0, 0)
   const c1 = worldToScreen(cam, size, size)

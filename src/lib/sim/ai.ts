@@ -408,7 +408,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
             w,
             foot.map((u) => u.id),
             enemyHall.x + (owner === 0 ? 5 : -5),
-            enemyHall.y,
+            enemyHall.y + (owner === 0 ? 4 : -4),
           )
         }
       }

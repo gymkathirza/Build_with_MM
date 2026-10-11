@@ -25,8 +25,8 @@ export function SettingsView() {
             <p className="text-xs tracking-[0.35em] text-primary/80 uppercase">Settings</p>
             <h1 className="font-heading text-3xl tracking-wide text-primary">The steward’s desk</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              These controls remember nothing beyond this page. They exist so the mock feels like a
-              real options hall, not a settings dump.
+              Horns, banner dyes, and how tightly the cartographer draws. Changes apply on this
+              device until you furl the page.
             </p>
           </div>
           <Button variant="outline" render={<Link href="/" />}>
@@ -100,7 +100,7 @@ export function SettingsView() {
 
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">
-            {saved ? "Noted. Nothing was written to disk." : "Unsaved — as all mock ledgers are."}
+            {saved ? "Noted for this sitting." : "Unsaved. Record before you march."}
           </p>
           <Button onClick={() => setSaved(true)}>Record</Button>
         </div>
