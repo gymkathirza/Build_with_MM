@@ -430,7 +430,15 @@ export function nodeLabel(n: Node) {
   return "Relic"
 }
 
-function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: DrawQuality, w: number, h: number) {
+function drawNode(
+  ctx: CanvasRenderingContext2D,
+  n: Node,
+  cam: Cam,
+  quality: DrawQuality,
+  w: number,
+  h: number,
+  contested = false,
+) {
   const p = worldToScreen(cam, n.x, n.y)
   const s = Math.max(n.fauna ? 40 : 34, cam.z * (n.fauna ? 2.8 : 2.35))
   if (culled(p.sx, p.sy, s, w, h)) return
@@ -480,6 +488,21 @@ function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: Dra
     ctx.beginPath()
     ctx.arc(p.sx + wander, p.sy - s * 0.2 + bob, s * 0.28, 0, Math.PI * 2)
     ctx.stroke()
+    for (let i = 0; i < 4; i++) {
+      const a = now / 480 + n.id + i * 1.3
+      const lift = (now / 14 + i * 6) % 16
+      ctx.fillStyle = `rgba(255,230,160,${0.24 - lift * 0.01})`
+      ctx.beginPath()
+      ctx.arc(p.sx + wander + Math.cos(a) * 8, p.sy - s * 0.15 - lift, 1.5, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    if (contested) {
+      ctx.strokeStyle = `rgba(212,92,58,${0.4 + 0.28 * Math.sin(now / 140)})`
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.arc(p.sx + wander, p.sy - s * 0.2 + bob, s * 0.38, 0, Math.PI * 2)
+      ctx.stroke()
+    }
   }
   if (quality > 1 && n.fauna) {
     const eye = 0.35 + 0.35 * Math.sin(now / 180 + n.id)
@@ -998,7 +1021,14 @@ export function drawWorld(
   }
   drawTerrain(ctx, cam, w, h, quality, world)
   for (const n of world.nodes) {
-    if (n.amount > 0) drawNode(ctx, n, cam, quality, w, h)
+    if (n.amount > 0) {
+      const owners = new Set(
+        world.units
+          .filter((u) => u.order.t === "gather" && u.order.node === n.id)
+          .map((u) => u.owner),
+      )
+      drawNode(ctx, n, cam, quality, w, h, owners.size > 1)
+    }
   }
   for (const b of world.buildings) {
     drawBuilding(

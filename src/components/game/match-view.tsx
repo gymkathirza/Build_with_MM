@@ -798,7 +798,7 @@ function Selection({
         levies hop to the next nearest of that job; a right-click lock holds the node you picked.
         Ashriders ride first. Three riders hook an empty hearth. Idle levies walk a relic if no
         scout is free. A spare levy crews a far camp, pit, or granary. A third warden overwatches
-        the camp. Pressed camps and pits draw a sentry.
+        the camp. A relic levy does not steal that crew. Pressed camps and pits draw a sentry.
         Recall walks banners home. The age rite waits if the hearth is struck; extra banners hold
         the hearth while it burns.
       </div>

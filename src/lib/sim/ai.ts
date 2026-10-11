@@ -514,7 +514,11 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
       const already = levies.some((u) => u.order.t === "gather" && u.order.node === relic.id)
       const levyScout = already
         ? null
-        : levies.find((u) => u.order.t === "idle" || u.order.t === "move" || u.order.t === "gather")
+        : levies.find(
+            (u) =>
+              !isFarCampCrew(w, u, owner) &&
+              (u.order.t === "idle" || u.order.t === "move" || u.order.t === "gather"),
+          )
       if (levyScout) issueGather(w, [levyScout.id], relic.id)
     }
     const contested = w.nodes.find(
