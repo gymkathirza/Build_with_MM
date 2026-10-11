@@ -429,6 +429,17 @@ function drawBuilding(
     ctx.beginPath()
     ctx.ellipse(p.sx - s * 0.16, p.sy - s * 0.08 + bob, 5, 4, 0, 0, Math.PI * 2)
     ctx.fill()
+    ctx.strokeStyle = "rgba(30,24,18,0.4)"
+    ctx.lineWidth = 1.1
+    for (let i = 0; i < 2; i++) {
+      const a = now / 900 + b.id + i * 2
+      const bx = p.sx + Math.cos(a) * s * 0.28
+      const by = p.sy - s * 0.42 + Math.sin(a * 0.7) * 6
+      ctx.beginPath()
+      ctx.moveTo(bx - 4, by)
+      ctx.quadraticCurveTo(bx, by - 3, bx + 4, by)
+      ctx.stroke()
+    }
   }
   if (quality > 1 && b.done && b.type === "camp") {
     const flicker = 0.28 + 0.22 * Math.sin(now / 90 + b.id)

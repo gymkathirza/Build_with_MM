@@ -482,7 +482,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     )
     const takers = military.filter(
       (u) =>
-        (u.type === "warden" || u.type === "guard") &&
+        (u.type === "warden" || u.type === "guard" || u.type === "ashrider") &&
         !garrison.some((g) => g.id === u.id) &&
         (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
     ).slice(0, 2)
