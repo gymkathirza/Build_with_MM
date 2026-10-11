@@ -657,8 +657,24 @@ function drawUnit(
   ctx.beginPath()
   ctx.ellipse(p.sx, y + size * 0.14, 5, 2.2, 0, 0, Math.PI * 2)
   ctx.fill()
+  if (quality > 1 && limp) {
+    ctx.strokeStyle = "rgba(212,92,58,0.7)"
+    ctx.lineWidth = 1.6
+    ctx.beginPath()
+    ctx.moveTo(p.sx - 4, y - size * 0.18)
+    ctx.lineTo(p.sx + 5, y - size * 0.08)
+    ctx.stroke()
+  }
   if (selected) {
-    ctx.strokeStyle = `rgba(255,246,212,${0.55 + 0.35 * Math.sin(t / 160)})`
+    const ring =
+      u.type === "ashrider"
+        ? "255,170,90"
+        : u.type === "warden"
+          ? "160,210,255"
+          : u.type === "guard"
+            ? "210,190,140"
+            : "255,246,212"
+    ctx.strokeStyle = `rgba(${ring},${0.55 + 0.35 * Math.sin(t / 160)})`
     ctx.lineWidth = 1.8
     ctx.beginPath()
     ctx.arc(p.sx, y, size * 0.5, 0, Math.PI * 2)

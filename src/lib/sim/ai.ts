@@ -508,6 +508,20 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         contested.x,
         contested.y,
       )
+    } else if (!hallPressed && !contested) {
+      const relicLevy = levies.find((u) => {
+        const order = u.order
+        if (order.t !== "gather") return false
+        const n = w.nodes.find((q) => q.id === order.node)
+        return n?.type === "relics"
+      })
+      const escort = military.find(
+        (u) =>
+          u.type === "guard" &&
+          !garrison.some((g) => g.id === u.id) &&
+          (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+      )
+      if (relicLevy && escort) issueDefend(w, [escort.id], relicLevy.x, relicLevy.y)
     }
   }
 

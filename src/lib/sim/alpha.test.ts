@@ -824,3 +824,29 @@ test("idle levy walks a relic when no scout is free", () => {
   )
 })
 
+test("a relic levy draws a banner escort", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  w.players[0].age = 1
+  const h = hall(w, 0)
+  const relic = w.nodes.find((n) => n.type === "relics" && n.amount > 0)
+  const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")
+  assert.ok(relic && levy)
+  levy.x = relic.x
+  levy.y = relic.y
+  assert.ok(issueGather(w, [levy.id], relic.id))
+  pushBanner(w, "guard", 0, h.x + 2, h.y)
+  pushBanner(w, "guard", 0, h.x + 3, h.y)
+  for (let i = 0; i < 24; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const escort = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "guard" &&
+      (u.order.t === "defend" || u.order.t === "attackMove" || Math.hypot(u.x - relic.x, u.y - relic.y) < 16),
+  )
+  assert.ok(escort, "a banner should walk with the relic levy")
+})
+
