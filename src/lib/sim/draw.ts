@@ -133,6 +133,23 @@ function drawTerrain(
     ctx.beginPath()
     ctx.ellipse(lake.sx - lrx * 0.22, lake.sy - lry * 0.28, lrx * 0.18, lry * 0.1, 0.4, 0, Math.PI * 2)
     ctx.fill()
+    if ((world.mapId === "hollowmere" || world.mapId === "vast-mere") && quality > 1) {
+      for (let i = 0; i < 5; i++) {
+        const a = t / 1600 + i * 1.1
+        ctx.fillStyle = "rgba(40,90,50,0.45)"
+        ctx.beginPath()
+        ctx.ellipse(
+          lake.sx + Math.cos(a) * lrx * 0.45,
+          lake.sy + Math.sin(a * 0.8) * lry * 0.4,
+          5,
+          2.4,
+          0.2,
+          0,
+          Math.PI * 2,
+        )
+        ctx.fill()
+      }
+    }
     if (world.mapId === "shattercoast" && quality > 1) {
       for (let i = 0; i < 5; i++) {
         const foam = 0.1 + 0.08 * Math.sin(t / 380 + i)

@@ -695,6 +695,14 @@ function caveHall(ctx: CanvasRenderingContext2D, ox: number, oy: number, variant
     ctx.moveTo(cx + 18, oy + 18)
     ctx.lineTo(cx + 22, oy + 8)
     ctx.stroke()
+    ctx.fillStyle = "#fff6d4"
+    ctx.beginPath()
+    ctx.ellipse(cx + 14, base - 20, 2.6, 3.4, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = "#f0c36a"
+    ctx.beginPath()
+    ctx.ellipse(cx + 14, base - 20, 1.2, 1.8, 0, 0, Math.PI * 2)
+    ctx.fill()
   }
 }
 
