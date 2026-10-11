@@ -549,6 +549,13 @@ function drawNode(
       ctx.beginPath()
       ctx.arc(p.sx + 4, p.sy - s * 0.22, 1.6, 0, Math.PI * 2)
       ctx.fill()
+      if (worked) {
+        const flake = (now / 45 + n.id * 2) % 14
+        ctx.fillStyle = `rgba(180,190,200,${0.26 - flake * 0.012})`
+        ctx.beginPath()
+        ctx.arc(p.sx + 2, p.sy - 4 - flake * 0.35, 1.4, 0, Math.PI * 2)
+        ctx.fill()
+      }
     }
   }
   if (quality > 1 && n.type === "relics") {
@@ -1162,7 +1169,7 @@ export function drawWorld(
         if (
           camp.owner !== hearth.owner ||
           !camp.done ||
-          (camp.type !== "camp" && camp.type !== "pit" && camp.type !== "granary")
+          (camp.type !== "camp" && camp.type !== "pit" && camp.type !== "granary" && camp.type !== "lodge")
         )
           continue
         if (Math.hypot(camp.x - hearth.x, camp.y - hearth.y) <= 16) continue

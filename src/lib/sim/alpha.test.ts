@@ -1355,3 +1355,32 @@ test("bare timber pulls a levy onto pine", () => {
   assert.ok(walker, "bare timber should walk pine")
 })
 
+test("bare ore pulls a levy onto stone", () => {
+  const params = personaById("balanced").params
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 80
+  w.players[0].timber = 40
+  w.players[0].ore = 10
+  for (const u of w.units) {
+    if (u.owner === 0 && u.type === "levy") {
+      u.x = h.x
+      u.y = h.y
+      u.order = { t: "idle" }
+    }
+  }
+  for (let i = 0; i < 20; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const walker = w.units.find((u) => {
+    if (u.owner !== 0 || u.type !== "levy") return false
+    const order = u.order
+    if (order.t === "return" && u.carry?.res === "ore") return true
+    if (order.t !== "gather") return false
+    const n = w.nodes.find((q) => q.id === order.node)
+    return n?.type === "ore"
+  })
+  assert.ok(walker, "bare ore should walk stone")
+})
+
