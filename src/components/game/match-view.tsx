@@ -789,7 +789,8 @@ function Selection({
         Select a levy or hall. Right-click grain, timber, ore, hunt, or relics to gather. Forge Age
         levies hop to the next nearest of that job; a right-click lock holds the node you picked.
         Ashriders ride first. Three riders hook an empty hearth. Idle levies walk a relic if no
-        scout is free. Pressed camps and pits draw a sentry. The age rite waits if the hearth is struck.
+        scout is free. Pressed camps and pits draw a sentry. Recall walks banners home. The age
+        rite waits if the hearth is struck.
       </div>
     )
   }
