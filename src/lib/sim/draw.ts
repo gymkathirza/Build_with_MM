@@ -190,6 +190,21 @@ function drawTerrain(
     }
   }
 
+  if (quality > 0 && world.mapId === "emberglass") {
+    for (let i = 0; i < 7; i++) {
+      const hx = ((hash(i * 41, 7) % 1000) / 1000) * size
+      const hy = ((hash(i * 23, 11) % 1000) / 1000) * size
+      if (Math.hypot(hx - size / 2, hy - size / 2) < lakeR * 2) continue
+      const a = worldToScreen(cam, hx, hy)
+      const b = worldToScreen(cam, hx + 8 + (i % 3) * 4, hy + 3)
+      ctx.strokeStyle = `rgba(180,70,30,${0.18 + 0.1 * Math.sin(performance.now() / 400 + i)})`
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(a.sx, a.sy)
+      ctx.lineTo(b.sx, b.sy)
+      ctx.stroke()
+    }
+  }
   if (quality > 0) {
     for (let i = 0; i < 16; i++) {
       const hx = ((hash(i * 19, 41) % 1000) / 1000) * size

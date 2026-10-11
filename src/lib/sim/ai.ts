@@ -410,12 +410,24 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
           issueAttack(w, [riders[0].id], preyLevy.id)
         }
         if (riders.length && foot.length && w.tick % 40 === owner) {
-          issueAttackMove(
-            w,
-            foot.map((u) => u.id),
-            enemyHall.x + (owner === 0 ? 5 : -5),
-            enemyHall.y + (owner === 0 ? 4 : -4),
-          )
+          const shields = foot.filter((u) => u.type === "guard")
+          const bows = foot.filter((u) => u.type !== "guard")
+          if (shields.length) {
+            issueAttackMove(
+              w,
+              shields.map((u) => u.id),
+              enemyHall.x + (owner === 0 ? 3 : -3),
+              enemyHall.y + (owner === 0 ? 2 : -2),
+            )
+          }
+          if (bows.length) {
+            issueAttackMove(
+              w,
+              bows.map((u) => u.id),
+              enemyHall.x + (owner === 0 ? 8 : -8),
+              enemyHall.y + (owner === 0 ? 6 : -6),
+            )
+          }
         }
       }
     }

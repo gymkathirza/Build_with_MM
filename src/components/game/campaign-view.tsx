@@ -106,7 +106,7 @@ export function CampaignView() {
                 <li key={chapter.id}>
                   <Card
                     className={cn(
-                      "gold-trim h-full bg-card/70",
+                      "gold-trim h-full bg-card/70 transition hover:bg-card/90 hover:ring-1 hover:ring-primary/40",
                       !chapter.unlocked && "opacity-70",
                     )}
                   >

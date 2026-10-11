@@ -168,6 +168,25 @@
       0 0 0 1px rgb(0 0 0 / 0.6);
   }
 
+  .reed-sway {
+    transform-origin: bottom center;
+    animation: reed-sway 3.6s ease-in-out infinite;
+  }
+
+  .reed-sway-delay {
+    animation-delay: 0.8s;
+  }
+
+  @keyframes reed-sway {
+    0%,
+    100% {
+      transform: rotate(-2deg);
+    }
+    50% {
+      transform: rotate(3deg);
+    }
+  }
+
   .menu-link {
     position: relative;
     letter-spacing: 0.18em;
