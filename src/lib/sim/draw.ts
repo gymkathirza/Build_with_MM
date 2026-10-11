@@ -320,7 +320,15 @@ function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: Dra
   const now = performance.now()
   const bob = n.fauna && quality > 0 ? Math.sin(n.id + now / 320) * 2.1 : 0
   const wander = n.fauna && quality > 1 ? Math.sin(n.id * 1.7 + now / 900) * 2.4 : 0
-  blit(ctx, nodeSpr(n), p.sx - s / 2 + wander, p.sy - s * 0.72 + bob, s, s)
+  if (n.fauna && wander < -0.4) {
+    ctx.save()
+    ctx.translate(p.sx + wander, 0)
+    ctx.scale(-1, 1)
+    blit(ctx, nodeSpr(n), -s / 2, p.sy - s * 0.72 + bob, s, s)
+    ctx.restore()
+  } else {
+    blit(ctx, nodeSpr(n), p.sx - s / 2 + wander, p.sy - s * 0.72 + bob, s, s)
+  }
   if (quality > 1 && n.type === "relics") {
     const gleam = 0.18 + 0.22 * Math.sin(now / 240 + n.id)
     ctx.strokeStyle = `rgba(255,246,212,${gleam})`
@@ -428,6 +436,15 @@ function drawBuilding(
     ctx.beginPath()
     ctx.ellipse(p.sx - s * 0.06, p.sy - s * 0.12, 4, 5, 0, 0, Math.PI * 2)
     ctx.fill()
+    ctx.strokeStyle = "rgba(90,60,30,0.45)"
+    ctx.lineWidth = 1.4
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2 + now / 4000
+      ctx.beginPath()
+      ctx.moveTo(p.sx + Math.cos(a) * s * 0.22, p.sy + Math.sin(a) * s * 0.1)
+      ctx.lineTo(p.sx + Math.cos(a) * s * 0.3, p.sy + Math.sin(a) * s * 0.14 - 6)
+      ctx.stroke()
+    }
   }
   if (quality > 1 && b.done && b.type === "pit") {
     const ember = 0.2 + 0.2 * Math.sin(now / 110 + b.id)

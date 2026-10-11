@@ -633,7 +633,7 @@ export function MatchView({
       {paused && winner === null ? (
         <Overlay
           title="The field is held"
-          description="Simulation is paused. Resume, change banners, or resign the match."
+          description="The plate is held. Resume the march, open the steward’s desk, or resign and furl the banners."
         >
           <Button className="w-full" onClick={() => setPaused(false)}>
             Resume
