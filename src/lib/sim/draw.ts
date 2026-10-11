@@ -209,6 +209,19 @@ function drawTerrain(
         ctx.arc(lake.sx - lrx * 0.35, lake.sy + lry * 0.15 - jump * 0.7, 1.8, 0, Math.PI * 2)
         ctx.fill()
       }
+      for (let i = 0; i < 5; i++) {
+        const a = t / 900 + i * 1.3
+        ctx.fillStyle = `rgba(255,230,160,${0.1 + 0.1 * Math.sin(t / 260 + i)})`
+        ctx.beginPath()
+        ctx.arc(
+          lake.sx + Math.cos(a) * lrx * 1.25,
+          lake.sy - lry * 0.8 + Math.sin(a * 0.7) * 8,
+          1.3,
+          0,
+          Math.PI * 2,
+        )
+        ctx.fill()
+      }
       for (let i = 0; i < 4; i++) {
         const a = t / 2400 + i * 1.4
         ctx.fillStyle = `rgba(210,230,220,${0.05 + 0.04 * Math.sin(t / 900 + i)})`
@@ -971,6 +984,13 @@ function drawUnit(
     ctx.moveTo(p.sx + (faceLeft ? -6 : 6), y - size * 0.28)
     ctx.lineTo(p.sx + (faceLeft ? -11 : 11), y - size * 0.42)
     ctx.stroke()
+  }
+  if (quality > 1 && u.type === "guard" && (u.order.t === "defend" || u.order.t === "idle")) {
+    const glint = 0.2 + 0.2 * Math.sin(t / 180 + u.id)
+    ctx.fillStyle = `rgba(210,190,140,${glint})`
+    ctx.beginPath()
+    ctx.ellipse(p.sx + (faceLeft ? -5 : 5), y - size * 0.16, 3.2, 4.2, 0, 0, Math.PI * 2)
+    ctx.fill()
   }
   if (quality > 1 && limp) {
     ctx.strokeStyle = "rgba(212,92,58,0.7)"

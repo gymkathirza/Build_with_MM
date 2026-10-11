@@ -1269,3 +1269,31 @@ test("an ashrider scouts an empty rival hearth first", () => {
   assert.ok(scouted, "an ashrider should scout the empty hearth before a foot banner")
 })
 
+test("starving stores pull a levy onto grain", () => {
+  const params = personaById("balanced").params
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 20
+  w.players[0].timber = 40
+  w.players[0].ore = 180
+  for (const u of w.units) {
+    if (u.owner === 0 && u.type === "levy") {
+      u.x = h.x
+      u.y = h.y
+      u.order = { t: "idle" }
+    }
+  }
+  for (let i = 0; i < 20; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const walker = w.units.find((u) => {
+    if (u.owner !== 0 || u.type !== "levy") return false
+    if (u.order.t === "return" && u.carry?.res === "grain") return true
+    if (u.order.t !== "gather") return false
+    const n = w.nodes.find((q) => q.id === u.order.node)
+    return n?.type === "grain"
+  })
+  assert.ok(walker, "starving stores should walk grain")
+})
+
