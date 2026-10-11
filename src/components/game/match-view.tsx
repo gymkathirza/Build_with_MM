@@ -174,7 +174,7 @@ export function MatchView({
       pressRef.current.textContent = press ? `Hearth pressed ×${press}` : ""
     }
     setHudPulse((n) => n + 1)
-  }, [world])
+  }, [world, mapId])
 
   useLayoutEffect(() => {
     let canvas = canvasRef.current

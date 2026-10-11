@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useState, type ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
@@ -9,28 +9,41 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CinematicShell } from "@/components/game/cinematic-shell"
 
-export function SettingsView() {
-  const [horns, setHorns] = useState(true)
-  const [banners, setBanners] = useState(true)
-  const [edgePan, setEdgePan] = useState(true)
-  const [master, setMaster] = useState([70])
-  const [music, setMusic] = useState([55])
-  const [saved, setSaved] = useState(false)
+type Steward = {
+  horns: boolean
+  banners: boolean
+  edgePan: boolean
+  master: number[]
+  music: number[]
+}
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("mm-steward")
-      if (!raw) return
-      const v = JSON.parse(raw) as { horns?: boolean; banners?: boolean; edgePan?: boolean; master?: number; music?: number }
-      if (typeof v.horns === "boolean") setHorns(v.horns)
-      if (typeof v.banners === "boolean") setBanners(v.banners)
-      if (typeof v.edgePan === "boolean") setEdgePan(v.edgePan)
-      if (typeof v.master === "number") setMaster([v.master])
-      if (typeof v.music === "number") setMusic([v.music])
-    } catch {
-      /* ignore bad ledger */
+function loadSteward(): Steward {
+  const fallback: Steward = { horns: true, banners: true, edgePan: true, master: [70], music: [55] }
+  if (typeof window === "undefined") return fallback
+  try {
+    const raw = localStorage.getItem("mm-steward")
+    if (!raw) return fallback
+    const v = JSON.parse(raw) as { horns?: boolean; banners?: boolean; edgePan?: boolean; master?: number; music?: number }
+    return {
+      horns: typeof v.horns === "boolean" ? v.horns : fallback.horns,
+      banners: typeof v.banners === "boolean" ? v.banners : fallback.banners,
+      edgePan: typeof v.edgePan === "boolean" ? v.edgePan : fallback.edgePan,
+      master: typeof v.master === "number" ? [v.master] : fallback.master,
+      music: typeof v.music === "number" ? [v.music] : fallback.music,
     }
-  }, [])
+  } catch {
+    return fallback
+  }
+}
+
+export function SettingsView() {
+  const [seed] = useState(loadSteward)
+  const [horns, setHorns] = useState(seed.horns)
+  const [banners, setBanners] = useState(seed.banners)
+  const [edgePan, setEdgePan] = useState(seed.edgePan)
+  const [master, setMaster] = useState(seed.master)
+  const [music, setMusic] = useState(seed.music)
+  const [saved, setSaved] = useState(false)
 
   return (
     <CinematicShell>
