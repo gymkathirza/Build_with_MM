@@ -477,6 +477,29 @@ test("student lowers attackAtArmy against rand-aggro", () => {
   assert.ok(march.length >= 1, "rand-aggro should draw an earlier march than attackAt 9")
 })
 
+test("student recalls the wave when banners press the hearth", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 2 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  w.players[0].age = 1
+  const h = hall(w, 0)
+  pushBanner(w, "guard", 0, h.x + 3, h.y)
+  pushBanner(w, "guard", 0, h.x + 4, h.y)
+  pushBanner(w, "ashrider", 0, h.x + 5, h.y)
+  pushBanner(w, "guard", 1, h.x + 6, h.y)
+  pushBanner(w, "guard", 1, h.x + 7, h.y)
+  for (let i = 0; i < 12; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const home = w.units.filter(
+    (u) =>
+      u.owner === 0 &&
+      u.type !== "levy" &&
+      (u.order.t === "attack" || u.order.t === "defend" || Math.hypot(u.x - h.x, u.y - h.y) < 16),
+  )
+  assert.ok(home.length >= 2, "pressed hearth should keep or recall banners")
+})
+
 test("Forge Age hunt hops to the next hunt, not a grain field", () => {
   const w = createWorld("ashen", "gilded", undefined, { mapId: "emberglass" })
   w.players[0].age = 1

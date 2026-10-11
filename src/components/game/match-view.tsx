@@ -329,6 +329,16 @@ export function MatchView({
         else setPaused((p) => !p)
       }
       if (e.code === "KeyH") issueHalt(world, selectedDrawRef.current.size ? [...selectedDrawRef.current] : [])
+      if (e.code === "KeyG") {
+        const hall = world.buildings.find((b) => b.owner === 0 && b.type === "hearth" && b.done)
+        const ids = selectedDrawRef.current.size ? [...selectedDrawRef.current] : []
+        if (hall && ids.length) issueDefend(world, ids, hall.x, hall.y)
+      }
+      if (e.code === "KeyF") setPending({ kind: "attackMove" })
+      if (e.code === "Space") {
+        e.preventDefault()
+        setPaused((p) => !p)
+      }
     }
     const up = (e: KeyboardEvent) => keysRef.current.delete(e.code)
     const wheel = (e: WheelEvent) => {
@@ -576,7 +586,8 @@ export function MatchView({
           <TrainPanel world={world} selected={selBuild} onTrain={() => paintHud(60, 16, 0)} />
         </div>
         <p className="px-3 pb-1.5 text-[11px] text-muted-foreground">
-          WASD pan · wheel zoom · left select · right order · Build with Manon Mani
+          WASD pan · wheel zoom · left select · right order · F strike-move · G defend hearth · H hold ·
+          Space pause · Esc cancel
         </p>
       </footer>
 
@@ -656,10 +667,10 @@ function Selection({
   }
   if (!selectedUnits.length) {
     return (
-      <div className="rounded-sm border border-dashed border-primary/25 px-3 py-6 text-center text-sm text-muted-foreground">
-        Select a levy or hall. Right-click grain, timber, ore, hunt, or relics to gather. In Forge Age
+      <div className="rounded-sm border border-dashed border-primary/25 px-3 py-5 text-center text-sm text-muted-foreground">
+        Select a levy or hall. Right-click grain, timber, ore, hunt, or relics to gather. Forge Age
         levies hop to the next nearest of that job; a right-click lock holds the node you picked.
-        Ashriders leave first when the march starts.
+        Ashriders ride first. If banners press your hearth, the student recalls the wave.
       </div>
     )
   }

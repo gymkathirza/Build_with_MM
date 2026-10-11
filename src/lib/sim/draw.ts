@@ -110,6 +110,10 @@ function drawTerrain(
     ctx.beginPath()
     ctx.ellipse(lake.sx + 8, lake.sy + 3, lrx * 0.52, lry * 0.28, -0.2, 0, Math.PI * 2)
     ctx.stroke()
+    ctx.fillStyle = `rgba(230,250,245,${0.08 + 0.06 * Math.sin(t / 520)})`
+    ctx.beginPath()
+    ctx.ellipse(lake.sx - lrx * 0.22, lake.sy - lry * 0.28, lrx * 0.18, lry * 0.1, 0.4, 0, Math.PI * 2)
+    ctx.fill()
     if (quality > 1) {
       for (let i = 0; i < 6; i++) {
         const a = (i / 6) * Math.PI * 2
@@ -120,7 +124,16 @@ function drawTerrain(
         )
         blit(ctx, SPR.palm, palm.sx - 16, palm.sy - 28, 32, 32)
       }
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2 + 0.4
+        const reed = worldToScreen(
+          cam,
+          size / 2 + Math.cos(a) * lakeR * 1.28,
+          size / 2 + Math.sin(a) * lakeR * 0.78,
+        )
+        blit(ctx, SPR.reed, reed.sx - 10, reed.sy - 18, 20, 20)
+      }
+      for (let i = 0; i < 4; i++) {
         const a = t / 1800 + i * 2.1
         const bird = worldToScreen(
           cam,
@@ -130,8 +143,8 @@ function drawTerrain(
         ctx.strokeStyle = `rgba(30,24,18,${0.35 + 0.2 * Math.sin(t / 400 + i)})`
         ctx.lineWidth = 1.2
         ctx.beginPath()
-        ctx.moveTo(bird.sx - 4, bird.sy)
-        ctx.quadraticCurveTo(bird.sx, bird.sy - 3 - Math.sin(t / 180 + i) * 2, bird.sx + 4, bird.sy)
+        ctx.moveTo(bird.sx - 5, bird.sy)
+        ctx.quadraticCurveTo(bird.sx, bird.sy - 4 - Math.sin(t / 180 + i) * 2.4, bird.sx + 5, bird.sy)
         ctx.stroke()
       }
     }
@@ -149,15 +162,18 @@ function drawTerrain(
   }
 
   if (quality > 0) {
-    for (let i = 0; i < 11; i++) {
+    for (let i = 0; i < 16; i++) {
       const hx = ((hash(i * 19, 41) % 1000) / 1000) * size
       const hy = ((hash(i * 29, 17) % 1000) / 1000) * size
       if (Math.hypot(hx - size / 2, hy - size / 2) < lakeR * 2.4) continue
       const hp = worldToScreen(cam, hx, hy)
-      ctx.fillStyle = i % 3 === 0 ? "rgba(62,52,32,0.28)" : "rgba(28,46,22,0.22)"
+      ctx.fillStyle = i % 3 === 0 ? "rgba(62,52,32,0.32)" : "rgba(28,46,22,0.24)"
       ctx.beginPath()
-      ctx.ellipse(hp.sx, hp.sy, (26 + (i % 4) * 4) * cam.z * 0.22, (11 + (i % 3) * 2) * cam.z * 0.22, 0.18, 0, Math.PI * 2)
+      ctx.ellipse(hp.sx, hp.sy, (30 + (i % 4) * 5) * cam.z * 0.24, (12 + (i % 3) * 2) * cam.z * 0.24, 0.18, 0, Math.PI * 2)
       ctx.fill()
+      if (quality > 1 && i % 4 === 0) {
+        blit(ctx, SPR.cliff, hp.sx - 18, hp.sy - 28, 36, 32)
+      }
     }
     const halls = world.buildings.filter((b) => b.type === "hearth" && b.done)
     if (halls.length >= 2) {
@@ -189,7 +205,7 @@ function drawTerrain(
         if (hsh % 9 > 1) continue
         const p = worldToScreen(cam, gx + (hsh % 5), gy + ((hsh >> 3) % 5))
         if (culled(p.sx, p.sy, deco, w, h)) continue
-        const spr = hsh % 9 === 0 ? SPR.grass : SPR.rock
+        const spr = hsh % 9 === 0 ? SPR.grass : hsh % 11 === 0 ? SPR.flower : hsh % 13 === 0 ? SPR.fern : SPR.rock
         blit(ctx, spr, p.sx - deco / 2, p.sy - deco * 0.65, deco, deco)
       }
     }
@@ -266,8 +282,22 @@ function drawBuilding(
   const s = Math.max(52, r * 2.05)
   if (culled(p.sx, p.sy, s, w, h)) return
   if (!b.done) ctx.globalAlpha = 0.58
+  ctx.fillStyle = "rgba(18,12,8,0.28)"
+  ctx.beginPath()
+  ctx.ellipse(p.sx, p.sy + s * 0.08, s * 0.38, s * 0.12, 0, 0, Math.PI * 2)
+  ctx.fill()
   blit(ctx, buildingSpr(b.type), p.sx - s / 2, p.sy - s * 0.78, s, s)
   ctx.globalAlpha = 1
+  if (!b.done && quality > 0) {
+    ctx.strokeStyle = "rgba(196,154,90,0.55)"
+    ctx.lineWidth = 1.5
+    ctx.strokeRect(p.sx - r * 0.7, p.sy - r * 0.9, r * 1.4, r * 1.3)
+    ctx.beginPath()
+    ctx.moveTo(p.sx - r * 0.7, p.sy - r * 0.9)
+    ctx.lineTo(p.sx, p.sy - r * 1.25)
+    ctx.lineTo(p.sx + r * 0.7, p.sy - r * 0.9)
+    ctx.stroke()
+  }
   if (quality > 0 && b.done && (b.type === "hearth" || b.type === "camp" || b.type === "pit")) {
     const rise = (now / 18 + b.id * 13) % 28
     ctx.fillStyle = `rgba(220,210,200,${0.18 + (b.type === "pit" ? 0.12 : 0)})`
@@ -378,6 +408,10 @@ function drawUnit(
   const bob = quality > 0 ? Math.sin(t / (moving ? 90 : 180) + u.id) * (moving ? 2.2 : 1.2) : 0
   const sway = quality > 0 && moving ? Math.sin(t / 70 + u.id) * 1.6 : 0
   const y = p.sy + bob
+  ctx.fillStyle = "rgba(18,12,8,0.28)"
+  ctx.beginPath()
+  ctx.ellipse(p.sx, y + size * 0.16, size * 0.28, size * 0.08, 0, 0, Math.PI * 2)
+  ctx.fill()
   if (quality > 1 && moving) {
     const puff = (t / 40 + u.id * 3) % 10
     ctx.fillStyle = `rgba(90,70,40,${0.16 - puff * 0.012})`
@@ -420,13 +454,17 @@ function drawMinimap(ctx: CanvasRenderingContext2D, world: World, cam: Cam, w: n
   const mh = 90
   const x = w - mw - 12
   const y = h - mh - 12
-  ctx.fillStyle = "rgba(8,6,4,0.72)"
+  ctx.fillStyle = "rgba(8,6,4,0.78)"
   ctx.fillRect(x, y, mw, mh)
-  ctx.strokeStyle = "rgba(243,212,138,0.45)"
+  ctx.strokeStyle = "rgba(243,212,138,0.5)"
   ctx.strokeRect(x, y, mw, mh)
   const size = Math.max(1, world.size)
   const sx = mw / size
   const sy = mh / size
+  ctx.fillStyle = "rgba(45,106,120,0.55)"
+  ctx.beginPath()
+  ctx.ellipse(x + size * 0.5 * sx, y + size * 0.5 * sy, mw * 0.08, mh * 0.07, 0.2, 0, Math.PI * 2)
+  ctx.fill()
   for (const n of world.nodes) {
     if (n.amount <= 0) continue
     ctx.fillStyle = n.fauna
@@ -540,9 +578,20 @@ export function drawWorld(
   if (quality > 0) {
     const dusk = ctx.createRadialGradient(w * 0.5, h * 0.42, Math.min(w, h) * 0.28, w * 0.5, h * 0.5, Math.max(w, h) * 0.72)
     dusk.addColorStop(0, "rgba(0,0,0,0)")
-    dusk.addColorStop(1, "rgba(12,8,4,0.28)")
+    dusk.addColorStop(1, "rgba(12,8,4,0.32)")
     ctx.fillStyle = dusk
     ctx.fillRect(0, 0, w, h)
+    if (quality > 1) {
+      for (let i = 0; i < 10; i++) {
+        const a = now / 2400 + i * 0.62
+        const mx = w * (0.12 + ((i * 17) % 80) / 100) + Math.sin(a) * 18
+        const my = h * (0.18 + ((i * 13) % 60) / 100) + Math.cos(a * 0.8) * 10
+        ctx.fillStyle = `rgba(255,220,140,${0.08 + 0.1 * (0.5 + 0.5 * Math.sin(now / 300 + i))})`
+        ctx.beginPath()
+        ctx.arc(mx, my, 1.4, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
     drawMinimap(ctx, world, cam, w, h)
   }
 }

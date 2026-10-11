@@ -30,6 +30,10 @@ export const SPR = {
   boar: 22,
   bear: 23,
   wolf: 24,
+  reed: 25,
+  flower: 26,
+  cliff: 27,
+  fern: 28,
 } as const
 
 const SKIN = "#f0c09a"
@@ -650,6 +654,8 @@ function caveHall(ctx: CanvasRenderingContext2D, ox: number, oy: number, variant
   ctx.beginPath()
   ctx.arc(cx + 3, base - 12, 1.4, 0, Math.PI * 2)
   ctx.fill()
+  ctx.fillStyle = "#5a3a18"
+  ctx.fillRect(cx - 18, base - 4, 36, 3)
   if (variant === 0) {
     ctx.fillStyle = "#f0c36a"
     ctx.beginPath()
@@ -931,6 +937,62 @@ function bakeAtlas() {
   put(SPR.boar, (x, y) => drawBoar(ctx, x, y))
   put(SPR.bear, (x, y) => drawBear(ctx, x, y))
   put(SPR.wolf, (x, y) => drawWolf(ctx, x, y))
+  put(SPR.reed, (x, y) => {
+    ctx.fillStyle = "#2f5a28"
+    for (let i = 0; i < 6; i++) {
+      ctx.beginPath()
+      ctx.moveTo(x + 18 + i * 6, y + 56)
+      ctx.quadraticCurveTo(x + 20 + i * 6, y + 28, x + 14 + i * 6 + (i % 2) * 8, y + 12)
+      ctx.quadraticCurveTo(x + 22 + i * 6, y + 32, x + 20 + i * 6, y + 56)
+      ctx.fill()
+    }
+    ctx.fillStyle = "#6a8a38"
+    ctx.beginPath()
+    ctx.ellipse(x + 28, y + 16, 3, 6, -0.4, 0, Math.PI * 2)
+    ctx.fill()
+  })
+  put(SPR.flower, (x, y) => {
+    ctx.fillStyle = GRASS
+    ctx.fillRect(x + 30, y + 36, 3, 18)
+    ctx.fillStyle = "#e8c76a"
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2
+      ctx.beginPath()
+      ctx.ellipse(x + 32 + Math.cos(a) * 6, y + 32 + Math.sin(a) * 5, 4, 3, a, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ellipse(ctx, x + 32, y + 32, 2.4, 2.4, "#fff6d4", false)
+  })
+  put(SPR.cliff, (x, y) => {
+    ctx.fillStyle = "#6a727a"
+    ctx.beginPath()
+    ctx.moveTo(x + 8, y + 56)
+    ctx.lineTo(x + 10, y + 22)
+    ctx.lineTo(x + 28, y + 10)
+    ctx.lineTo(x + 54, y + 26)
+    ctx.lineTo(x + 56, y + 56)
+    ctx.closePath()
+    ctx.fill()
+    ctx.fillStyle = "#9aa3ad"
+    ctx.beginPath()
+    ctx.moveTo(x + 18, y + 30)
+    ctx.lineTo(x + 28, y + 16)
+    ctx.lineTo(x + 42, y + 28)
+    ctx.closePath()
+    ctx.fill()
+    mossDots(ctx, x + 34, y + 22, 4)
+  })
+  put(SPR.fern, (x, y) => {
+    ctx.fillStyle = "#3d6a32"
+    for (let i = 0; i < 5; i++) {
+      const a = -1.4 + i * 0.55
+      ctx.beginPath()
+      ctx.ellipse(x + 32 + Math.cos(a) * 10, y + 40 + Math.sin(a) * 6, 11, 3.2, a, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.fillStyle = "#2a4a22"
+    ctx.fillRect(x + 30, y + 40, 3, 14)
+  })
   return c
 }
 
@@ -939,10 +1001,13 @@ function bakeMoss() {
   const ctx = ctx2d(c)
   ctx.fillStyle = "#35502f"
   ctx.fillRect(0, 0, 48, 48)
-  for (let i = 0; i < 18; i++) {
-    ctx.fillStyle = i % 3 === 0 ? "#3d5a32" : "#2f4a2c"
-    ctx.fillRect((i * 13) % 48, (i * 19) % 48, 3, 2)
+  for (let i = 0; i < 28; i++) {
+    ctx.fillStyle = i % 4 === 0 ? "#4a6a38" : i % 3 === 0 ? "#3d5a32" : "#2f4a2c"
+    ctx.fillRect((i * 13) % 48, (i * 19) % 48, 4, 2)
   }
+  ctx.fillStyle = "rgba(90,70,40,0.18)"
+  ctx.fillRect(8, 22, 18, 3)
+  ctx.fillRect(24, 36, 14, 2)
   return c
 }
 

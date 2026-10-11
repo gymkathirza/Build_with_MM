@@ -49,8 +49,8 @@ export function SkirmishView() {
             </h1>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
               Vast Mere is the Alpha default. Forge Age levies take the nearest timber, ore, grain,
-              or hunt and hop when it empties. Pick any named plate — each preview and march URL is
-              unique. Lost Cartograph stays sealed.
+              or hunt and hop when it empties. Banners recall if the hearth is pressed. Pick any
+              named plate — each preview and march URL is unique. Lost Cartograph stays sealed.
             </p>
           </div>
           <Link href="/" className={buttonVariants({ variant: "outline" })}>

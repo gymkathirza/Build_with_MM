@@ -81,6 +81,23 @@ function hall(w: World, owner: Owner) {
   return w.buildings.find((b) => b.owner === owner && b.type === "hearth" && b.done)
 }
 
+function foesNear(w: World, x: number, y: number, r: number, owner: Owner) {
+  const out: World["units"] = []
+  for (const u of w.units) {
+    if (u.owner === owner) continue
+    if (Math.hypot(u.x - x, u.y - y) < r) out.push(u)
+  }
+  return out
+}
+
+function weakest(units: World["units"]) {
+  let best = units[0]
+  for (const u of units) {
+    if (u.hp < best.hp) best = u
+  }
+  return best
+}
+
 function countType(w: World, owner: Owner, type: string) {
   return w.units.filter((u) => u.owner === owner && u.type === type).length
 }
@@ -249,9 +266,11 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
 
   const enemyHall = hall(w, owner === 0 ? 1 : 0)
   const guards = military.filter((u) => u.type === "guard")
+  const raiders = foesNear(w, h.x, h.y, 22, owner)
+  const hallPressed = raiders.length > 0
   const attackAt = p.age >= 1 ? Math.max(2, tuned.attackAtArmy - 1) : tuned.attackAtArmy
-  const keepRaid = military.length >= attackAt ? 1 : 0
-  const wantHold = Math.max(1, Math.floor(guards.length * 0.35))
+  const keepRaid = !hallPressed && military.length >= attackAt ? 1 : 0
+  const wantHold = Math.max(1, Math.floor(guards.length * (hallPressed ? 0.7 : 0.35)))
   const garrisonN = Math.max(0, Math.min(guards.length - keepRaid, wantHold))
   const garrison = guards.slice(0, garrisonN)
   if (garrison.length && w.tick % 20 === owner) {
@@ -261,6 +280,24 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
       h.x,
       h.y,
     )
+  }
+  if (hallPressed && w.tick % 10 === owner) {
+    const prey = weakest(raiders)
+    const responders = military.filter((u) => !garrison.some((g) => g.id === u.id) && u.hp >= u.hpMax * 0.28)
+    if (prey && responders.length) {
+      issueAttack(
+        w,
+        responders.map((u) => u.id),
+        prey.id,
+      )
+    }
+  }
+  if (w.tick % 20 === owner) {
+    for (const u of levies) {
+      if (u.order.t !== "gather" && u.order.t !== "return") continue
+      const threat = foesNear(w, u.x, u.y, 9, owner).find((f) => f.type !== "levy")
+      if (threat) issueMove(w, [u.id], h.x + (owner === 0 ? 2 : -2), h.y)
+    }
   }
 
   if (persona.tease && military.length >= 1 && w.tick % 40 === owner) {
@@ -306,7 +343,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
       ).length
     : 99
 
-  if (enemyHall && military.length >= attackAt) {
+  if (!hallPressed && enemyHall && military.length >= attackAt) {
     const soldiers = military.filter(
       (u) =>
         (u.order.t === "idle" || u.order.t === "move" || u.order.t === "attackMove" || u.order.t === "defend") &&
@@ -314,44 +351,54 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         u.hp >= u.hpMax * 0.38,
     )
     if (soldiers.length) {
-      const riders = soldiers.filter((u) => u.type === "ashrider")
-      const wave = riders.length ? riders : soldiers
-      const bend = riders.length ? (owner === 0 ? -6 : 6) : 0
-      issueAttackMove(
-        w,
-        wave.map((u) => u.id),
-        enemyHall.x,
-        enemyHall.y + bend,
-      )
-      const foot = soldiers.filter((u) => u.type !== "ashrider")
-      if (riders.length && foot.length && w.tick % 40 === owner) {
+      const midX = soldiers.reduce((s, u) => s + u.x, 0) / soldiers.length
+      const midY = soldiers.reduce((s, u) => s + u.y, 0) / soldiers.length
+      const closeFoes = foesNear(w, midX, midY, 16, owner)
+      if (closeFoes.length) {
+        const prey = weakest(closeFoes)
+        issueAttack(
+          w,
+          soldiers.map((u) => u.id),
+          prey.id,
+        )
+      } else {
+        const riders = soldiers.filter((u) => u.type === "ashrider")
+        const wave = riders.length ? riders : soldiers
+        const bend = riders.length ? (owner === 0 ? -6 : 6) : 0
         issueAttackMove(
           w,
-          foot.map((u) => u.id),
+          wave.map((u) => u.id),
           enemyHall.x,
-          enemyHall.y,
+          enemyHall.y + bend,
         )
+        const foot = soldiers.filter((u) => u.type !== "ashrider")
+        if (riders.length && foot.length && w.tick % 40 === owner) {
+          issueAttackMove(
+            w,
+            foot.map((u) => u.id),
+            enemyHall.x + (owner === 0 ? 5 : -5),
+            enemyHall.y,
+          )
+        }
       }
     }
   } else if (
+    !hallPressed &&
     p.age >= 1 &&
     enemyHall &&
     military.length >= 2 &&
-    levies.length >= 10 &&
     w.tick % 80 === owner &&
     p.timber >= 80 &&
     p.ore >= 40 &&
     foeMilitaryHome === 0
   ) {
-    const militia = levies.filter((u) => u.order.t === "idle").slice(0, 2)
-    if (militia.length) {
-      issueAttackMove(
-        w,
-        militia.map((u) => u.id),
-        enemyHall.x,
-        enemyHall.y,
-      )
-    }
+    const scout = military.find(
+      (u) =>
+        (u.order.t === "idle" || u.order.t === "defend") &&
+        !garrison.some((g) => g.id === u.id) &&
+        u.hp >= u.hpMax * 0.6,
+    )
+    if (scout) issueAttackMove(w, [scout.id], enemyHall.x, enemyHall.y)
   }
 
   if (p.age >= 1 && w.tick % 60 === owner) {

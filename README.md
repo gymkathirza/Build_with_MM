@@ -34,9 +34,11 @@ npm run playtest:gather  # Forge nearest-chain probe (travel / idle / wrong node
 npm run benchmark      # wall-clock hour: BENCH_MINUTES=60 npm run benchmark
 ```
 
-## Eight-hour ML loop
+## Eleven-hour ML loop
 
-Invoke `/8hml` from Cursor or `npm run ml:8h` in the repo.
+`npm run ml:11h` is the durable command for a wall-clock **≥660 minute** Vast Mere observability + tuner job (`BENCH_MINUTES=660`). Leave it until it prints `Done`. It writes `src/lib/ml/tuned.json` and `src/lib/ml/benchmark-latest.json`.
+
+`npm run ml:8h` or Cursor `/8hml` is the shorter 485-minute variant. `npm run benchmark` is the one-hour variant (`BENCH_MINUTES=60`).
 
 ## What Alpha includes
 
