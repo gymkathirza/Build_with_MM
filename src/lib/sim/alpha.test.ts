@@ -461,10 +461,12 @@ test("student lowers attackAtArmy against rand-aggro", () => {
   w.players[0].ore = 400
   w.players[0].timber = 400
   const h = hall(w, 0)
+  // adapt 9→6, Forge uses attackAt-1 = 5, so the wave needs five banners.
   pushBanner(w, "guard", 0, h.x + 2, h.y)
   pushBanner(w, "guard", 0, h.x + 3, h.y)
   pushBanner(w, "guard", 0, h.x + 4, h.y)
   pushBanner(w, "ashrider", 0, h.x + 5, h.y)
+  pushBanner(w, "ashrider", 0, h.x + 6, h.y)
   for (let i = 0; i < 10; i++) {
     tickAi(w, 0, student, personaById("balanced"))
     tick(w)
