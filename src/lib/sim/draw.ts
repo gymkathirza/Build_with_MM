@@ -534,7 +534,7 @@ function drawBuilding(
     ctx.fillText(label, p.sx, p.sy + r + 14)
   }
   if (selected) {
-    ctx.strokeStyle = "#f3d48a"
+    ctx.strokeStyle = `rgba(243,212,138,${0.55 + 0.35 * Math.sin(now / 160)})`
     ctx.lineWidth = 2
     ctx.strokeRect(p.sx - r - 3, p.sy - r - 3, r * 2 + 6, r * 2 + 6)
   }
