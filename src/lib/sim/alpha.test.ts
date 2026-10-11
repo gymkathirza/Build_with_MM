@@ -501,6 +501,34 @@ test("ashrider peels a gathering rival levy", () => {
   )
 })
 
+test("pressed hearth queues a banner guard", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 400
+  w.players[0].ore = 200
+  w.players[0].timber = 200
+  const yard = placeBuilding(
+    w,
+    0,
+    "yard",
+    h.x + 8,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  yard.done = true
+  yard.construct = yard.constructMax
+  pushBanner(w, "guard", 1, h.x + 4, h.y)
+  for (let i = 0; i < 8; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  assert.ok(
+    yard.queue.some((q) => q.type === "guard") || w.units.some((u) => u.owner === 0 && u.type === "guard"),
+    "pressed hearth should raise a guard",
+  )
+})
+
 test("wounded hearth keeps the banners home", () => {
   const params = { ...personaById("balanced").params, attackAtArmy: 2 }
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })

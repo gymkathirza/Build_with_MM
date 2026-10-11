@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
@@ -16,6 +16,21 @@ export function SettingsView() {
   const [master, setMaster] = useState([70])
   const [music, setMusic] = useState([55])
   const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("mm-steward")
+      if (!raw) return
+      const v = JSON.parse(raw) as { horns?: boolean; banners?: boolean; edgePan?: boolean; master?: number; music?: number }
+      if (typeof v.horns === "boolean") setHorns(v.horns)
+      if (typeof v.banners === "boolean") setBanners(v.banners)
+      if (typeof v.edgePan === "boolean") setEdgePan(v.edgePan)
+      if (typeof v.master === "number") setMaster([v.master])
+      if (typeof v.music === "number") setMusic([v.music])
+    } catch {
+      /* ignore bad ledger */
+    }
+  }, [])
 
   return (
     <CinematicShell>
@@ -102,7 +117,21 @@ export function SettingsView() {
           <p className="text-sm text-muted-foreground">
             {saved ? "Noted for this sitting." : "Unsaved. Record before you march."}
           </p>
-          <Button onClick={() => setSaved(true)}>Record</Button>
+          <Button
+            onClick={() => {
+              try {
+                localStorage.setItem(
+                  "mm-steward",
+                  JSON.stringify({ horns, banners, edgePan, master: master[0], music: music[0] }),
+                )
+              } catch {
+                /* private mode */
+              }
+              setSaved(true)
+            }}
+          >
+            Record
+          </Button>
         </div>
       </div>
     </CinematicShell>

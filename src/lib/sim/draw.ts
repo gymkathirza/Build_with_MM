@@ -36,6 +36,15 @@ function hash(x: number, y: number) {
   return (Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263)) >>> 0
 }
 
+export function plateGround(mapId: string) {
+  if (mapId === "nightgrove") return "#243526"
+  if (mapId === "sunvault") return "#5a6a3a"
+  if (mapId === "emberglass") return "#4a3a28"
+  if (mapId === "shattercoast") return "#3a4a42"
+  if (mapId === "hollowmere") return "#2e4a3a"
+  return "#3d5a32"
+}
+
 function drawTerrain(
   ctx: CanvasRenderingContext2D,
   cam: Cam,
@@ -45,16 +54,7 @@ function drawTerrain(
   world: World,
 ) {
   const size = world.size
-  ctx.fillStyle =
-    world.mapId === "nightgrove"
-      ? "#243526"
-      : world.mapId === "sunvault"
-        ? "#5a6a3a"
-        : world.mapId === "emberglass"
-          ? "#4a3a28"
-          : world.mapId === "shattercoast"
-            ? "#3a4a42"
-            : "#3d5a32"
+  ctx.fillStyle = plateGround(world.mapId)
   ctx.fillRect(0, 0, w, h)
   const c0 = worldToScreen(cam, 0, 0)
   const c1 = worldToScreen(cam, size, size)
@@ -501,6 +501,10 @@ function drawUnit(
     ctx.moveTo(p.sx + sway * dir + 4 * dir, y - size * 0.2)
     ctx.lineTo(p.sx + sway * dir + 14 * dir, y - size * 0.48)
     ctx.stroke()
+    ctx.fillStyle = "rgba(255,230,160,0.55)"
+    ctx.beginPath()
+    ctx.arc(p.sx + sway * dir + 12 * dir, y - size * 0.46, 2.4, 0, Math.PI * 2)
+    ctx.fill()
   }
   ctx.fillStyle = color
   ctx.beginPath()

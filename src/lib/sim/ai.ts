@@ -269,6 +269,9 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
   const raiders = foesNear(w, h.x, h.y, 22, owner)
   const hallWounded = h.hp < h.hpMax * 0.82
   const hallPressed = raiders.length > 0 || hallWounded
+  if (hallPressed && yard && yard.queue.length < 4 && p.grain >= 55 && p.ore >= 20) {
+    queueTrain(w, yard.id, "guard")
+  }
   const attackAt = p.age >= 1 ? Math.max(2, tuned.attackAtArmy - 1) : tuned.attackAtArmy
   const keepRaid = !hallPressed && military.length >= attackAt ? 1 : 0
   const wantHold = Math.max(1, Math.floor(guards.length * (hallPressed ? 0.7 : 0.35)))

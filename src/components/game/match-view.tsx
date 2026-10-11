@@ -40,7 +40,7 @@ import {
   upgradeBuilding,
 } from "@/lib/sim/engine"
 import { tickAi } from "@/lib/sim/ai"
-import { type Cam, drawWorld, nodeLabel, screenToWorld } from "@/lib/sim/draw"
+import { type Cam, drawWorld, nodeLabel, plateGround, screenToWorld } from "@/lib/sim/draw"
 import { createTelemetry, pushEvent, pushFrame } from "@/lib/obs/telemetry"
 import { DEFAULT_TUNED, type DrawQuality, type Tuned } from "@/lib/ml/score"
 import { factionById, mapById } from "@/lib/game-data"
@@ -260,7 +260,7 @@ export function MatchView({
         if (acc > step * 2) acc = 0
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      ctx.fillStyle = "#3d5a32"
+      ctx.fillStyle = plateGround(world.mapId)
       ctx.fillRect(0, 0, w, h)
       const t0 = performance.now()
       try {
@@ -270,6 +270,8 @@ export function MatchView({
       }
       const drag = dragRef.current
       if (drag) {
+        ctx.fillStyle = "rgba(243,212,138,0.12)"
+        ctx.fillRect(drag.sx, drag.sy, drag.x - drag.sx, drag.y - drag.sy)
         ctx.strokeStyle = "rgba(243,212,138,0.9)"
         ctx.strokeRect(drag.sx, drag.sy, drag.x - drag.sx, drag.y - drag.sy)
       }
