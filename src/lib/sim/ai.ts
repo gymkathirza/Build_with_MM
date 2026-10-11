@@ -25,7 +25,7 @@ function ownerFarOutposts(w: World, owner: Owner) {
     (b) =>
       b.owner === owner &&
       b.done &&
-      (b.type === "camp" || b.type === "pit") &&
+      (b.type === "camp" || b.type === "pit" || b.type === "granary") &&
       Math.hypot(b.x - h.x, b.y - h.y) > 16,
   )
 }
@@ -604,6 +604,19 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         : undefined
     if (farCamp && spareRider) {
       issueDefend(w, [spareRider.id], farCamp.x, farCamp.y)
+    }
+    const wardenCount = military.filter((u) => u.type === "warden").length
+    const spareWarden =
+      wardenCount >= 3
+        ? military.find(
+            (u) =>
+              u.type === "warden" &&
+              !garrison.some((g) => g.id === u.id) &&
+              (u.order.t === "idle" || u.order.t === "defend" || u.order.t === "move"),
+          )
+        : undefined
+    if (farCamp && spareWarden) {
+      issueDefend(w, [spareWarden.id], farCamp.x, farCamp.y)
     }
   }
 }

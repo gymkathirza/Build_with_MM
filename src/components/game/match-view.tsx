@@ -778,7 +778,7 @@ function Selection({
                 ? "Pressed — a sentry should hold this yard"
                 : building.tier >= 1
                   ? "Shored"
-                  : building.type === "camp" || building.type === "pit"
+                  : building.type === "camp" || building.type === "pit" || building.type === "granary"
                     ? (() => {
                         const hearth = world.buildings.find((b) => b.owner === building.owner && b.type === "hearth")
                         const far = hearth && Math.hypot(building.x - hearth.x, building.y - hearth.y) > 16
@@ -797,7 +797,8 @@ function Selection({
         Select a levy or hall. Right-click grain, timber, ore, hunt, or relics to gather. Forge Age
         levies hop to the next nearest of that job; a right-click lock holds the node you picked.
         Ashriders ride first. Three riders hook an empty hearth. Idle levies walk a relic if no
-        scout is free. A spare levy crews a far camp or pit. Pressed camps and pits draw a sentry.
+        scout is free. A spare levy crews a far camp, pit, or granary. A third warden overwatches
+        the camp. Pressed camps and pits draw a sentry.
         Recall walks banners home. The age rite waits if the hearth is struck; extra banners hold
         the hearth while it burns.
       </div>

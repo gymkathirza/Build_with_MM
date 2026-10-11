@@ -1019,3 +1019,72 @@ test("age rite pulls banners home to hold the hearth", () => {
   assert.ok(holding.length >= 2, "the rite should pull banners onto the hearth")
 })
 
+test("extra levies walk a far granary", () => {
+  const params = personaById("balanced").params
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 400
+  w.players[0].timber = 200
+  const granary = placeBuilding(
+    w,
+    0,
+    "granary",
+    h.x + 22,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  granary.done = true
+  granary.construct = granary.constructMax
+  for (let i = 0; i < 8; i++) {
+    const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")
+    if (!levy) break
+    w.units.push({ ...levy, id: w.nextId++, x: h.x + 1, y: h.y + 1, order: { t: "idle" }, carry: null })
+  }
+  for (const u of w.units) {
+    if (u.owner === 0 && u.type === "levy") u.order = { t: "idle" }
+  }
+  for (let i = 0; i < 50; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const walker = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "levy" &&
+      (u.order.t === "move" || Math.hypot(u.x - granary.x, u.y - granary.y) < 8),
+  )
+  assert.ok(walker, "an extra levy should walk the far granary")
+})
+
+test("a third warden overwatches a far camp", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  w.players[0].grain = 400
+  w.players[0].timber = 200
+  const camp = placeBuilding(
+    w,
+    0,
+    "camp",
+    h.x + 22,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  camp.done = true
+  camp.construct = camp.constructMax
+  for (let i = 0; i < 3; i++) pushBanner(w, "warden", 0, h.x + 2 + i, h.y)
+  for (let i = 0; i < 50; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const watch = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "warden" &&
+      ((u.order.t === "defend" && Math.hypot(u.order.x - camp.x, u.order.y - camp.y) < 4) ||
+        Math.hypot(u.x - camp.x, u.y - camp.y) < 10),
+  )
+  assert.ok(watch, "a spare warden should overwatch the far camp")
+})
+

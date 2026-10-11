@@ -609,6 +609,11 @@ function drawBuilding(
       ctx.quadraticCurveTo(bx, by - 3, bx + 4, by)
       ctx.stroke()
     }
+    const chaff = (now / 60 + b.id * 4) % 14
+    ctx.fillStyle = `rgba(212,184,90,${0.22 - chaff * 0.012})`
+    ctx.beginPath()
+    ctx.ellipse(p.sx + 6, p.sy - s * 0.2 - chaff * 0.5, 2.4, 1.2, 0.3, 0, Math.PI * 2)
+    ctx.fill()
   }
   if (quality > 1 && b.done && b.type === "camp") {
     const flicker = 0.28 + 0.22 * Math.sin(now / 90 + b.id)
@@ -857,6 +862,15 @@ function drawUnit(
     ctx.beginPath()
     ctx.arc(p.sx + 8, y - size * 0.12, 2.2, 0, Math.PI * 2)
     ctx.fill()
+  }
+  if (quality > 1 && u.type === "warden" && u.order.t !== "attack") {
+    const glint = 0.18 + 0.22 * Math.sin(t / 200 + u.id)
+    ctx.strokeStyle = `rgba(190,230,255,${glint})`
+    ctx.lineWidth = 1.3
+    ctx.beginPath()
+    ctx.moveTo(p.sx + (faceLeft ? -6 : 6), y - size * 0.28)
+    ctx.lineTo(p.sx + (faceLeft ? -11 : 11), y - size * 0.42)
+    ctx.stroke()
   }
   if (quality > 1 && limp) {
     ctx.strokeStyle = "rgba(212,92,58,0.7)"
