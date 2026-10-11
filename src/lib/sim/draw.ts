@@ -150,6 +150,20 @@ function drawTerrain(
         ctx.fill()
       }
     }
+    if (world.mapId === "vast-mere" && quality > 1) {
+      for (let i = 0; i < 8; i++) {
+        const a = i * 0.72 + 0.35
+        const rx = lake.sx + Math.cos(a) * lrx * 1.06
+        const ry = lake.sy + Math.sin(a) * lry * 1.14
+        const sway = Math.sin(t / 420 + i) * 2.2
+        ctx.strokeStyle = "rgba(46,82,38,0.48)"
+        ctx.lineWidth = 1.35
+        ctx.beginPath()
+        ctx.moveTo(rx, ry)
+        ctx.quadraticCurveTo(rx + sway, ry - 7, rx + sway * 0.35, ry - 15)
+        ctx.stroke()
+      }
+    }
     if (quality > 1) {
       for (let i = 0; i < 6; i++) {
         const foam = 0.07 + 0.08 * Math.sin(t / 380 + i)
@@ -513,6 +527,13 @@ function drawBuilding(
     ctx.beginPath()
     ctx.arc(p.sx + 3, p.sy - s * 0.2 - spark * 0.7, 1.6, 0, Math.PI * 2)
     ctx.fill()
+    ctx.strokeStyle = "rgba(90,70,40,0.28)"
+    ctx.lineWidth = 1.1
+    ctx.setLineDash([3, 4])
+    ctx.beginPath()
+    ctx.ellipse(p.sx, p.sy + s * 0.02, s * 0.34, s * 0.16, 0, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.setLineDash([])
   }
   if (quality > 1 && b.done && b.type === "pit") {
     const ember = 0.2 + 0.2 * Math.sin(now / 110 + b.id)
@@ -823,6 +844,25 @@ export function drawWorld(
       w,
       h,
     )
+  }
+  if (quality > 1) {
+    ctx.strokeStyle = "rgba(90,70,40,0.16)"
+    ctx.lineWidth = Math.max(2, cam.z * 0.2)
+    ctx.setLineDash([5, 6])
+    for (const hearth of world.buildings) {
+      if (hearth.type !== "hearth" || !hearth.done) continue
+      for (const camp of world.buildings) {
+        if (camp.owner !== hearth.owner || !camp.done || camp.type !== "camp") continue
+        if (Math.hypot(camp.x - hearth.x, camp.y - hearth.y) <= 16) continue
+        const a = worldToScreen(cam, hearth.x, hearth.y)
+        const b = worldToScreen(cam, camp.x, camp.y)
+        ctx.beginPath()
+        ctx.moveTo(a.sx, a.sy)
+        ctx.lineTo(b.sx, b.sy)
+        ctx.stroke()
+      }
+    }
+    ctx.setLineDash([])
   }
   for (const u of world.units) {
     drawUnit(ctx, u, cam, team(world, u.owner), selected.has(u.id), quality, now, w, h, world)

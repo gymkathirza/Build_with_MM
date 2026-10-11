@@ -18,9 +18,32 @@ import {
 import { COSTS } from "./catalog"
 import { personaById, type Persona } from "./personas"
 
+function ownerFarCamps(w: World, owner: Owner) {
+  const h = hall(w, owner)
+  if (!h) return []
+  return w.buildings.filter(
+    (b) => b.owner === owner && b.done && b.type === "camp" && Math.hypot(b.x - h.x, b.y - h.y) > 16,
+  )
+}
+
+function isFarCampCrew(w: World, u: World["units"][number], owner: Owner) {
+  if (u.owner !== owner || u.type !== "levy") return false
+  const camps = ownerFarCamps(w, owner)
+  if (!camps.length) return false
+  const order = u.order
+  if (order.t === "move") {
+    return camps.some((c) => Math.hypot(order.x - c.x, order.y - c.y) < 4)
+  }
+  return camps.some((c) => Math.hypot(u.x - c.x, u.y - c.y) < 8)
+}
+
 function idleLevies(w: World, owner: Owner) {
   return w.units.filter(
-    (u) => u.owner === owner && u.type === "levy" && (u.order.t === "idle" || u.order.t === "move"),
+    (u) =>
+      u.owner === owner &&
+      u.type === "levy" &&
+      (u.order.t === "idle" || u.order.t === "move") &&
+      !isFarCampCrew(w, u, owner),
   )
 }
 
@@ -543,6 +566,26 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
     )
     if (outpost && sentry) issueDefend(w, [sentry.id], outpost.x, outpost.y)
+    const farCamp = ownerFarCamps(w, owner)[0]
+    const crewed =
+      farCamp &&
+      levies.some((u) => {
+        const order = u.order
+        return (
+          Math.hypot(u.x - farCamp.x, u.y - farCamp.y) < 8 ||
+          (order.t === "move" && Math.hypot(order.x - farCamp.x, order.y - farCamp.y) < 4)
+        )
+      })
+    const extra =
+      !crewed
+        ? idleLevies(w, owner)[0] ??
+          (levies.length > wantsGather + 1
+            ? levies.find((u) => !isFarCampCrew(w, u, owner) && (u.order.t === "gather" || u.order.t === "move"))
+            : undefined)
+        : undefined
+    if (farCamp && extra) {
+      issueMove(w, [extra.id], farCamp.x, farCamp.y)
+    }
   }
 }
 

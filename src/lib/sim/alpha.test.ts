@@ -880,3 +880,40 @@ test("Forge Age with fat stores sends a levy to relics", () => {
   )
 })
 
+test("extra levies walk a far camp", () => {
+  const params = personaById("balanced").params
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 400
+  w.players[0].timber = 200
+  const camp = placeBuilding(
+    w,
+    0,
+    "camp",
+    h.x + 22,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  camp.done = true
+  camp.construct = camp.constructMax
+  for (let i = 0; i < 8; i++) {
+    const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")
+    if (!levy) break
+    w.units.push({ ...levy, id: w.nextId++, x: h.x + 1, y: h.y + 1, order: { t: "idle" }, carry: null })
+  }
+  for (const u of w.units) {
+    if (u.owner === 0 && u.type === "levy") u.order = { t: "idle" }
+  }
+  for (let i = 0; i < 50; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const walker = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "levy" &&
+      (u.order.t === "move" || Math.hypot(u.x - camp.x, u.y - camp.y) < 8),
+  )
+  assert.ok(walker, "an extra levy should walk the far camp")
+})
+
