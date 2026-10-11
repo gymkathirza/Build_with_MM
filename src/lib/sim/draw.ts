@@ -150,6 +150,24 @@ function drawTerrain(
         ctx.fill()
       }
     }
+    if (world.mapId === "hollowmere" && quality > 1) {
+      for (let i = 0; i < 4; i++) {
+        const ring = (t / 16 + i * 9) % 22
+        ctx.strokeStyle = `rgba(180,220,210,${0.16 - ring * 0.006})`
+        ctx.lineWidth = 1.1
+        ctx.beginPath()
+        ctx.ellipse(
+          lake.sx + Math.cos(i * 1.7) * lrx * 0.35,
+          lake.sy + Math.sin(i) * lry * 0.3,
+          3 + ring * 0.35,
+          1.6 + ring * 0.18,
+          0.2,
+          0,
+          Math.PI * 2,
+        )
+        ctx.stroke()
+      }
+    }
     if (world.mapId === "vast-mere" && quality > 1) {
       for (let i = 0; i < 8; i++) {
         const a = i * 0.72 + 0.35
@@ -283,6 +301,17 @@ function drawTerrain(
       ctx.fillStyle = `rgba(255,220,120,${0.06 + 0.06 * Math.sin(performance.now() / 700 + i)})`
       ctx.beginPath()
       ctx.arc(hp.sx, hp.sy, 1.6, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    const t = performance.now()
+    for (let i = 0; i < 6; i++) {
+      const drift = (t / 40 + i * 11) % 28
+      const sx = ((hash(i * 19, 5) % 1000) / 1000) * size
+      const sy = ((hash(i * 7, 23) % 1000) / 1000) * size
+      const p = worldToScreen(cam, sx, sy)
+      ctx.fillStyle = `rgba(255,236,180,${0.16 - drift * 0.004})`
+      ctx.beginPath()
+      ctx.ellipse(p.sx + drift * 0.4, p.sy - drift * 0.6, 2.2, 1.1, 0.4, 0, Math.PI * 2)
       ctx.fill()
     }
   }
