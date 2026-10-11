@@ -798,6 +798,40 @@ test("a pressed pit draws a sentry", () => {
   )
 })
 
+test("a pressed lodge draws a sentry", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  w.players[0].grain = 400
+  w.players[0].ore = 200
+  w.players[0].timber = 200
+  const lodge = placeBuilding(
+    w,
+    0,
+    "lodge",
+    h.x + 18,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  lodge.done = true
+  lodge.construct = lodge.constructMax
+  pushBanner(w, "guard", 0, h.x + 2, h.y)
+  pushBanner(w, "guard", 0, h.x + 3, h.y)
+  pushBanner(w, "guard", 1, lodge.x + 2, lodge.y)
+  for (let i = 0; i < 16; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const sentry = w.units.find((u) => u.owner === 0 && u.type === "guard")
+  assert.ok(sentry, "need a home guard")
+  const near = Math.hypot(sentry.x - lodge.x, sentry.y - lodge.y)
+  assert.ok(
+    sentry.order.t === "defend" || sentry.order.t === "attack" || sentry.order.t === "attackMove" || near < 14,
+    `lodge should pull a sentry, order ${sentry.order.t} dist ${near}`,
+  )
+})
+
 test("idle levy walks a relic when no scout is free", () => {
   const params = { ...personaById("balanced").params, attackAtArmy: 9 }
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })

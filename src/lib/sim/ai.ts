@@ -593,7 +593,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
       (b) =>
         b.owner === owner &&
         b.done &&
-        (b.type === "camp" || b.type === "pit" || b.type === "granary") &&
+        (b.type === "camp" || b.type === "pit" || b.type === "granary" || b.type === "lodge") &&
         foesNear(w, b.x, b.y, 10, owner).length > 0,
     )
     const sentry = military.find(
