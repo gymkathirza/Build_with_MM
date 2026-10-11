@@ -626,6 +626,16 @@ function drawBuilding(
     ctx.beginPath()
     ctx.arc(p.sx, p.sy, r * (b.aging > 0 ? 1.05 : wounded ? 1.0 : 0.92), 0, Math.PI * 2)
     ctx.stroke()
+    if (b.aging > 0 && quality > 1) {
+      for (let i = 0; i < 5; i++) {
+        const a = now / 400 + b.id + i * 1.2
+        const lift = ((now / 12 + i * 7) % 22)
+        ctx.fillStyle = `rgba(255,220,140,${0.28 - lift * 0.01})`
+        ctx.beginPath()
+        ctx.arc(p.sx + Math.cos(a) * r * 0.55, p.sy - lift, 2, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
     if (age >= 1) {
       ctx.strokeStyle = "rgba(180,150,90,0.45)"
       ctx.lineWidth = 2
