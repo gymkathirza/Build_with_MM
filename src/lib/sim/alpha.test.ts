@@ -1246,3 +1246,26 @@ test("a wounded levy under a banner runs home", () => {
   )
 })
 
+test("an ashrider scouts an empty rival hearth first", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  const foe = hall(w, 1)
+  w.players[0].age = 1
+  w.players[0].timber = 90
+  w.players[0].ore = 50
+  pushBanner(w, "ashrider", 0, h.x + 3, h.y)
+  pushBanner(w, "guard", 0, h.x + 2, h.y)
+  let scouted = false
+  for (let i = 0; i < 90; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    const rider = w.units.find((u) => u.owner === 0 && u.type === "ashrider")
+    if (rider?.order.t === "attackMove" && Math.abs(rider.order.x - foe.x) < 0.01) {
+      scouted = true
+      break
+    }
+    tick(w)
+  }
+  assert.ok(scouted, "an ashrider should scout the empty hearth before a foot banner")
+})
+

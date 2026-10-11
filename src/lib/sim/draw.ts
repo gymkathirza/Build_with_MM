@@ -197,6 +197,18 @@ function drawTerrain(
       ctx.beginPath()
       ctx.arc(heron, heronY - 11, 1.6, 0, Math.PI * 2)
       ctx.fill()
+      const jump = (t / 18) % 36
+      ctx.strokeStyle = `rgba(210,235,230,${0.16 - jump * 0.004})`
+      ctx.lineWidth = 1.1
+      ctx.beginPath()
+      ctx.ellipse(lake.sx - lrx * 0.35, lake.sy + lry * 0.15, 3 + jump * 0.22, 1.5 + jump * 0.1, 0.2, 0, Math.PI * 2)
+      ctx.stroke()
+      if (jump < 10) {
+        ctx.fillStyle = `rgba(230,245,240,${0.22 - jump * 0.015})`
+        ctx.beginPath()
+        ctx.arc(lake.sx - lrx * 0.35, lake.sy + lry * 0.15 - jump * 0.7, 1.8, 0, Math.PI * 2)
+        ctx.fill()
+      }
       for (let i = 0; i < 4; i++) {
         const a = t / 2400 + i * 1.4
         ctx.fillStyle = `rgba(210,230,220,${0.05 + 0.04 * Math.sin(t / 900 + i)})`

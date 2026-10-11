@@ -493,10 +493,17 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
   ) {
     const scout = military.find(
       (u) =>
+        u.type === "ashrider" &&
         (u.order.t === "idle" || u.order.t === "defend") &&
         !garrison.some((g) => g.id === u.id) &&
         u.hp >= u.hpMax * 0.6,
-    )
+    ) ??
+      military.find(
+        (u) =>
+          (u.order.t === "idle" || u.order.t === "defend") &&
+          !garrison.some((g) => g.id === u.id) &&
+          u.hp >= u.hpMax * 0.6,
+      )
     if (scout) issueAttackMove(w, [scout.id], enemyHall.x, enemyHall.y)
   }
 

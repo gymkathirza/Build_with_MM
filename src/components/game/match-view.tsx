@@ -798,7 +798,8 @@ function Selection({
       <div className="rounded-sm border border-dashed border-primary/25 px-3 py-5 text-center text-sm text-muted-foreground">
         Select a levy or hall. Right-click grain, timber, ore, hunt, or relics to gather. Forge Age
         levies hop to the next nearest of that job; a right-click lock holds the node you picked.
-        Ashriders ride first. Three riders hook an empty hearth. Idle levies walk a relic if no
+        Ashriders ride first. A lone rider scouts an empty hearth. Three riders hook an empty
+        hearth. Idle levies walk a relic if no
         scout is free. A spare levy crews a far camp, pit, or granary. A third warden overwatches
         the camp. A relic levy does not steal that crew; a spare banner walks with them. Pressed
         camps and pits draw a sentry.
