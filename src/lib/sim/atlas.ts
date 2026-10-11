@@ -556,6 +556,10 @@ function drawWolf(ctx: CanvasRenderingContext2D, ox: number, oy: number) {
   ctx.lineTo(cx + 20, feet - 34)
   ctx.lineTo(cx + 20, feet - 24)
   ctx.fill()
+  ctx.fillStyle = WHITE
+  ctx.beginPath()
+  ctx.arc(cx + 15.2, feet - 22.6, 1.5, 0, Math.PI * 2)
+  ctx.fill()
   ctx.fillStyle = PUPIL
   ctx.beginPath()
   ctx.arc(cx + 16, feet - 22, 1.1, 0, Math.PI * 2)
