@@ -338,6 +338,27 @@ function drawBuilding(
     ctx.beginPath()
     ctx.arc(p.sx, p.sy, r * (b.aging > 0 ? 1.05 : 0.92), 0, Math.PI * 2)
     ctx.stroke()
+    if (age >= 1) {
+      ctx.strokeStyle = "rgba(180,150,90,0.45)"
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.arc(p.sx, p.sy + 2, r * 0.78, 0.2, Math.PI - 0.2)
+      ctx.stroke()
+      ctx.fillStyle = trim
+      ctx.fillRect(p.sx - s * 0.28, p.sy - s * 0.72, 3, s * 0.22)
+      ctx.beginPath()
+      ctx.moveTo(p.sx - s * 0.28, p.sy - s * 0.72)
+      ctx.lineTo(p.sx - s * 0.12, p.sy - s * 0.62)
+      ctx.lineTo(p.sx - s * 0.28, p.sy - s * 0.52)
+      ctx.fill()
+    }
+  }
+  if (quality > 0 && b.done && b.tier >= 1) {
+    ctx.strokeStyle = "rgba(154,163,173,0.55)"
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.ellipse(p.sx, p.sy + s * 0.02, r * 0.95, r * 0.38, 0, 0, Math.PI * 2)
+    ctx.stroke()
   }
   if (!b.done) {
     hpBar(ctx, p.sx - r, p.sy + r * 0.8, r * 2, b.construct / b.constructMax)
@@ -358,11 +379,13 @@ function drawBuilding(
   }
 }
 
-function unitSpr(u: Unit) {
-  if (u.type === "guard") return SPR.guard
+function unitSpr(u: Unit, moving: boolean, t: number) {
+  const stride = moving && Math.sin(t / 70 + u.id) > 0
+  if (u.type === "guard") return stride ? SPR.guardStride : SPR.guard
   if (u.type === "warden") return SPR.warden
   if (u.type === "ashrider") return SPR.ashrider
   if (u.carry) return SPR.levyCarry
+  if (stride) return SPR.levyStride
   return u.id & 1 ? SPR.levyAxe : SPR.levyClub
 }
 
@@ -422,7 +445,7 @@ function drawUnit(
   ctx.save()
   ctx.translate(p.sx, 0)
   ctx.scale(faceLeft ? -1 : 1, 1)
-  blit(ctx, unitSpr(u), -size / 2 + sway, y - size * 0.82, size, size)
+  blit(ctx, unitSpr(u, moving, t), -size / 2 + sway, y - size * 0.82, size, size)
   ctx.restore()
   if (quality > 1 && (u.order.t === "attack" || u.order.t === "attackMove") && u.atkCd > 0.65) {
     const dir = faceLeft ? -1 : 1
@@ -438,10 +461,10 @@ function drawUnit(
   ctx.ellipse(p.sx, y + size * 0.14, 5, 2.2, 0, 0, Math.PI * 2)
   ctx.fill()
   if (selected) {
-    ctx.strokeStyle = "#fff6d4"
-    ctx.lineWidth = 1.5
+    ctx.strokeStyle = `rgba(255,246,212,${0.55 + 0.35 * Math.sin(t / 160)})`
+    ctx.lineWidth = 1.8
     ctx.beginPath()
-    ctx.arc(p.sx, y, size * 0.48, 0, Math.PI * 2)
+    ctx.arc(p.sx, y, size * 0.5, 0, Math.PI * 2)
     ctx.stroke()
     hpBar(ctx, p.sx - size * 0.35, y + size * 0.22, size * 0.7, u.hp / u.hpMax)
   } else if (u.hp < u.hpMax && quality > 0) {
@@ -582,6 +605,21 @@ export function drawWorld(
     ctx.fillStyle = dusk
     ctx.fillRect(0, 0, w, h)
     if (quality > 1) {
+      for (let i = 0; i < 3; i++) {
+        const a = now / 9000 + i * 2.1
+        ctx.fillStyle = `rgba(12,10,8,${0.07 + 0.03 * Math.sin(now / 1400 + i)})`
+        ctx.beginPath()
+        ctx.ellipse(
+          w * (0.22 + 0.28 * i) + Math.sin(a) * 40,
+          h * (0.18 + 0.12 * i),
+          70 + i * 12,
+          18,
+          0.1,
+          0,
+          Math.PI * 2,
+        )
+        ctx.fill()
+      }
       for (let i = 0; i < 10; i++) {
         const a = now / 2400 + i * 0.62
         const mx = w * (0.12 + ((i * 17) % 80) / 100) + Math.sin(a) * 18

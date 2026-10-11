@@ -34,6 +34,8 @@ export const SPR = {
   flower: 26,
   cliff: 27,
   fern: 28,
+  levyStride: 29,
+  guardStride: 30,
 } as const
 
 const SKIN = "#f0c09a"
@@ -264,9 +266,11 @@ function caveHuman(
   ox: number,
   oy: number,
   kind: "club" | "axe" | "carry" | "spear" | "bow" | "ride",
+  gait: "plant" | "stride" = "plant",
 ) {
   const cx = ox + 32
   const feet = oy + 58
+  const spread = gait === "stride" && kind !== "ride" ? 5 : 0
   ctx.fillStyle = "rgba(20,12,8,0.28)"
   ctx.beginPath()
   ctx.ellipse(cx, feet + 1, 14, 4, 0, 0, Math.PI * 2)
@@ -313,11 +317,11 @@ function caveHuman(
 
   const hip = kind === "ride" ? feet - 18 : feet - 16
   if (kind !== "ride") {
-    ellipse(ctx, cx - 8, feet, 3.2, 1.8, SKIN_D, false)
-    ellipse(ctx, cx + 9, feet, 3.2, 1.8, SKIN_D, false)
+    ellipse(ctx, cx - 8 - spread, feet, 3.2, 1.8, SKIN_D, false)
+    ellipse(ctx, cx + 9 + spread, feet, 3.2, 1.8, SKIN_D, false)
   }
-  limb(ctx, cx - 5, hip, cx - 8, kind === "ride" ? hip + 8 : feet - 2, 6.2)
-  limb(ctx, cx + 5, hip, cx + 9, kind === "ride" ? hip + 8 : feet - 2, 6.2)
+  limb(ctx, cx - 5, hip, cx - 8 - spread, kind === "ride" ? hip + 8 : feet - 2, 6.2)
+  limb(ctx, cx + 5, hip, cx + 9 + spread, kind === "ride" ? hip + 8 : feet - 2, 6.2)
 
   const torsoY = hip - 11
   ellipse(ctx, cx, torsoY, 11, 10, SKIN)
@@ -982,6 +986,8 @@ function bakeAtlas() {
     ctx.fill()
     mossDots(ctx, x + 34, y + 22, 4)
   })
+  put(SPR.levyStride, (x, y) => caveHuman(ctx, x, y, "club", "stride"))
+  put(SPR.guardStride, (x, y) => caveHuman(ctx, x, y, "spear", "stride"))
   put(SPR.fern, (x, y) => {
     ctx.fillStyle = "#3d6a32"
     for (let i = 0; i < 5; i++) {

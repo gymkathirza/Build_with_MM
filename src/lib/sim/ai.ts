@@ -298,6 +298,30 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
       const threat = foesNear(w, u.x, u.y, 9, owner).find((f) => f.type !== "levy")
       if (threat) issueMove(w, [u.id], h.x + (owner === 0 ? 2 : -2), h.y)
     }
+    if (!hallPressed) {
+      const threatened = levies.find((u) => {
+        if (u.order.t !== "gather" && u.order.t !== "return") return false
+        return foesNear(w, u.x, u.y, 12, owner).some((f) => f.type !== "levy")
+      })
+      const escort = military.find(
+        (u) =>
+          u.type === "warden" &&
+          !garrison.some((g) => g.id === u.id) &&
+          (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+      )
+      if (threatened && escort) issueAttackMove(w, [escort.id], threatened.x, threatened.y)
+    }
+  }
+  if (tuned.kite > 0.45 && w.tick % 20 === owner) {
+    for (const u of military) {
+      if (u.type !== "warden") continue
+      const melee = foesNear(w, u.x, u.y, 4, owner).find((f) => f.type !== "warden")
+      if (!melee) continue
+      const dx = u.x - melee.x
+      const dy = u.y - melee.y
+      const len = Math.hypot(dx, dy) || 1
+      issueMove(w, [u.id], u.x + (dx / len) * 6, u.y + (dy / len) * 6)
+    }
   }
 
   if (persona.tease && military.length >= 1 && w.tick % 40 === owner) {

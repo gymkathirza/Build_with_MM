@@ -145,7 +145,14 @@ export function MatchView({
     if (obsLineRef.current) {
       const last = tel.frames.at(-1)
       obsLineRef.current.textContent = last
-        ? `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms\nsim ${simMs.toFixed(2)} ms · in ${tel.lastInputMs.toFixed(0)} ms\nclicks ${tel.clicks} · fail ${tel.failedOrders} · deaths ${tel.deaths}\npan ${tel.cameraMoves} · lod ${qualityRef.current}\ngather hop ${world.gather.hops} · idle ${world.gather.idleDeplete} · wrong ${world.gather.wrong}\nbanners ${world.units.filter((u) => u.owner === 0 && u.type !== "levy").length} · ashriders ${world.units.filter((u) => u.owner === 0 && u.type === "ashrider").length}`
+        ? `${fps.toFixed(0)} fps · ${frameMs.toFixed(1)} ms\nsim ${simMs.toFixed(2)} ms · in ${tel.lastInputMs.toFixed(0)} ms\nclicks ${tel.clicks} · fail ${tel.failedOrders} · deaths ${tel.deaths}\npan ${tel.cameraMoves} · lod ${qualityRef.current}\ngather hop ${world.gather.hops} · idle ${world.gather.idleDeplete} · wrong ${world.gather.wrong}\nbanners ${world.units.filter((u) => u.owner === 0 && u.type !== "levy").length} · ashriders ${world.units.filter((u) => u.owner === 0 && u.type === "ashrider").length}\n${(() => {
+            const hall = world.buildings.find((b) => b.owner === 0 && b.type === "hearth" && b.done)
+            if (!hall) return "hearth lost"
+            const press = world.units.filter(
+              (u) => u.owner === 1 && Math.hypot(u.x - hall.x, u.y - hall.y) < 22,
+            ).length
+            return press ? `hearth pressed ×${press}` : "hearth clear"
+          })()}`
         : "warming…"
     }
     setHudPulse((n) => n + 1)
@@ -748,7 +755,7 @@ function TrainPanel({
       <ul className="mt-2 space-y-1">
         {(b?.queue ?? []).map((q, i) => (
           <li key={i} className="text-xs">
-            {UNIT_LABEL[q.type]}
+            {UNIT_LABEL[q.type]} · {Math.max(0, q.max - q.t).toFixed(0)}s
             <Progress value={(q.t / q.max) * 100} className="mt-1" />
           </li>
         ))}

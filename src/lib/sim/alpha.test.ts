@@ -477,6 +477,25 @@ test("student lowers attackAtArmy against rand-aggro", () => {
   assert.ok(march.length >= 1, "rand-aggro should draw an earlier march than attackAt 9")
 })
 
+test("warden steps off a melee that closes in", () => {
+  const params = { ...personaById("balanced").params, kite: 0.8, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  pushBanner(w, "warden", 0, h.x + 28, h.y)
+  pushBanner(w, "guard", 1, h.x + 30, h.y)
+  const warden = w.units.find((u) => u.owner === 0 && u.type === "warden")!
+  const foe = w.units.find((u) => u.owner === 1 && u.type === "guard")!
+  for (let i = 0; i < 24; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const away = Math.hypot(warden.x - foe.x, warden.y - foe.y)
+  assert.ok(
+    away > 3.2 || warden.order.t === "move",
+    `warden should kite, dist ${away} order ${warden.order.t}`,
+  )
+})
+
 test("student recalls the wave when banners press the hearth", () => {
   const params = { ...personaById("balanced").params, attackAtArmy: 2 }
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
