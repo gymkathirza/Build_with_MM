@@ -372,6 +372,16 @@ function drawTerrain(
     ctx.beginPath()
     ctx.arc(perch.sx + 4, perch.sy - 2.2, 0.8, 0, Math.PI * 2)
     ctx.fill()
+    const batX = perch.sx - 28 + Math.sin(t / 900) * 36
+    const batY = perch.sy - 18 + Math.sin(t / 220) * 5
+    const wing = Math.sin(t / 80) * 5
+    ctx.strokeStyle = "rgba(18,16,20,0.5)"
+    ctx.lineWidth = 1.2
+    ctx.beginPath()
+    ctx.moveTo(batX - 6, batY + wing * 0.2)
+    ctx.quadraticCurveTo(batX - 2, batY - wing, batX, batY)
+    ctx.quadraticCurveTo(batX + 2, batY - wing, batX + 6, batY + wing * 0.2)
+    ctx.stroke()
   }
   if (quality > 1 && world.mapId === "sunvault") {
     for (let i = 0; i < 10; i++) {
@@ -1017,12 +1027,14 @@ function drawUnit(
     ctx.beginPath()
     ctx.arc(p.sx + 8, y - size * 0.12, 2.2, 0, Math.PI * 2)
     ctx.fill()
-    if (u.carry.res === "timber" || u.carry.res === "ore") {
+    if (u.carry.res === "timber" || u.carry.res === "ore" || u.carry.res === "grain") {
       const drop = (t / 40 + u.id * 3) % 10
       ctx.fillStyle =
         u.carry.res === "ore"
           ? `rgba(180,190,200,${0.22 - drop * 0.016})`
-          : `rgba(90,60,30,${0.2 - drop * 0.014})`
+          : u.carry.res === "timber"
+            ? `rgba(90,60,30,${0.2 - drop * 0.014})`
+            : `rgba(212,184,90,${0.2 - drop * 0.014})`
       ctx.beginPath()
       ctx.arc(p.sx - (faceLeft ? -4 : 4), y + 3 + drop * 0.35, 1.3, 0, Math.PI * 2)
       ctx.fill()

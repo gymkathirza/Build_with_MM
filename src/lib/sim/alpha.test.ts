@@ -1294,6 +1294,30 @@ test("a relic hauler draws a banner on the walk home", () => {
   assert.ok(escort, "a banner should walk the relic home")
 })
 
+test("a far timber haul draws a banner", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")!
+  levy.order = { t: "return", drop: h.id }
+  levy.carry = { res: "timber", amt: 8 }
+  levy.x = h.x + 20
+  levy.y = h.y
+  for (let i = 0; i < 4; i++) pushBanner(w, "guard", 0, h.x + 2 + i, h.y)
+  for (let i = 0; i < 20; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const escort = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "guard" &&
+      u.order.t === "defend" &&
+      Math.hypot(u.order.x - levy.x, u.order.y - levy.y) < 10,
+  )
+  assert.ok(escort, "a banner should walk a far timber haul home")
+})
+
 test("a wounded ashrider peels to the lodge", () => {
   const params = { ...personaById("balanced").params, attackAtArmy: 9, kite: 0.6 }
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
