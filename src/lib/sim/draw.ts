@@ -197,6 +197,15 @@ function drawTerrain(
         ctx.stroke()
       }
     }
+    if (world.mapId === "shattercoast" && quality > 1) {
+      for (let i = 0; i < 7; i++) {
+        const spray = (t / 50 + i * 9) % 18
+        ctx.fillStyle = `rgba(230,245,250,${0.18 - spray * 0.008})`
+        ctx.beginPath()
+        ctx.arc(lake.sx + Math.cos(i * 0.9) * lrx * 0.92, lake.sy + lry * 0.72 - spray, 1.5, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
     if (quality > 1) {
       for (let i = 0; i < 6; i++) {
         const a = (i / 6) * Math.PI * 2
