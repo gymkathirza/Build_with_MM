@@ -662,6 +662,22 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     if (crewLevy && escortGuard) {
       issueDefend(w, [escortGuard.id], crewLevy.x, crewLevy.y)
     }
+    const hunter = levies.find((u) => {
+      const order = u.order
+      if (order.t !== "gather") return false
+      const n = w.nodes.find((q) => q.id === order.node)
+      return n?.fauna === "wolf" || n?.fauna === "bear"
+    })
+    const huntGuard =
+      hunter && guards.length >= 3
+        ? military.find(
+            (u) =>
+              u.type === "guard" &&
+              !garrison.some((g) => g.id === u.id) &&
+              (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+          )
+        : undefined
+    if (hunter && huntGuard) issueDefend(w, [huntGuard.id], hunter.x, hunter.y)
   }
 }
 

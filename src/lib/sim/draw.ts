@@ -499,6 +499,7 @@ function drawNode(
   w: number,
   h: number,
   contested = false,
+  hunted = false,
 ) {
   const p = worldToScreen(cam, n.x, n.y)
   const s = Math.max(n.fauna ? 40 : 34, cam.z * (n.fauna ? 2.8 : 2.35))
@@ -564,6 +565,13 @@ function drawNode(
       ctx.arc(p.sx + wander, p.sy - s * 0.2 + bob, s * 0.38, 0, Math.PI * 2)
       ctx.stroke()
     }
+  }
+  if (quality > 1 && n.fauna && hunted) {
+    ctx.strokeStyle = `rgba(212,92,58,${0.35 + 0.2 * Math.sin(now / 160)})`
+    ctx.lineWidth = 1.8
+    ctx.beginPath()
+    ctx.arc(p.sx + wander, p.sy - s * 0.2 + bob, s * 0.32, 0, Math.PI * 2)
+    ctx.stroke()
   }
   if (quality > 1 && n.fauna) {
     ctx.fillStyle = "rgba(40,28,16,0.22)"
@@ -1117,7 +1125,7 @@ export function drawWorld(
           .filter((u) => u.order.t === "gather" && u.order.node === n.id)
           .map((u) => u.owner),
       )
-      drawNode(ctx, n, cam, quality, w, h, owners.size > 1)
+      drawNode(ctx, n, cam, quality, w, h, owners.size > 1, owners.size > 0 && !!n.fauna)
     }
   }
   for (const b of world.buildings) {
