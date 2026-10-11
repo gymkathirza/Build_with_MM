@@ -43,7 +43,7 @@ import { tickAi } from "@/lib/sim/ai"
 import { type Cam, drawWorld, nodeLabel, screenToWorld } from "@/lib/sim/draw"
 import { createTelemetry, pushEvent, pushFrame } from "@/lib/obs/telemetry"
 import { DEFAULT_TUNED, type DrawQuality, type Tuned } from "@/lib/ml/score"
-import { factionById } from "@/lib/game-data"
+import { factionById, mapById } from "@/lib/game-data"
 import { hallPositions, specFor } from "@/lib/sim/maps"
 import { personaById } from "@/lib/sim/personas"
 import tunedJson from "@/lib/ml/tuned.json"
@@ -415,6 +415,9 @@ export function MatchView({
         <PearlLogo size={28} className="hidden shrink-0 sm:block" />
         <p className="font-heading hidden text-[11px] tracking-[0.28em] text-primary uppercase sm:block">
           {faction.name}
+        </p>
+        <p className="hidden max-w-[12rem] truncate text-[11px] text-muted-foreground sm:block">
+          {mapById(mapId).name} · {personaById(personaId).name}
         </p>
         <Chip icon={<Wheat className="size-3.5" />} label="Grain" valueRef={grainRef} initial={240} />
         <Chip icon={<Trees className="size-3.5" />} label="Timber" valueRef={timberRef} initial={220} />

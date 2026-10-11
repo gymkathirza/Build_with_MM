@@ -177,7 +177,7 @@ export function SkirmishView() {
               data-testid="march"
               data-map={mapId}
             >
-              March
+              March {map.name}
             </Link>
           ) : (
             <span
@@ -283,6 +283,19 @@ function MapPreview({ mapId, accent }: { mapId: string; accent: string }) {
       </defs>
       <rect width="640" height="280" fill={`url(#${mossId})`} />
       <ellipse cx={320} cy={140} rx={lakeRx} ry={lakeRy} fill={`url(#${waterId})`} />
+      {[0, 1, 2, 3, 4, 5].map((i) => {
+        const a = (i / 6) * Math.PI * 2
+        return (
+          <path
+            key={`reed-${i}`}
+            d={`M${320 + Math.cos(a) * lakeRx * 0.92} ${140 + Math.sin(a) * lakeRy * 0.92} q4 -10 1 -18`}
+            fill="none"
+            stroke="#3d6a32"
+            strokeWidth="1.4"
+            opacity="0.7"
+          />
+        )
+      })}
       {trees.map(([tx, ty], i) => (
         <g key={i} transform={`translate(${tx} ${ty})`}>
           <rect x="-2" y="6" width="4" height="14" fill="#6b3d1c" />

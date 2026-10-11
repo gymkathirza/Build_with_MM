@@ -267,7 +267,8 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
   const enemyHall = hall(w, owner === 0 ? 1 : 0)
   const guards = military.filter((u) => u.type === "guard")
   const raiders = foesNear(w, h.x, h.y, 22, owner)
-  const hallPressed = raiders.length > 0
+  const hallWounded = h.hp < h.hpMax * 0.82
+  const hallPressed = raiders.length > 0 || hallWounded
   const attackAt = p.age >= 1 ? Math.max(2, tuned.attackAtArmy - 1) : tuned.attackAtArmy
   const keepRaid = !hallPressed && military.length >= attackAt ? 1 : 0
   const wantHold = Math.max(1, Math.floor(guards.length * (hallPressed ? 0.7 : 0.35)))
@@ -443,6 +444,21 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         !garrison.some((g) => g.id === u.id),
     )
     if (relic && scout) issueMove(w, [scout.id], relic.x, relic.y)
+    const contested = w.nodes.find(
+      (n) =>
+        n.type === "relics" &&
+        n.amount > 0 &&
+        w.units.some(
+          (u) => u.owner !== owner && u.order.t === "gather" && u.order.node === n.id,
+        ),
+    )
+    const taker = military.find(
+      (u) =>
+        (u.type === "warden" || u.type === "guard") &&
+        !garrison.some((g) => g.id === u.id) &&
+        (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+    )
+    if (contested && taker && !hallPressed) issueAttackMove(w, [taker.id], contested.x, contested.y)
   }
 }
 

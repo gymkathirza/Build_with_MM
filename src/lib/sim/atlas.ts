@@ -36,6 +36,7 @@ export const SPR = {
   fern: 28,
   levyStride: 29,
   guardStride: 30,
+  wardenStride: 31,
 } as const
 
 const SKIN = "#f0c09a"
@@ -988,6 +989,7 @@ function bakeAtlas() {
   })
   put(SPR.levyStride, (x, y) => caveHuman(ctx, x, y, "club", "stride"))
   put(SPR.guardStride, (x, y) => caveHuman(ctx, x, y, "spear", "stride"))
+  put(SPR.wardenStride, (x, y) => caveHuman(ctx, x, y, "bow", "stride"))
   put(SPR.fern, (x, y) => {
     ctx.fillStyle = "#3d6a32"
     for (let i = 0; i < 5; i++) {

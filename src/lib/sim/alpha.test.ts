@@ -477,6 +477,25 @@ test("student lowers attackAtArmy against rand-aggro", () => {
   assert.ok(march.length >= 1, "rand-aggro should draw an earlier march than attackAt 9")
 })
 
+test("wounded hearth keeps the banners home", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 2 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  w.players[0].age = 1
+  const h = hall(w, 0)
+  h.hp = h.hpMax * 0.7
+  pushBanner(w, "guard", 0, h.x + 2, h.y)
+  pushBanner(w, "guard", 0, h.x + 3, h.y)
+  pushBanner(w, "ashrider", 0, h.x + 4, h.y)
+  for (let i = 0; i < 10; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const march = w.units.filter(
+    (u) => u.owner === 0 && u.type !== "levy" && (u.order.t === "attackMove" || u.order.t === "attack"),
+  )
+  assert.equal(march.length, 0, "a wounded hearth should not send the wave")
+})
+
 test("warden steps off a melee that closes in", () => {
   const params = { ...personaById("balanced").params, kite: 0.8, attackAtArmy: 9 }
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })

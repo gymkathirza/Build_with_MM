@@ -238,8 +238,18 @@ function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: Dra
   const p = worldToScreen(cam, n.x, n.y)
   const s = Math.max(n.fauna ? 40 : 34, cam.z * (n.fauna ? 2.8 : 2.35))
   if (culled(p.sx, p.sy, s, w, h)) return
-  const bob = n.fauna && quality > 0 ? Math.sin(n.id + performance.now() / 320) * 2.1 : 0
-  blit(ctx, nodeSpr(n), p.sx - s / 2, p.sy - s * 0.72 + bob, s, s)
+  const now = performance.now()
+  const bob = n.fauna && quality > 0 ? Math.sin(n.id + now / 320) * 2.1 : 0
+  const wander = n.fauna && quality > 1 ? Math.sin(n.id * 1.7 + now / 900) * 2.4 : 0
+  blit(ctx, nodeSpr(n), p.sx - s / 2 + wander, p.sy - s * 0.72 + bob, s, s)
+  if (quality > 1 && n.type === "relics") {
+    const gleam = 0.18 + 0.22 * Math.sin(now / 240 + n.id)
+    ctx.strokeStyle = `rgba(255,246,212,${gleam})`
+    ctx.lineWidth = 1.4
+    ctx.beginPath()
+    ctx.arc(p.sx + wander, p.sy - s * 0.2 + bob, s * 0.28, 0, Math.PI * 2)
+    ctx.stroke()
+  }
   if (quality > 0) {
     ctx.fillStyle = "rgba(20,12,8,0.82)"
     ctx.font = `${Math.max(11, Math.min(15, cam.z * 0.7))}px sans-serif`
@@ -312,6 +322,13 @@ function drawBuilding(
       ctx.fill()
     }
   }
+  if (quality > 1 && b.done && b.type === "lodge") {
+    const glow = 0.2 + 0.18 * Math.sin(now / 160 + b.id)
+    ctx.fillStyle = `rgba(255,190,90,${glow})`
+    ctx.beginPath()
+    ctx.arc(p.sx + s * 0.18, p.sy - s * 0.42, 4, 0, Math.PI * 2)
+    ctx.fill()
+  }
   if (quality > 1 && b.done && b.type === "yard") {
     const flap = Math.sin(now / 220 + b.id) * 3
     ctx.fillStyle = trim
@@ -382,7 +399,7 @@ function drawBuilding(
 function unitSpr(u: Unit, moving: boolean, t: number) {
   const stride = moving && Math.sin(t / 70 + u.id) > 0
   if (u.type === "guard") return stride ? SPR.guardStride : SPR.guard
-  if (u.type === "warden") return SPR.warden
+  if (u.type === "warden") return stride ? SPR.wardenStride : SPR.warden
   if (u.type === "ashrider") return SPR.ashrider
   if (u.carry) return SPR.levyCarry
   if (stride) return SPR.levyStride
