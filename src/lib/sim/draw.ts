@@ -163,6 +163,21 @@ function drawTerrain(
         ctx.quadraticCurveTo(rx + sway, ry - 7, rx + sway * 0.35, ry - 15)
         ctx.stroke()
       }
+      for (let i = 0; i < 4; i++) {
+        const a = t / 2400 + i * 1.4
+        ctx.fillStyle = `rgba(210,230,220,${0.05 + 0.04 * Math.sin(t / 900 + i)})`
+        ctx.beginPath()
+        ctx.ellipse(
+          lake.sx + Math.cos(a) * lrx * 1.4,
+          lake.sy + Math.sin(a * 0.6) * lry * 1.6,
+          18,
+          7,
+          0.15,
+          0,
+          Math.PI * 2,
+        )
+        ctx.fill()
+      }
     }
     if (quality > 1) {
       for (let i = 0; i < 6; i++) {
@@ -437,6 +452,7 @@ function drawBuilding(
   now: number,
   w: number,
   h: number,
+  pressed: boolean,
 ) {
   const p = worldToScreen(cam, b.x, b.y)
   const r = BUILDING_STATS[b.type].radius * cam.z
@@ -635,6 +651,21 @@ function drawBuilding(
     const label = b.type === "hearth" ? AGE_NAMES[age as 0 | 1 | 2] : BUILDING_LABEL[b.type]
     ctx.fillText(label, p.sx, p.sy + r + 14)
   }
+  if (quality > 1 && b.done && b.queue.length) {
+    for (let i = 0; i < Math.min(4, b.queue.length); i++) {
+      ctx.fillStyle = trim
+      ctx.beginPath()
+      ctx.arc(p.sx - 6 + i * 5, p.sy + r * 0.72, 2.1, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  }
+  if (pressed && quality > 0) {
+    ctx.strokeStyle = `rgba(212,92,58,${0.35 + 0.3 * Math.sin(now / 140)})`
+    ctx.lineWidth = 2.2
+    ctx.beginPath()
+    ctx.arc(p.sx, p.sy, r * 1.08, 0, Math.PI * 2)
+    ctx.stroke()
+  }
   if (selected) {
     ctx.strokeStyle = `rgba(243,212,138,${0.55 + 0.35 * Math.sin(now / 160)})`
     ctx.lineWidth = 2
@@ -823,8 +854,22 @@ function drawMinimap(ctx: CanvasRenderingContext2D, world: World, cam: Cam, w: n
     ctx.fillRect(x + n.x * sx - dot / 2, y + n.y * sy - dot / 2, dot, dot)
   }
   for (const b of world.buildings) {
-    ctx.fillStyle = team(world, b.owner)
-    ctx.fillRect(x + b.x * sx - 2, y + b.y * sy - 2, 4, 4)
+    const px = x + b.x * sx
+    const py = y + b.y * sy
+    ctx.fillStyle = b.hp < b.hpMax * 0.82 ? "#d45c3a" : team(world, b.owner)
+    if (b.type === "hearth") {
+      ctx.fillRect(px - 3, py - 3, 6, 6)
+    } else if (b.type === "camp" || b.type === "pit") {
+      ctx.beginPath()
+      ctx.moveTo(px, py - 3)
+      ctx.lineTo(px + 3, py)
+      ctx.lineTo(px, py + 3)
+      ctx.lineTo(px - 3, py)
+      ctx.closePath()
+      ctx.fill()
+    } else {
+      ctx.fillRect(px - 2, py - 2, 4, 4)
+    }
   }
   for (const u of world.units) {
     ctx.fillStyle = team(world, u.owner)
@@ -870,6 +915,7 @@ export function drawWorld(
       now,
       w,
       h,
+      world.units.some((u) => u.owner !== b.owner && Math.hypot(u.x - b.x, u.y - b.y) < 10),
     )
   }
   if (quality > 1) {

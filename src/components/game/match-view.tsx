@@ -774,9 +774,17 @@ function Selection({
           {building.done
             ? building.aging > 0
               ? `Age rite ${Math.max(0, Math.min(100, (1 - building.aging / COSTS.age1.time) * 100)).toFixed(0)}%`
-              : building.tier >= 1
-                ? "Shored"
-                : "Standing"
+              : world.units.some((u) => u.owner !== building.owner && Math.hypot(u.x - building.x, u.y - building.y) < 10)
+                ? "Pressed — a sentry should hold this yard"
+                : building.tier >= 1
+                  ? "Shored"
+                  : building.type === "camp" || building.type === "pit"
+                    ? (() => {
+                        const hearth = world.buildings.find((b) => b.owner === building.owner && b.type === "hearth")
+                        const far = hearth && Math.hypot(building.x - hearth.x, building.y - hearth.y) > 16
+                        return far ? "Far outpost — a levy should walk this trail" : "Standing"
+                      })()
+                    : "Standing"
             : `Raising ${((building.construct / building.constructMax) * 100).toFixed(0)}%`}
         </p>
         <Progress value={(building.hp / building.hpMax) * 100} className="mt-2" />
@@ -789,7 +797,8 @@ function Selection({
         Select a levy or hall. Right-click grain, timber, ore, hunt, or relics to gather. Forge Age
         levies hop to the next nearest of that job; a right-click lock holds the node you picked.
         Ashriders ride first. Three riders hook an empty hearth. Idle levies walk a relic if no
-        scout is free. A spare levy crews a far camp. Pressed camps and pits draw a sentry. Recall
+        scout is free. A spare levy crews a far camp or pit. Pressed camps and pits draw a sentry.
+        Recall
         walks banners home. The age rite waits if the hearth is struck.
       </div>
     )
