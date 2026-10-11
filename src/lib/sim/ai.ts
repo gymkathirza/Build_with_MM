@@ -237,7 +237,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     startAge(w, owner)
   }
 
-  if (p.age >= 1 && !incomplete.length) {
+  if (p.age >= 1 && !incomplete.length && foesNear(w, h.x, h.y, 18, owner).length === 0) {
     const shorable = w.buildings.find((b) => b.owner === owner && b.done && b.type !== "hearth" && b.tier < 1)
     if (shorable && p.grain >= COSTS.upgrade.grain && p.timber >= COSTS.upgrade.timber && p.ore >= COSTS.upgrade.ore) {
       upgradeBuilding(w, shorable.id)

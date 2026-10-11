@@ -139,6 +139,32 @@ test("age rite waits while banners press the hearth", () => {
   assert.ok(h.aging <= 0 && w.players[0].age === 0, "rite should wait while the hearth is pressed")
 })
 
+test("shore waits while banners press the hearth", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  w.players[0].grain = 400
+  w.players[0].ore = 200
+  w.players[0].timber = 200
+  const yard = placeBuilding(
+    w,
+    0,
+    "yard",
+    h.x + 8,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  yard.done = true
+  yard.construct = yard.constructMax
+  pushBanner(w, "guard", 1, h.x + 3, h.y)
+  for (let i = 0; i < 10; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  assert.equal(yard.tier, 0, "should not shore while the hearth is pressed")
+})
+
 test("coach AI reaches Forge Age on a small plate", () => {
   const persona = personaById("coach")
   const w = createWorld("ashen", "gilded", persona.params, {

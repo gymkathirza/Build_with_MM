@@ -98,6 +98,7 @@ export function MatchView({
   const relicsRef = useRef<HTMLSpanElement>(null)
   const ageRef = useRef<HTMLSpanElement>(null)
   const popRef = useRef<HTMLSpanElement>(null)
+  const pressRef = useRef<HTMLSpanElement>(null)
   const camEventAt = useRef(0)
 
   const [tuned] = useState<Tuned>(() => {
@@ -163,6 +164,14 @@ export function MatchView({
             return press ? `hearth pressed ×${press}` : "hearth clear"
           })()}\nplate ${mapId}`
         : "warming…"
+    }
+    if (pressRef.current) {
+      const hall = world.buildings.find((b) => b.owner === 0 && b.type === "hearth" && b.done)
+      const press = hall
+        ? world.units.filter((u) => u.owner === 1 && Math.hypot(u.x - hall.x, u.y - hall.y) < 22).length
+        : 0
+      pressRef.current.hidden = press === 0
+      pressRef.current.textContent = press ? `Hearth pressed ×${press}` : ""
     }
     setHudPulse((n) => n + 1)
   }, [world])
@@ -443,6 +452,11 @@ export function MatchView({
         <Badge variant="outline" className="hidden tabular-nums sm:inline-flex">
           {selected.length ? `${selected.length} selected` : "none selected"}
         </Badge>
+        <span
+          ref={pressRef}
+          hidden
+          className="font-heading text-[11px] tracking-wide text-destructive uppercase"
+        />
         <Button size="icon-sm" variant="outline" aria-label="Pause" onClick={() => setPaused(true)}>
           <Pause />
         </Button>
@@ -695,7 +709,7 @@ function Selection({
       <div className="rounded-sm border border-dashed border-primary/25 px-3 py-5 text-center text-sm text-muted-foreground">
         Select a levy or hall. Right-click grain, timber, ore, hunt, or relics to gather. Forge Age
         levies hop to the next nearest of that job; a right-click lock holds the node you picked.
-        Ashriders ride first. If banners press your hearth, the student recalls the wave.
+        Ashriders ride first. Pressed camps draw a sentry. The age rite waits if the hearth is struck.
       </div>
     )
   }

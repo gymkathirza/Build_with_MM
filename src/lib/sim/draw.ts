@@ -133,6 +133,16 @@ function drawTerrain(
     ctx.beginPath()
     ctx.ellipse(lake.sx - lrx * 0.22, lake.sy - lry * 0.28, lrx * 0.18, lry * 0.1, 0.4, 0, Math.PI * 2)
     ctx.fill()
+    if (world.mapId === "shattercoast" && quality > 1) {
+      for (let i = 0; i < 5; i++) {
+        const foam = 0.1 + 0.08 * Math.sin(t / 380 + i)
+        ctx.strokeStyle = `rgba(230,245,245,${foam})`
+        ctx.lineWidth = 1.2
+        ctx.beginPath()
+        ctx.ellipse(lake.sx + (i - 2) * lrx * 0.18, lake.sy + lry * 0.35, lrx * 0.16, lry * 0.08, 0.15, 0, Math.PI * 2)
+        ctx.stroke()
+      }
+    }
     if (quality > 1) {
       for (let i = 0; i < 6; i++) {
         const a = (i / 6) * Math.PI * 2
@@ -224,7 +234,25 @@ function drawTerrain(
         if (hsh % 9 > 1) continue
         const p = worldToScreen(cam, gx + (hsh % 5), gy + ((hsh >> 3) % 5))
         if (culled(p.sx, p.sy, deco, w, h)) continue
-        const spr = hsh % 9 === 0 ? SPR.grass : hsh % 11 === 0 ? SPR.flower : hsh % 13 === 0 ? SPR.fern : SPR.rock
+        const plate = world.mapId
+        const spr =
+          plate === "nightgrove" && hsh % 7 === 0
+            ? SPR.fern
+            : plate === "sunvault" && hsh % 7 === 0
+              ? SPR.flower
+              : plate === "emberglass" && hsh % 7 === 0
+                ? SPR.rock
+                : plate === "shattercoast" && hsh % 7 === 0
+                  ? SPR.reed
+                  : plate === "hollowmere" && hsh % 7 === 0
+                    ? SPR.fern
+                    : hsh % 9 === 0
+                      ? SPR.grass
+                      : hsh % 11 === 0
+                        ? SPR.flower
+                        : hsh % 13 === 0
+                          ? SPR.fern
+                          : SPR.rock
         blit(ctx, spr, p.sx - deco / 2, p.sy - deco * 0.65, deco, deco)
       }
     }
@@ -487,7 +515,7 @@ function drawUnit(
   const moving = u.order.t === "move" || u.order.t === "gather" || u.order.t === "return" || u.order.t === "attackMove"
   const limp = u.hp < u.hpMax * 0.38
   const faceLeft = orderDestX(world, u) < u.x - 0.15
-  const bob = quality > 0 ? Math.sin(t / (moving ? (limp ? 140 : 90) : 180) + u.id) * (moving ? (limp ? 1.2 : 2.2) : 1.2) : 0
+  const bob = quality > 0 ? Math.sin(t / (moving ? (limp ? 140 : 90) : 180) + u.id) * (moving ? (limp ? 1.2 : 2.2) : u.carry ? 1.8 : 1.2) : 0
   const sway = quality > 0 && moving ? Math.sin(t / (limp ? 110 : 70) + u.id) * (limp ? 0.8 : 1.6) : 0
   const y = p.sy + bob
   ctx.fillStyle = "rgba(18,12,8,0.28)"
