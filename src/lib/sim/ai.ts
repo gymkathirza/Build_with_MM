@@ -652,15 +652,14 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
       }
     }
     const riderCount = military.filter((u) => u.type === "ashrider").length
-    const spareRider =
-      riderCount >= 4
-        ? military.find(
-            (u) =>
-              u.type === "ashrider" &&
-              !garrison.some((g) => g.id === u.id) &&
-              (u.order.t === "idle" || u.order.t === "defend" || u.order.t === "move"),
-          )
-        : undefined
+    const spareRiders = military.filter(
+      (u) =>
+        u.type === "ashrider" &&
+        !garrison.some((g) => g.id === u.id) &&
+        (u.order.t === "idle" || u.order.t === "defend" || u.order.t === "move"),
+    )
+    const spareRider = riderCount >= 4 ? spareRiders[0] : undefined
+    const relicRider = riderCount >= 5 ? spareRiders[1] ?? spareRiders[0] : undefined
     const farLodge = w.buildings.find(
       (b) =>
         b.owner === owner &&
@@ -682,6 +681,8 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     } else if (farCamp && spareRider) {
       issueDefend(w, [spareRider.id], farCamp.x, farCamp.y)
     }
+    const relicNode = w.nodes.find((n) => n.type === "relics" && n.amount > 0)
+    if (relicNode && relicRider) issueDefend(w, [relicRider.id], relicNode.x, relicNode.y)
     const wardenCount = military.filter((u) => u.type === "warden").length
     const spareWarden =
       wardenCount >= 3

@@ -1204,6 +1204,31 @@ test("a fourth ashrider patrols a far yard", () => {
   assert.ok(patrol, "a spare ashrider should patrol the far yard")
 })
 
+test("a fifth ashrider patrols a relic", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  w.players[0].grain = 400
+  w.players[0].timber = 200
+  const relic = w.nodes.find((n) => n.type === "relics" && n.amount > 0)
+  assert.ok(relic, "emberglass should seed a relic")
+  for (let i = 0; i < 5; i++) pushBanner(w, "ashrider", 0, h.x + 2 + i, h.y)
+  for (let i = 0; i < 50; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const patrol = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "ashrider" &&
+      ((u.order.t === "defend" && Math.hypot(u.order.x - relic.x, u.order.y - relic.y) < 4) ||
+        (u.order.t === "move" && Math.hypot(u.order.x - relic.x, u.order.y - relic.y) < 4) ||
+        Math.hypot(u.x - relic.x, u.y - relic.y) < 12),
+  )
+  assert.ok(patrol, "a spare ashrider should patrol a relic")
+})
+
 test("extra levies walk a far pit", () => {
   const params = personaById("balanced").params
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
@@ -1728,6 +1753,30 @@ test("a far grain haul draws a banner", () => {
   assert.ok(escort, "a banner should walk a far grain haul home")
 })
 
+test("a far ore haul draws a banner", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")!
+  levy.order = { t: "return", drop: h.id }
+  levy.carry = { res: "ore", amt: 8 }
+  levy.x = h.x + 20
+  levy.y = h.y
+  for (let i = 0; i < 4; i++) pushBanner(w, "guard", 0, h.x + 2 + i, h.y)
+  for (let i = 0; i < 20; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const escort = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "guard" &&
+      u.order.t === "defend" &&
+      Math.hypot(u.order.x - levy.x, u.order.y - levy.y) < 10,
+  )
+  assert.ok(escort, "a banner should walk a far ore haul home")
+})
+
 test("a wounded ashrider peels to the lodge", () => {
   const params = { ...personaById("balanced").params, attackAtArmy: 9, kite: 0.6 }
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
@@ -1913,6 +1962,34 @@ test("a wolf hunt draws a banner escort", () => {
       Math.hypot(u.order.x - levy.x, u.order.y - levy.y) < 10,
   )
   assert.ok(escort, "a banner should walk with a wolf hunt")
+})
+
+test("a bear hunt draws a banner escort", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")!
+  const bear = w.nodes.find((n) => n.type === "grain") ?? w.nodes[0]!
+  bear.fauna = "bear"
+  bear.amount = 80
+  bear.x = h.x + 10
+  bear.y = h.y
+  levy.order = { t: "gather", node: bear.id }
+  levy.x = bear.x
+  levy.y = bear.y
+  for (let i = 0; i < 3; i++) pushBanner(w, "guard", 0, h.x + 2 + i, h.y)
+  for (let i = 0; i < 50; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const escort = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "guard" &&
+      u.order.t === "defend" &&
+      Math.hypot(u.order.x - levy.x, u.order.y - levy.y) < 10,
+  )
+  assert.ok(escort, "a banner should walk with a bear hunt")
 })
 
 test("a deer hunt draws a banner escort", () => {

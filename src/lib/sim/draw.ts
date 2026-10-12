@@ -630,6 +630,11 @@ function drawNode(
     ctx.beginPath()
     ctx.arc(p.sx + wander, p.sy - s * 0.2 + bob, s * 0.28, 0, Math.PI * 2)
     ctx.stroke()
+    ctx.strokeStyle = `rgba(255,246,212,${gleam * 0.55})`
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.arc(p.sx + wander, p.sy - s * 0.2 + bob, s * 0.18, 0, Math.PI * 2)
+    ctx.stroke()
     for (let i = 0; i < 4; i++) {
       const a = now / 480 + n.id + i * 1.3
       const lift = (now / 14 + i * 6) % 16
