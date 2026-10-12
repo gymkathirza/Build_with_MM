@@ -2,11 +2,14 @@ import { CAMPAIGN_MISSIONS, type MissionId } from "./missions"
 
 export const SAVE_KEY = "mm-mkp1-chronicle"
 
+export type RelicChoiceSave = "keep" | "return"
+
 export type ChronicleSlot = {
   id: string
   label: string
   completed: MissionId[]
   relicSecured: boolean
+  relicChoice: RelicChoiceSave | null
   started: boolean
 }
 
@@ -15,9 +18,9 @@ export type ChronicleFile = {
 }
 
 const EMPTY_SLOTS: ChronicleSlot[] = [
-  { id: "slot-1", label: "Chronicle I", completed: [], relicSecured: false, started: false },
-  { id: "slot-2", label: "Chronicle II", completed: [], relicSecured: false, started: false },
-  { id: "slot-3", label: "Chronicle III", completed: [], relicSecured: false, started: false },
+  { id: "slot-1", label: "Chronicle I", completed: [], relicSecured: false, relicChoice: null, started: false },
+  { id: "slot-2", label: "Chronicle II", completed: [], relicSecured: false, relicChoice: null, started: false },
+  { id: "slot-3", label: "Chronicle III", completed: [], relicSecured: false, relicChoice: null, started: false },
 ]
 
 export function emptyFile(): ChronicleFile {
@@ -41,6 +44,7 @@ function normalize(raw: unknown): ChronicleFile | null {
         label: template.label,
         completed,
         relicSecured: s.relicSecured === true,
+        relicChoice: s.relicChoice === "keep" || s.relicChoice === "return" ? s.relicChoice : null,
         started: s.started === true || completed.length > 0,
       }
     }),
@@ -77,16 +81,23 @@ export function isUnlocked(slot: ChronicleSlot, missionId: MissionId) {
   return slot.completed.includes(CAMPAIGN_MISSIONS[i - 1]!.id)
 }
 
-export function markVictory(file: ChronicleFile, slotId: string, missionId: MissionId): ChronicleFile {
+export function markVictory(
+  file: ChronicleFile,
+  slotId: string,
+  missionId: MissionId,
+  extras?: { relicChoice?: RelicChoiceSave | null },
+): ChronicleFile {
   return {
     slots: file.slots.map((s) => {
       if (s.id !== slotId) return s
       const completed = s.completed.includes(missionId) ? s.completed : [...s.completed, missionId]
+      const relicChoice = extras?.relicChoice ?? s.relicChoice
       return {
         ...s,
         started: true,
         completed,
         relicSecured: s.relicSecured || missionId === "palk",
+        relicChoice: missionId === "palk" ? relicChoice : s.relicChoice,
       }
     }),
   }

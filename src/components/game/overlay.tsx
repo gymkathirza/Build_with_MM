@@ -7,11 +7,15 @@ export function Overlay({
   description,
   children,
   wide = false,
+  image,
+  imageAlt,
 }: {
   title: string
   description: string
   children: ReactNode
   wide?: boolean
+  image?: string
+  imageAlt?: string
 }) {
   return (
     <div
@@ -21,8 +25,14 @@ export function Overlay({
       aria-labelledby="overlay-title"
     >
       <div
-        className={`gold-trim w-full rounded-sm bg-card/95 p-5 shadow-2xl ring-1 ring-primary/20 ${wide ? "max-w-lg max-h-[90dvh] overflow-y-auto" : "max-w-md"}`}
+        className={`gold-trim w-full rounded-sm bg-card/95 p-5 shadow-2xl ring-1 ring-primary/20 ${wide ? "max-w-xl max-h-[90dvh] overflow-y-auto" : "max-w-md"}`}
       >
+        {image ? (
+          <div className="mb-4 overflow-hidden rounded-sm border border-primary/20 bg-[#1a1410]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={image} alt={imageAlt ?? ""} className="aspect-[16/9] w-full object-cover" />
+          </div>
+        ) : null}
         <h2 id="overlay-title" className="font-heading text-xl tracking-wide text-primary">
           {title}
         </h2>

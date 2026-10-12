@@ -624,7 +624,7 @@ function hit(w: World, u: Unit, target: Unit | Building) {
   const dmg =
     Math.max(1, stats.atk - armor) *
     (target.kind === "building" ? 1.4 : 1) *
-    campaignHitBonus(w, u.type, u.x, u.y)
+    campaignHitBonus(w, u.type, u.x, u.y, u.owner)
   target.hp -= dmg
   u.atkCd = stats.cd
   if (target.hp <= 0) {
@@ -833,7 +833,7 @@ function tickBuildings(w: World) {
 
 export function tick(w: World) {
   if (w.winner !== null) return
-  if (w.campaign?.phase === "briefing") return
+  if (w.campaign?.phase === "briefing" || w.campaign?.phase === "diplomacy") return
   w.tick++
   if (w.events.length > 40) w.events.length = 0
   tickBuildings(w)

@@ -29,7 +29,7 @@ export function PearlLogo({
       className={cn("pearl-logo", className)}
       role={decorative ? "presentation" : "img"}
       aria-hidden={decorative ? true : undefined}
-      aria-label={decorative ? undefined : "Pearl of Manon Mani"}
+      aria-label={decorative ? undefined : "Pearl of Manon Mani and Masila Mani"}
     >
       <defs>
         <radialGradient id={body} cx="38%" cy="30%" r="72%">

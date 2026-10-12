@@ -3,6 +3,21 @@ import { blit, getMoss, SPR } from "../sim/atlas"
 import type { Building, Node, Unit, World } from "../sim/engine"
 import { factionById } from "../game-data"
 import type { DrawQuality } from "../ml/score"
+import { artImage, CAMPAIGN_ART } from "../campaign/artifacts"
+
+function blitArt(
+  ctx: CanvasRenderingContext2D,
+  src: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+) {
+  const img = artImage(src)
+  if (!img) return false
+  ctx.drawImage(img, x, y, w, h)
+  return true
+}
 
 export type Cam = { x: number; y: number; z: number; w: number; h: number }
 
@@ -299,7 +314,15 @@ function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: Dra
   const now = performance.now()
   const bob = n.fauna && quality > 0 ? Math.sin(n.id + now / 320) * 2.1 : 0
   const wander = n.fauna && quality > 1 ? Math.sin(n.id * 1.7 + now / 900) * 2.4 : 0
-  blit(ctx, nodeSpr(n), p.sx - s / 2 + wander, p.sy - s * 0.72 + bob, s, s)
+  const art =
+    n.fauna === "shark"
+      ? CAMPAIGN_ART.mannarPearls
+      : n.type === "relics"
+        ? CAMPAIGN_ART.toothRelic
+        : null
+  if (!art || !blitArt(ctx, art, p.sx - s / 2 + wander, p.sy - s * 0.72 + bob, s, s)) {
+    blit(ctx, nodeSpr(n), p.sx - s / 2 + wander, p.sy - s * 0.72 + bob, s, s)
+  }
   if (quality > 1 && n.type === "relics") {
     const gleam = 0.18 + 0.22 * Math.sin(now / 240 + n.id)
     ctx.strokeStyle = `rgba(255,246,212,${gleam})`
@@ -332,6 +355,7 @@ function buildingSpr(type: Building["type"]) {
   if (type === "quay") return SPR.camp
   if (type === "lighthouse") return SPR.pit
   if (type === "charm") return SPR.granary
+  if (type === "temple" || type === "mosque") return SPR.hearth
   return SPR.granary
 }
 
@@ -357,7 +381,17 @@ function drawBuilding(
   ctx.beginPath()
   ctx.ellipse(p.sx, p.sy + s * 0.08, s * 0.38, s * 0.12, 0, 0, Math.PI * 2)
   ctx.fill()
-  blit(ctx, buildingSpr(b.type), p.sx - s / 2, p.sy - s * 0.78, s, s)
+  const hallArt =
+    b.type === "quay"
+      ? CAMPAIGN_ART.kayalDockyard
+      : b.type === "lighthouse"
+        ? CAMPAIGN_ART.lighthouse
+        : b.type === "charm"
+          ? CAMPAIGN_ART.sharkCharmer
+          : null
+  if (!hallArt || !blitArt(ctx, hallArt, p.sx - s / 2, p.sy - s * 0.78, s, s)) {
+    blit(ctx, buildingSpr(b.type), p.sx - s / 2, p.sy - s * 0.78, s, s)
+  }
   if (b.type === "lighthouse" && b.done) {
     ctx.fillStyle = "#d4c48a"
     ctx.fillRect(p.sx - s * 0.08, p.sy - s * 0.72, s * 0.16, s * 0.55)
@@ -572,7 +606,21 @@ function drawUnit(
   ctx.save()
   ctx.translate(p.sx, 0)
   ctx.scale(faceLeft ? -1 : 1, 1)
-  if (u.type === "dhoni") {
+  const unitArt =
+    u.type === "dhoni"
+      ? world.mapId === "palk" && u.id < 20
+        ? CAMPAIGN_ART.flagship
+        : CAMPAIGN_ART.coastalDhoni
+      : u.type === "marzban"
+        ? CAMPAIGN_ART.escortShip
+        : u.type === "rowther"
+          ? CAMPAIGN_ART.rowtherCavalry
+          : u.type === "ashrider" && world.campaign
+            ? CAMPAIGN_ART.arabWarhorse
+            : null
+  if (unitArt && blitArt(ctx, unitArt, -size / 2 + sway, y - size * 0.82, size, size)) {
+    /* CC0 card */
+  } else if (u.type === "dhoni") {
     ctx.fillStyle = "#6b3d1c"
     ctx.beginPath()
     ctx.ellipse(sway, y - size * 0.12, size * 0.42, size * 0.14, 0, 0, Math.PI * 2)
@@ -744,14 +792,17 @@ export function drawWorld(
     for (const ship of campaign.convoys) {
       if (ship.sunk || ship.arrived) continue
       const p = worldToScreen(cam, ship.x, ship.y)
-      ctx.fillStyle = "#c4a35a"
-      ctx.beginPath()
-      ctx.ellipse(p.sx, p.sy, Math.max(8, cam.z * 0.7), Math.max(4, cam.z * 0.28), 0.1, 0, Math.PI * 2)
-      ctx.fill()
+      const sw = Math.max(28, cam.z * 2.2)
+      if (!blitArt(ctx, CAMPAIGN_ART.altibiMerchantman, p.sx - sw / 2, p.sy - sw * 0.7, sw, sw)) {
+        ctx.fillStyle = "#c4a35a"
+        ctx.beginPath()
+        ctx.ellipse(p.sx, p.sy, Math.max(8, cam.z * 0.7), Math.max(4, cam.z * 0.28), 0.1, 0, Math.PI * 2)
+        ctx.fill()
+      }
       ctx.fillStyle = "rgba(20,12,8,0.8)"
       ctx.font = "11px sans-serif"
       ctx.textAlign = "center"
-      ctx.fillText("Horse ship", p.sx, p.sy + 12)
+      ctx.fillText("Al-Tibi hull", p.sx, p.sy + 12)
     }
     if (campaign.night) {
       ctx.fillStyle = "rgba(6,10,28,0.38)"

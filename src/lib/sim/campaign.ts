@@ -19,7 +19,8 @@ export type HorseConvoy = {
   sunk: boolean
 }
 
-export type CampaignPhase = "briefing" | "play" | "victory" | "defeat"
+export type CampaignPhase = "briefing" | "play" | "diplomacy" | "victory" | "defeat"
+export type RelicChoice = "keep" | "return"
 
 export type CampaignRuntime = {
   missionId: MissionId
@@ -33,6 +34,7 @@ export type CampaignRuntime = {
   shipsNeeded: number
   relicHeld: boolean
   relicNodeId: number | null
+  relicChoice: RelicChoice | null
   pirateScale: number
   night: boolean
   sharkKills: number
@@ -42,8 +44,16 @@ export type CampaignRuntime = {
   nextSpawnAt: number
   nextConvoyAt: number
   nextWaveAt: number
+  nextRevoltAt: number
   convoysSpawned: number
   wavesSpawned: number
+  shaiva: number
+  vaishnava: number
+  csi: number
+  stupa: number
+  loyalty: number
+  unrest: number
+  tribute: boolean
   objective: string
   failWhy: string
   winWhy: string
@@ -111,10 +121,18 @@ export function campaignSpeed(w: World, type: string, x: number, y: number) {
   return 1
 }
 
-export function campaignHitBonus(w: World, type: string, x: number, y: number) {
+export function campaignHitBonus(w: World, type: string, x: number, y: number, owner?: 0 | 1) {
   if (!w.campaign) return 1
-  if (type === "rowther" && (isBeach(w, x, y) || isWater(w, x, y))) return 1.45
-  return 1
+  const c = w.campaign
+  let m = 1
+  if (type === "rowther" && (isBeach(w, x, y) || isWater(w, x, y))) m *= 1.45
+  if (c.relicHeld && owner === 1) m *= 0.82
+  if (c.relicChoice === "keep" && owner === 0) m *= 1.12
+  const temple = w.buildings.find((b) => b.owner === 0 && b.type === "temple" && b.done)
+  if (temple && owner === 0 && dist(x, y, temple.x, temple.y) < 12) {
+    m *= 1 + Math.min(0.2, (c.shaiva + c.vaishnava) / 500)
+  }
+  return m
 }
 
 export function fundGuild(w: World, which: "manigramam" | "anjuvannam") {
@@ -146,6 +164,70 @@ export function fundGuild(w: World, which: "manigramam" | "anjuvannam") {
   return true
 }
 
+export function fundPatronage(w: World, which: "shaiva" | "vaishnava") {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  const p = w.players[0]
+  if (p.relics < 1) {
+    w.events.push({ k: "failed", owner: 0, why: "Kayal customs gold (Relics) funds Divine Patronage." })
+    return false
+  }
+  p.relics -= 1
+  if (which === "shaiva") c.shaiva = clamp01(c.shaiva + 24)
+  else c.vaishnava = clamp01(c.vaishnava + 24)
+  c.csi = clamp01(c.csi + 8)
+  c.loyalty = clamp01(c.loyalty + 14)
+  c.unrest = clamp01(c.unrest - 12)
+  return true
+}
+
+export function fundCosmopolitan(w: World, which: "mosque" | "stupa") {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  const p = w.players[0]
+  if (which === "mosque") {
+    if (p.ore < 25) {
+      w.events.push({ k: "failed", owner: 0, why: "The Sonakarpalli mosque wants Ore." })
+      return false
+    }
+    p.ore -= 25
+    c.csi = clamp01(c.csi + 18)
+  } else {
+    if (p.grain < 60) {
+      w.events.push({ k: "failed", owner: 0, why: "A Buddhist shrine wants Grain." })
+      return false
+    }
+    p.grain -= 60
+    c.stupa = clamp01(c.stupa + 22)
+    c.csi = clamp01(c.csi + 14)
+  }
+  c.unrest = clamp01(c.unrest - 6)
+  return true
+}
+
+export function chooseRelic(w: World, choice: RelicChoice) {
+  const c = w.campaign
+  if (!c || c.phase !== "diplomacy") return false
+  c.relicChoice = choice
+  if (choice === "keep") {
+    c.loyalty = clamp01(c.loyalty + 10)
+    win(
+      w,
+      "The Tooth Relic stays in Madurai. Masila Mani’s court and Manon Mani’s sea hold it; Jaffna still watches.",
+    )
+  } else {
+    c.tribute = true
+    c.pirateScale *= 1.2
+    w.players[0].grain += 80
+    w.players[0].relics += 2
+    win(
+      w,
+      "Parakramabahu III takes the Tooth Relic home. Jaffna stays a vassal; tribute follows Manon Mani and Masila Mani.",
+    )
+  }
+  return true
+}
+
 export function beginMission(w: World) {
   if (!w.campaign) return
   if (w.campaign.phase === "briefing") w.campaign.phase = "play"
@@ -153,7 +235,7 @@ export function beginMission(w: World) {
 
 function win(w: World, why: string) {
   const c = w.campaign
-  if (!c || c.phase !== "play") return
+  if (!c || (c.phase !== "play" && c.phase !== "diplomacy")) return
   c.phase = "victory"
   c.winWhy = why
   w.winner = 0
@@ -191,8 +273,9 @@ function tickKayal(w: World, c: CampaignRuntime) {
     const dx = hx - ship.x
     const dy = hy - ship.y
     const d = Math.hypot(dx, dy) || 1
-    ship.x += (dx / d) * 7.5 * DT
-    ship.y += (dy / d) * 7.5 * DT
+    const hull = c.csi < 22 ? 5.2 : 7.5
+    ship.x += (dx / d) * hull * DT
+    ship.y += (dy / d) * hull * DT
     for (const u of w.units) {
       if (u.owner !== 1) continue
       if (dist(u.x, u.y, ship.x, ship.y) < 2.2) ship.hp -= 11 * DT
@@ -220,8 +303,10 @@ function tickKayal(w: World, c: CampaignRuntime) {
     if (live) issueAttackMove(w, [u.id], live.x, live.y)
     else issueAttackMove(w, [u.id], hx, hy)
   }
-  c.objective = `Horse ships ${c.shipsEscorted}/${c.shipsNeeded} · lost ${c.shipsLost}/3`
-  if (c.shipsEscorted >= c.shipsNeeded) win(w, "The Hormuz hulls are under Kayal’s lamps.")
+  c.objective = `Horse ships ${c.shipsEscorted}/${c.shipsNeeded} · lost ${c.shipsLost}/3 · CSI ${c.csi | 0}`
+  if (c.shipsEscorted >= c.shipsNeeded) {
+    win(w, "The Hormuz hulls are under Kayal’s lamps — Manon Mani’s quay, Masila Mani’s Twin-Fish gate.")
+  }
   else if (c.shipsLost >= 3) lose(w, "Malabar corsairs emptied the horse road.")
 }
 
@@ -229,12 +314,14 @@ function tickPalk(w: World, c: CampaignRuntime) {
   const relic = c.relicNodeId != null ? w.nodes.find((n) => n.id === c.relicNodeId) : null
   const hall = p0Hall(w)
   if (relic && relic.amount <= 0) c.relicHeld = true
-  if (c.relicHeld && hall) {
+  if (c.relicHeld && hall && c.phase === "play") {
     const home = w.units.some(
       (u) => u.owner === 0 && u.carry?.res === "relics" && dist(u.x, u.y, hall.x, hall.y) < 4,
     )
     if (home || w.players[0].relics >= 1) {
-      win(w, "The Tooth Relic is in Madurai’s keeping. Southern pirate spawn will thin.")
+      c.phase = "diplomacy"
+      c.objective =
+        "Keep the Tooth Relic in Madurai, or return it when Parakramabahu III comes — Aryachakravarti’s prize."
       return
     }
   }
@@ -244,7 +331,7 @@ function tickPalk(w: World, c: CampaignRuntime) {
   }
   c.objective = c.relicHeld
     ? "Carry the Tooth Relic to the landing hearth"
-    : "Storm Yapahuwa and take the Tooth Relic"
+    : "Storm Yapahuwa with Aryachakravarti and take the Tooth Relic"
 }
 
 function tickTamra(w: World, c: CampaignRuntime) {
@@ -318,16 +405,27 @@ function tickFracture(w: World, c: CampaignRuntime) {
   if (sundaraDown && c.wavesBroken >= 2) win(w, "Vira’s camp stands. Kafur’s waves broke on Kayal.")
 }
 
+function tickGovernance(w: World, c: CampaignRuntime) {
+  if (c.tribute && w.tick % 40 === 0) w.players[0].grain += 2
+  if (c.csi >= 78 && c.shaiva + c.vaishnava < 40 && w.tick >= c.nextRevoltAt) {
+    const hall = p0Hall(w)
+    if (hall) spawnUnit(w, 1, "guard", hall.x + 10, hall.y - 8)
+    c.nextRevoltAt = w.tick + 20 * 14
+    c.unrest = clamp01(c.unrest + 10)
+  }
+}
+
 export function tickCampaign(w: World) {
   const c = w.campaign
   if (!c) return
-  if (c.phase === "briefing") return
+  if (c.phase === "briefing" || c.phase === "diplomacy") return
   if (c.phase !== "play") return
   const halls = w.buildings.filter((b) => b.owner === 0 && b.type === "hearth")
   if (!halls.length) {
     lose(w, "The hearth is gone.")
     return
   }
+  tickGovernance(w, c)
   if (c.missionId === "kayal") tickKayal(w, c)
   else if (c.missionId === "palk") tickPalk(w, c)
   else if (c.missionId === "tamraparani") tickTamra(w, c)
@@ -351,7 +449,7 @@ function convertP1ToCorsairs(w: World, keep = 2) {
 export function createCampaignWorld(
   missionId: string,
   ai?: AiParams,
-  opts?: { pirateScale?: number },
+  opts?: { pirateScale?: number; relicChoice?: RelicChoice | null },
 ): World {
   const spec = missionById(missionId) ?? CAMPAIGN_MISSIONS[0]!
   const pirateScale = opts?.pirateScale ?? 1
@@ -370,6 +468,7 @@ export function createCampaignWorld(
     shipsNeeded: 3,
     relicHeld: false,
     relicNodeId: null,
+    relicChoice: opts?.relicChoice ?? null,
     pirateScale,
     night: false,
     sharkKills: 0,
@@ -379,8 +478,16 @@ export function createCampaignWorld(
     nextSpawnAt: 20 * 4,
     nextConvoyAt: 20 * 3,
     nextWaveAt: 20 * 8,
+    nextRevoltAt: 20 * 18,
     convoysSpawned: 0,
     wavesSpawned: 0,
+    shaiva: 18,
+    vaishnava: 12,
+    csi: 42,
+    stupa: 0,
+    loyalty: 40,
+    unrest: 18,
+    tribute: opts?.relicChoice === "return",
     objective: spec.objective,
     failWhy: spec.lose,
     winWhy: spec.win,
@@ -480,7 +587,12 @@ export function createCampaignWorld(
 }
 
 export function campaignBuildTypes(missionId: string) {
-  const extra: Array<"quay" | "lighthouse" | "charm" | "lodge"> = ["quay", "lighthouse"]
+  const extra: Array<"quay" | "lighthouse" | "charm" | "lodge" | "temple" | "mosque"> = [
+    "quay",
+    "lighthouse",
+    "temple",
+    "mosque",
+  ]
   if (missionId === "tamraparani" || missionId === "fracture") extra.push("charm", "lodge")
   if (missionId === "kayal" || missionId === "palk") extra.push("lodge")
   return extra

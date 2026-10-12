@@ -51,9 +51,13 @@ import { loadFile, markVictory, writeFile } from "@/lib/campaign/save"
 import {
   beginMission,
   campaignBuildTypes,
+  chooseRelic,
   createCampaignWorld,
+  fundCosmopolitan,
   fundGuild,
+  fundPatronage,
 } from "@/lib/sim/campaign"
+import { CAMPAIGN_ART, missionArt } from "@/lib/campaign/artifacts"
 import { EmptyState } from "@/components/game/screen-states"
 import tunedJson from "@/lib/ml/tuned.json"
 
@@ -126,8 +130,11 @@ export function MatchView({
     if (mission) {
       const saved = loadFile()
       const slot = saved.file.slots.find((s) => s.id === slotId)
-      const pirateScale = slot?.relicSecured ? 1.45 : 1
-      return createCampaignWorld(mission.id, tuned.ai, { pirateScale })
+      const pirateScale = slot?.relicSecured ? (slot.relicChoice === "return" ? 1.7 : 1.45) : 1
+      return createCampaignWorld(mission.id, tuned.ai, {
+        pirateScale,
+        relicChoice: slot?.relicChoice ?? null,
+      })
     }
     return createWorld(factionId, enemyFaction, tuned.ai, { mapId, persona: personaId })
   })
@@ -139,6 +146,7 @@ export function MatchView({
   const [hudPulse, setHudPulse] = useState(0)
   const [startPearl, setStartPearl] = useState(!mission)
   const [briefing, setBriefing] = useState(Boolean(mission))
+  const [diplomacy, setDiplomacy] = useState(false)
 
   useEffect(() => {
     const t = window.setTimeout(() => setStartPearl(false), 1900)
@@ -148,7 +156,9 @@ export function MatchView({
   useEffect(() => {
     if (winner !== 0 || !mission) return
     const cur = loadFile()
-    writeFile(markVictory(cur.file, slotId, mission.id))
+    writeFile(
+      markVictory(cur.file, slotId, mission.id, { relicChoice: world.campaign?.relicChoice ?? null }),
+    )
   }, [winner, mission, slotId])
 
   useEffect(() => {
@@ -208,6 +218,7 @@ export function MatchView({
     let fps = 60
     let hudAt = performance.now()
     let postedWin = false
+    let postedDiplomacy = false
     let sampleN = 0
     let lastObsPost = 0
     const p0Ai = bot
@@ -266,7 +277,12 @@ export function MatchView({
       cam.y = Math.max(8, Math.min(world.size - 8, cam.y))
 
       let simMs = 0
-      if (!pausedRef.current && world.winner === null && world.campaign?.phase !== "briefing") {
+      if (
+        !pausedRef.current &&
+        world.winner === null &&
+        world.campaign?.phase !== "briefing" &&
+        world.campaign?.phase !== "diplomacy"
+      ) {
         acc += dt
         const step = 1 / TICK_HZ
         let safety = 0
@@ -340,6 +356,10 @@ export function MatchView({
             void fetch("/api/obs", { method: "POST", body, keepalive: true })
           }
         }
+      }
+      if (!postedDiplomacy && world.campaign?.phase === "diplomacy") {
+        postedDiplomacy = true
+        setDiplomacy(true)
       }
       if (!postedWin && world.winner !== null) {
         postedWin = true
@@ -562,7 +582,10 @@ export function MatchView({
                   size="sm"
                   variant="outline"
                   className="h-7 text-[11px]"
-                  onClick={() => fundGuild(world, "manigramam")}
+                  onClick={() => {
+                    fundGuild(world, "manigramam")
+                    paintHud(60, 16, 0)
+                  }}
                 >
                   Fund Manigramam
                 </Button>
@@ -570,12 +593,65 @@ export function MatchView({
                   size="sm"
                   variant="outline"
                   className="h-7 text-[11px]"
-                  onClick={() => fundGuild(world, "anjuvannam")}
+                  onClick={() => {
+                    fundGuild(world, "anjuvannam")
+                    paintHud(60, 16, 0)
+                  }}
                 >
                   Seat Anjuvannam
                 </Button>
               </div>
             ) : null}
+            <p className="text-muted-foreground">
+              Shaiva {world.campaign.shaiva | 0} · Vaishnava {world.campaign.vaishnava | 0} · CSI{" "}
+              {world.campaign.csi | 0}
+            </p>
+            <div className="flex flex-wrap gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-[11px]"
+                onClick={() => {
+                  fundPatronage(world, "shaiva")
+                  paintHud(60, 16, 0)
+                }}
+              >
+                Fund Shaiva
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-[11px]"
+                onClick={() => {
+                  fundPatronage(world, "vaishnava")
+                  paintHud(60, 16, 0)
+                }}
+              >
+                Fund Vaishnava
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-[11px]"
+                onClick={() => {
+                  fundCosmopolitan(world, "mosque")
+                  paintHud(60, 16, 0)
+                }}
+              >
+                Seat mosque
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-[11px]"
+                onClick={() => {
+                  fundCosmopolitan(world, "stupa")
+                  paintHud(60, 16, 0)
+                }}
+              >
+                Seat shrine
+              </Button>
+            </div>
             {world.campaign.night ? (
               <p className="text-destructive">Night — raise a lighthouse or the sand spawns corsairs.</p>
             ) : null}
@@ -638,7 +714,13 @@ export function MatchView({
           </Overlay>
         ) : null}
         {briefing && mission && winner === null ? (
-          <Overlay wide title={mission.title} description={`${mission.arc} · ${mission.year}`}>
+          <Overlay
+            wide
+            title={mission.title}
+            description={`${mission.arc} · ${mission.year}`}
+            image={missionArt(mission.id).briefing}
+            imageAlt={missionArt(mission.id).caption}
+          >
             <p className="text-sm text-muted-foreground">{mission.briefing}</p>
             <p className="text-sm">
               <span className="text-primary">Win:</span> {mission.win}
@@ -659,6 +741,42 @@ export function MatchView({
             <Link href="/campaign" className={buttonVariants({ variant: "outline", className: "w-full" })}>
               Back to campaign
             </Link>
+          </Overlay>
+        ) : null}
+        {diplomacy && mission && winner === null ? (
+          <Overlay
+            wide
+            title="Relic Diplomacy"
+            description="Aryachakravarti holds the Tooth Relic. Keep it in Madurai, or return it when Parakramabahu III comes so Jaffna stays a vassal."
+            image={CAMPAIGN_ART.toothRelic}
+            imageAlt="Sacred Tooth Relic of Yapahuwa"
+          >
+            <p className="text-sm text-muted-foreground">
+              Manon Mani’s crossing, Masila Mani’s war. Capture already debuffed the host. Choose now.
+            </p>
+            <Button
+              className="w-full"
+              onClick={() => {
+                chooseRelic(world, "keep")
+                setDiplomacy(false)
+                setWinner(0)
+                setEndPearl(true)
+              }}
+            >
+              Keep in Madurai
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                chooseRelic(world, "return")
+                setDiplomacy(false)
+                setWinner(0)
+                setEndPearl(true)
+              }}
+            >
+              Return to Parakramabahu III
+            </Button>
           </Overlay>
         ) : null}
       </div>
@@ -748,7 +866,7 @@ export function MatchView({
         </p>
       </footer>
 
-      {paused && winner === null ? (
+      {paused && winner === null && !briefing && !diplomacy ? (
         <Overlay
           title="The field is held"
           description="Simulation is paused. Resume, change banners, or resign the match."

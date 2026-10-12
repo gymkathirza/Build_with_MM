@@ -26,6 +26,8 @@ export const BUILDING_STATS = {
   lighthouse: { hp: 520, radius: 2.0, pop: 0 },
   charm: { hp: 420, radius: 1.8, pop: 0 },
   quay: { hp: 700, radius: 2.4, pop: 0 },
+  temple: { hp: 640, radius: 2.2, pop: 0 },
+  mosque: { hp: 560, radius: 2.0, pop: 0 },
 } as const
 
 export type BuildingType = keyof typeof BUILDING_STATS
@@ -47,6 +49,8 @@ export const COSTS = {
   lighthouse: { grain: 0, timber: 80, ore: 25, relics: 0, time: 16, pop: 0, age: 0 },
   charm: { grain: 40, timber: 50, ore: 0, relics: 1, time: 14, pop: 0, age: 0 },
   quay: { grain: 0, timber: 100, ore: 20, relics: 0, time: 18, pop: 0, age: 0 },
+  temple: { grain: 40, timber: 70, ore: 15, relics: 1, time: 16, pop: 0, age: 0 },
+  mosque: { grain: 30, timber: 60, ore: 10, relics: 1, time: 15, pop: 0, age: 0 },
   age1: { grain: 280, timber: 0, ore: 140, relics: 0, time: 22, pop: 0, age: 0 },
   upgrade: { grain: 60, timber: 50, ore: 30, relics: 0, time: 0, pop: 0, age: 1 },
 } as const
@@ -81,4 +85,6 @@ export const BUILDING_LABEL: Record<BuildingType, string> = {
   lighthouse: "Stone Lighthouse",
   charm: "Kadalkatti Shrine",
   quay: "Kayal Quay",
+  temple: "Temple of Masila Mani",
+  mosque: "Sonakarpalli Mosque",
 }

@@ -32,7 +32,7 @@ export const CAMPAIGN_MISSIONS: CampaignMission[] = [
     enemy: "malabar",
     duration: "short",
     briefing:
-      "Appoint Takiuddin Abdur Rahman (Al-Tibi) as Prime Minister and port governor over Kayal, Kulasekharapatnam, Fattan, and Malifattan. Malabar corsairs are cutting horse ships from Hormuz and Aden. Fund Manigramam and Anjuvannam together so Marzban escorts may sail with the Pandya dhoni.",
+      "Appoint Takiuddin Abdur Rahman (Al-Tibi) as Prime Minister over Kayal of Manon Mani and Masila Mani, Kulasekharapatnam, Fattan, and Malifattan. Malabar corsairs cut horse ships from Hormuz and Aden. Fund Manigramam and Anjuvannam so Marzban escorts sail with the Pandya dhoni. The Sonakarpalli mosque is the first CSI beat.",
     win: "Three horse convoys reach the Kayal quay.",
     lose: "Three convoys sink, or the Kayal hearth falls.",
     objective: "Escort horse ships from Hormuz into Kayal",
@@ -48,10 +48,10 @@ export const CAMPAIGN_MISSIONS: CampaignMission[] = [
     enemy: "lanka",
     duration: "short",
     briefing:
-      "Bhuvanaikabahu I and Savakanmaindan sit astride Palk Strait. General Kulasekara Cinkaiariyan Aryacakravarti will land, storm Subhagiri (Yapahuwa), and take the Sacred Tooth Relic of the Buddha to the landing hearth. Northern Sri Lanka is to be held as a client.",
-    win: "Capture the Tooth Relic on Yapahuwa and deposit it at the landing hearth.",
-    lose: "The landing hearth is razed.",
-    objective: "Land, storm Yapahuwa, bring the Tooth Relic home",
+      "Bhuvanaikabahu I and Savakanmaindan sit astride Palk Strait — Manon Mani’s crossing, Masila Mani’s war. General Kulasekara Cinkaiariyan Aryachakravarti lands, storms Subhagiri (Yapahuwa), and takes the Sacred Tooth Relic. Then keep it in Madurai, or return it when Parakramabahu III comes so Jaffna stays a vassal.",
+    win: "Capture the Tooth Relic on Yapahuwa, deposit it, then keep or return.",
+    lose: "The landing hearth is razed before the choice is sealed.",
+    objective: "Land with Aryachakravarti, take the Tooth Relic, then keep or return",
   },
   {
     id: "tamraparani",
@@ -64,7 +64,7 @@ export const CAMPAIGN_MISSIONS: CampaignMission[] = [
     enemy: "malabar",
     duration: "short",
     briefing:
-      "Marco Polo is in the estuary. Raise stone lighthouses toward Kulasekharapatnam and Manapad so night corsairs cannot ambush the sand. Fund the Kadalkatti — shark charmers — or pearl divers die. Station Rowther cavalry at the coast to crush beach landings.",
+      "Marco Polo is in the estuary of Manon Mani and Masila Mani. Light Kulasekharapatnam and Manapad. Fund Kadalkatti shark charmers or pearl divers die. Station Rowther cavalry. Spend Relics on Divine Patronage: Nellaiappar at Tirunelveli, Masilamaninathar at Tharangambadi, Meenakshi at Madurai, Ranganathaswamy at Srirangam.",
     win: "Two lighthouses and one Kadalkatti shrine standing after three beach waves.",
     lose: "Kayal hearth falls, or six pearl divers are taken by sharks.",
     objective: "Light the coast, charm the gulf, hold the sand",
@@ -80,7 +80,7 @@ export const CAMPAIGN_MISSIONS: CampaignMission[] = [
     enemy: "delhi",
     duration: "short",
     briefing:
-      "The emperor favored illegitimate Vira Pandya over legitimate Sundara Pandya III. Civil war splits the coast. Sundara holds a rival camp; Malik Kafur of the Delhi Sultanate comes for Kayal. Hold Madurai and the port, or the Second Pandyan Empire ends here.",
+      "The emperor favored illegitimate Vira Pandya over legitimate Sundara Pandya III. Civil war splits the coast. Sundara holds a rival camp; Malik Kafur of the Delhi Sultanate comes for Kayal of Manon Mani and Masila Mani. Hold Madurai and the port, or the Second Pandyan Empire ends here.",
     win: "Raze Sundara’s camp and break two Malik Kafur waves with Kayal still standing.",
     lose: "Madurai or Kayal hearth falls.",
     objective: "Hold both hearths; break Sundara and Kafur",

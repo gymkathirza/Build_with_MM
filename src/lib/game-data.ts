@@ -1,6 +1,8 @@
 export const GAME_TITLE = "Build with Manon Mani"
 export const GAME_SHORT = "Manon Mani"
-export const GAME_TAGLINE = "Four banners. Four epochs. One treaty left to break."
+export const GAME_PAIR = "Manon Mani and Masila Mani"
+export const GAME_TAGLINE =
+  "Manon Mani’s pearl sea beside Masila Mani’s temple shore. Twin-fish of Madurai."
 export const GAME_VERSION = "0.1.0-alpha"
 export const GAME_CHANNEL = "Alpha pre-release"
 
@@ -305,7 +307,7 @@ export const CAMPAIGN_CHAPTERS = [
     title: "Storm of Subhagiri",
     act: "Preemptive Strike",
     synopsis:
-      "Aryacakravarti lands across Palk Strait, storms Yapahuwa, and takes the Tooth Relic.",
+      "Aryachakravarti lands across Palk Strait, storms Yapahuwa, and takes the Tooth Relic.",
     unlocked: false,
     duration: "short",
     faction: "pandya" as FactionId,

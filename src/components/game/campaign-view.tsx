@@ -22,7 +22,8 @@ import {
   writeFile,
   type ChronicleSlot,
 } from "@/lib/campaign/save"
-import { factionById } from "@/lib/game-data"
+import { missionArt } from "@/lib/campaign/artifacts"
+import { factionById, GAME_PAIR } from "@/lib/game-data"
 import { cn } from "@/lib/utils"
 
 export function CampaignView() {
@@ -52,7 +53,7 @@ export function CampaignView() {
   }
 
   return (
-    <CinematicShell footer="Twin-Fish Reign · Maravarman Kulasekara Pandyan I">
+    <CinematicShell footer={`Twin-Fish Reign · ${GAME_PAIR}`}>
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-4 py-8 sm:px-8 sm:py-10">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -61,8 +62,9 @@ export function CampaignView() {
               {CAMPAIGN_TITLE}
             </h1>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Four plates in order. {CAMPAIGN_STEWARD}, 1268–1310. Kayal, Palk Strait, the Tamraparani
-              lights, then the brothers’ war and Malik Kafur. Original engine. Historical names.
+              Four plates in order. {CAMPAIGN_STEWARD}, 1268–1310. {GAME_PAIR} — pearl sea and temple
+              shore. Kayal, Palk Strait, Yapahuwa, Jaffna, Tharangambadi / Masilamaninathar, then
+              Malik Kafur. General Aryachakravarti takes the Tooth Relic.
             </p>
           </div>
           <Button variant="outline" render={<Link href="/" />}>
@@ -114,7 +116,7 @@ export function CampaignView() {
         ) : empty ? (
           <EmptyState
             title="This plate is blank"
-            detail="No steward has taken the oath here. Begin Kayal Under Sail to inscribe Takiuddin Abdur Rahman as port governor and open the horse road."
+            detail="No steward has taken the oath here. Begin Kayal Under Sail — Manon Mani’s quay and Masila Mani’s Twin-Fish gate — to seat Takiuddin Abdur Rahman."
             action={
               <Button
                 render={<Link href={`/match?source=campaign&mission=kayal&slot=${slot.id}`} />}
@@ -132,7 +134,15 @@ export function CampaignView() {
               const faction = factionById(mission.faction)
               return (
                 <li key={mission.id}>
-                  <Card className={cn("gold-trim h-full bg-card/70", !open && "opacity-70")}>
+                  <Card className={cn("gold-trim h-full overflow-hidden bg-card/70", !open && "opacity-70")}>
+                    <div className="relative aspect-[16/9] w-full bg-[#1a1410]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={missionArt(mission.id).card}
+                        alt={missionArt(mission.id).caption}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
                     <CardHeader>
                       <div className="flex items-start justify-between gap-3">
                         <div>

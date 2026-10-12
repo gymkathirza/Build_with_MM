@@ -3,7 +3,7 @@ import { test } from "node:test"
 import { isUnlocked, markVictory, emptyFile } from "../campaign/save"
 import { CAMPAIGN_MISSIONS } from "../campaign/missions"
 import { createWorld, seedBuilding, spawnUnit, tick } from "./engine"
-import { beginMission, createCampaignWorld, fundGuild } from "./campaign"
+import { beginMission, chooseRelic, createCampaignWorld, fundCosmopolitan, fundGuild, fundPatronage } from "./campaign"
 
 test("skirmish worlds skip campaign state", () => {
   const w = createWorld("ashen", "gilded", undefined, { mapId: "emberglass" })
@@ -76,7 +76,7 @@ test("Kayal: funding both guilds unlocks Marzban escorts", () => {
   assert.ok(w.units.some((u) => u.owner === 0 && u.type === "marzban"))
 })
 
-test("Palk: depositing the Tooth Relic wins Subhagiri", () => {
+test("Palk: depositing the Tooth Relic opens Relic Diplomacy", () => {
   const w = createCampaignWorld("palk")
   beginMission(w)
   const relic = w.nodes.find((n) => n.id === w.campaign!.relicNodeId)
@@ -84,9 +84,41 @@ test("Palk: depositing the Tooth Relic wins Subhagiri", () => {
   relic!.amount = 0
   w.campaign!.relicHeld = true
   w.players[0].relics = 1
-  for (let i = 0; i < 8 && w.winner === null; i++) tick(w)
+  for (let i = 0; i < 8 && w.campaign?.phase === "play"; i++) tick(w)
+  assert.equal(w.winner, null)
+  assert.equal(w.campaign?.phase, "diplomacy")
+  const frozen = w.tick
+  tick(w)
+  assert.equal(w.tick, frozen)
+  assert.equal(chooseRelic(w, "keep"), true)
   assert.equal(w.winner, 0)
   assert.equal(w.campaign?.phase, "victory")
+  assert.equal(w.campaign?.relicChoice, "keep")
+})
+
+test("Palk: returning the Tooth Relic vassals Jaffna", () => {
+  const w = createCampaignWorld("palk")
+  beginMission(w)
+  w.campaign!.phase = "diplomacy"
+  w.campaign!.relicHeld = true
+  assert.equal(chooseRelic(w, "return"), true)
+  assert.equal(w.campaign?.tribute, true)
+  assert.equal(w.campaign?.relicChoice, "return")
+  assert.equal(w.winner, 0)
+})
+
+test("Divine Patronage and CSI spend customs gold", () => {
+  const w = createCampaignWorld("tamraparani")
+  beginMission(w)
+  w.players[0].relics = 3
+  w.players[0].ore = 80
+  w.players[0].grain = 200
+  const shaiva = w.campaign!.shaiva
+  assert.equal(fundPatronage(w, "shaiva"), true)
+  assert.ok(w.campaign!.shaiva > shaiva)
+  const csi = w.campaign!.csi
+  assert.equal(fundCosmopolitan(w, "mosque"), true)
+  assert.ok(w.campaign!.csi > csi)
 })
 
 test("Tamraparani: lighthouses and shrine plus three waves win", () => {
