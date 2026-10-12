@@ -362,7 +362,7 @@ export function MatchView({
       if (now - hudAt > 400) {
         hudAt = now
         paintHud(fps, frameMs, simMs)
-        if (now - lastObsPost > 2500) {
+        if (now - lastObsPost > 2500 && fps >= 24 && typeof document !== "undefined" && !document.hidden) {
           lastObsPost = now
           const body = JSON.stringify({
             fps,

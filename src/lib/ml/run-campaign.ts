@@ -65,9 +65,10 @@ function runCampaignGame(
   missionId: MissionId,
   maxSeconds: number,
   salt: number,
-  opts?: { relicSecured?: boolean; relicChoice?: RelicChoice | null },
+  opts?: { relicSecured?: boolean; relicChoice?: RelicChoice | null; pirateScale?: number },
 ): CampaignGameResult {
   const w: World = createCampaignWorld(missionId, tuned.ai, {
+    pirateScale: opts?.pirateScale ?? 1,
     relicSecured: opts?.relicSecured,
     relicChoice: opts?.relicChoice ?? null,
     veteranArmy: missionId !== "edicts" && missionId !== "kayal",
@@ -175,9 +176,11 @@ export function runCampaignBenchmark(
     for (let g = 0; g < gamesPerRound; g++) {
       const spec = CAMPAIGN_MISSIONS[g % CAMPAIGN_MISSIONS.length]!
       const relicSecured = spec.id === "tamraparani" && round % 2 === 0
+      const pirateScale = 1 + ((round + g) % 5) * 0.22
       games.push(
         runCampaignGame(tuned, spec.id, maxSeconds, round * 17 + g, {
           relicSecured,
+          pirateScale,
         }),
       )
     }
