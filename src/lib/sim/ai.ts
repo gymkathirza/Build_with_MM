@@ -395,7 +395,8 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
       else if (riders.length) {
         issueMove(w, riders.map((u) => u.id), h.x + (owner === 0 ? 3 : -3), h.y)
       }
-      if (rest.length) issueMove(w, rest.map((u) => u.id), h.x + (owner === 0 ? 3 : -3), h.y)
+      if (rest.length && yard) issueMove(w, rest.map((u) => u.id), yard.x, yard.y)
+      else if (rest.length) issueMove(w, rest.map((u) => u.id), h.x + (owner === 0 ? 3 : -3), h.y)
     }
     const scared = levies.filter(
       (u) =>

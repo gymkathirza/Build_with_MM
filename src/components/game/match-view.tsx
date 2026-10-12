@@ -806,7 +806,7 @@ function Selection({
         scout is free. A spare levy crews a far camp, pit, granary, or yard. A third warden overwatches
         the camp. A fourth ashrider patrols a far lodge, pit, granary, or yard; a third warden overwatches those same posts. A far timber, ore, or grain haul draws a banner. A relic levy does not steal that crew; a spare banner walks with them. Pressed
         camps, pits, yards, and lodges draw a sentry.
-        Recall walks banners home. Wounded ashriders and wardens peel to the lodge. The age rite waits if the
+        Recall walks banners home. Wounded ashriders and wardens peel to the lodge; wounded banners peel to the yard. The age rite waits if the
         hearth is struck; extra banners hold
         the hearth while it burns.
       </div>

@@ -1662,6 +1662,34 @@ test("a wounded warden peels to the lodge", () => {
   )
 })
 
+test("a wounded banner peels to the yard", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9, kite: 0.6 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  const yard = placeBuilding(
+    w,
+    0,
+    "yard",
+    h.x + 10,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  yard.done = true
+  yard.construct = yard.constructMax
+  pushBanner(w, "guard", 0, h.x + 22, h.y)
+  const banner = w.units.find((u) => u.owner === 0 && u.type === "guard")!
+  banner.hp = banner.hpMax * 0.2
+  for (let i = 0; i < 30; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const live = w.units.find((u) => u.id === banner.id)!
+  assert.ok(
+    live.order.t === "move" || Math.hypot(live.x - yard.x, live.y - yard.y) < 8,
+    "a wounded banner should peel to the yard",
+  )
+})
+
 test("a wounded levy under a banner runs home", () => {
   const params = { ...personaById("balanced").params, kite: 0.6 }
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
