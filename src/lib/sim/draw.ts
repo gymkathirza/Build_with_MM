@@ -278,6 +278,34 @@ function paintCampaignWater(
   if (quality > 0) {
     ctx.strokeStyle = "rgba(180,220,210,0.22)"
     ctx.stroke()
+    const now = performance.now()
+    ctx.strokeStyle = `rgba(210,240,235,${0.12 + 0.08 * Math.sin(now / 900)})`
+    ctx.lineWidth = 1.2
+    const bands = quality > 1 ? 5 : 3
+    for (let i = 0; i < bands; i++) {
+      const t = (now / 1400 + i * 0.18) % 1
+      ctx.beginPath()
+      if (id === "palk") {
+        const y = size * (0.41 + t * 0.18)
+        const a = worldToScreen(cam, 0, y)
+        const b = worldToScreen(cam, size, y)
+        ctx.moveTo(a.sx, a.sy)
+        ctx.lineTo(b.sx, b.sy)
+      } else if (id === "madurai-fracture") {
+        const x = size * (0.72 + t * 0.24)
+        const a = worldToScreen(cam, x, 0)
+        const b = worldToScreen(cam, x, size)
+        ctx.moveTo(a.sx, a.sy)
+        ctx.lineTo(b.sx, b.sy)
+      } else {
+        const y = size * (0.62 + t * 0.32)
+        const a = worldToScreen(cam, 0, y)
+        const b = worldToScreen(cam, size, y)
+        ctx.moveTo(a.sx, a.sy)
+        ctx.lineTo(b.sx, b.sy)
+      }
+      ctx.stroke()
+    }
   }
   void vw
   void vh
@@ -323,13 +351,19 @@ function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: Dra
   if (!art || !blitArt(ctx, art, p.sx - s / 2 + wander, p.sy - s * 0.72 + bob, s, s)) {
     blit(ctx, nodeSpr(n), p.sx - s / 2 + wander, p.sy - s * 0.72 + bob, s, s)
   }
-  if (quality > 1 && n.type === "relics") {
-    const gleam = 0.18 + 0.22 * Math.sin(now / 240 + n.id)
-    ctx.strokeStyle = `rgba(255,246,212,${gleam})`
-    ctx.lineWidth = 1.4
+  if (n.type === "relics") {
+    const gleam = 0.2 + 0.28 * Math.sin(now / 240 + n.id)
+    ctx.strokeStyle = `rgba(255,246,212,${quality > 0 ? gleam : 0.22})`
+    ctx.lineWidth = quality > 1 ? 2 : 1.4
     ctx.beginPath()
-    ctx.arc(p.sx + wander, p.sy - s * 0.2 + bob, s * 0.28, 0, Math.PI * 2)
+    ctx.arc(p.sx + wander, p.sy - s * 0.2 + bob, s * (0.28 + (quality > 1 ? 0.06 * Math.sin(now / 180) : 0)), 0, Math.PI * 2)
     ctx.stroke()
+    if (quality > 0) {
+      ctx.fillStyle = `rgba(255,230,160,${0.08 + 0.1 * gleam})`
+      ctx.beginPath()
+      ctx.arc(p.sx + wander, p.sy - s * 0.2 + bob, s * 0.16, 0, Math.PI * 2)
+      ctx.fill()
+    }
   }
   if (quality > 0) {
     ctx.fillStyle = "rgba(20,12,8,0.82)"
@@ -399,13 +433,18 @@ function drawBuilding(
     ctx.beginPath()
     ctx.arc(p.sx, p.sy - s * 0.76, s * 0.1, 0, Math.PI * 2)
     ctx.fill()
-    const beam = 0.12 + 0.1 * Math.sin(now / 280 + b.id)
+    const sweep = Math.sin(now / 280 + b.id)
+    const beam = 0.16 + 0.14 * sweep
     ctx.fillStyle = `rgba(255,230,140,${beam})`
     ctx.beginPath()
     ctx.moveTo(p.sx, p.sy - s * 0.76)
-    ctx.lineTo(p.sx + s * 0.9, p.sy - s * 0.2)
-    ctx.lineTo(p.sx + s * 1.1, p.sy + s * 0.05)
+    ctx.lineTo(p.sx + s * (0.55 + 0.45 * sweep), p.sy - s * 0.18)
+    ctx.lineTo(p.sx + s * (0.75 + 0.45 * sweep), p.sy + s * 0.08)
     ctx.closePath()
+    ctx.fill()
+    ctx.fillStyle = `rgba(255,246,200,${0.2 + 0.18 * Math.abs(sweep)})`
+    ctx.beginPath()
+    ctx.arc(p.sx, p.sy - s * 0.76, s * 0.16, 0, Math.PI * 2)
     ctx.fill()
   }
   if (b.type === "charm" && b.done) {
@@ -793,16 +832,19 @@ export function drawWorld(
       if (ship.sunk || ship.arrived) continue
       const p = worldToScreen(cam, ship.x, ship.y)
       const sw = Math.max(28, cam.z * 2.2)
-      if (!blitArt(ctx, CAMPAIGN_ART.altibiMerchantman, p.sx - sw / 2, p.sy - sw * 0.7, sw, sw)) {
-        ctx.fillStyle = "#c4a35a"
+      const grain = ship.kind === "grain"
+      const art = grain ? CAMPAIGN_ART.arabWarhorse : CAMPAIGN_ART.altibiMerchantman
+      if (!blitArt(ctx, art, p.sx - sw / 2, p.sy - sw * 0.7, sw, sw)) {
+        ctx.fillStyle = grain ? "#b8894a" : "#c4a35a"
         ctx.beginPath()
         ctx.ellipse(p.sx, p.sy, Math.max(8, cam.z * 0.7), Math.max(4, cam.z * 0.28), 0.1, 0, Math.PI * 2)
         ctx.fill()
       }
+      hpBar(ctx, p.sx - sw * 0.32, p.sy + 4, sw * 0.64, ship.hp / ship.hpMax)
       ctx.fillStyle = "rgba(20,12,8,0.8)"
       ctx.font = "11px sans-serif"
       ctx.textAlign = "center"
-      ctx.fillText("Al-Tibi hull", p.sx, p.sy + 12)
+      ctx.fillText(grain ? "Grain caravan" : "Hormuz hull", p.sx, p.sy + 16)
     }
     if (campaign.night) {
       ctx.fillStyle = "rgba(6,10,28,0.38)"

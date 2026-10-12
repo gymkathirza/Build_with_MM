@@ -8,12 +8,12 @@
     "start": "next start --hostname 0.0.0.0 --port 43147",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/lib/sim/alpha.test.ts src/lib/audio/sea-crest.test.ts src/lib/ml/score.test.ts src/lib/sim/campaign.test.ts",
+    "test": "tsx --test src/lib/sim/alpha.test.ts src/lib/audio/sea-crest.test.ts src/lib/ml/score.test.ts src/lib/sim/campaign.test.ts src/lib/ml/campaign-coach.test.ts",
     "audio": "tsx src/lib/audio/write-wav.ts",
     "playtest": "tsx src/lib/ml/cli.ts",
     "playtest:gather": "tsx src/lib/ml/cli.ts --gather",
     "benchmark": "tsx src/lib/ml/cli.ts --hour",
-    "ml:8h": "BENCH_MINUTES=485 tsx src/lib/ml/cli.ts --hour",
+    "ml:8h": "BENCH_MINUTES=485 tsx src/lib/ml/cli.ts --hour --campaign",
     "ml:11h": "BENCH_MINUTES=660 tsx src/lib/ml/cli.ts --hour"
   },
   "dependencies": {

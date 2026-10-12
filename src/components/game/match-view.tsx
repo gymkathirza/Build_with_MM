@@ -42,7 +42,7 @@ import {
 import { tickAi } from "@/lib/sim/ai"
 import { type Cam, drawWorld, nodeLabel, screenToWorld } from "@/lib/sim/draw"
 import { createTelemetry, pushEvent, pushFrame } from "@/lib/obs/telemetry"
-import { DEFAULT_TUNED, type DrawQuality, type Tuned } from "@/lib/ml/score"
+import { DEFAULT_CAMPAIGN, DEFAULT_TUNED, type DrawQuality, type Tuned } from "@/lib/ml/score"
 import { factionById, mapById } from "@/lib/game-data"
 import { hallPositions, specFor } from "@/lib/sim/maps"
 import { personaById } from "@/lib/sim/personas"
@@ -66,6 +66,8 @@ import {
   fundPatronage,
   fundYuvaraja,
   irrigate,
+  raiseKadalkatti,
+  raiseManapadLight,
   raisePalayam,
   repayLoan,
   seatAltibi,
@@ -84,6 +86,7 @@ const LOADED_TUNED: Tuned = {
   quality: tunedJson.quality as DrawQuality,
   lodDistance: tunedJson.lodDistance,
   round: tunedJson.round,
+  campaign: { ...DEFAULT_CAMPAIGN, ...(tunedJson as Tuned).campaign },
 }
 
 function difficultyAi(id: string, base: Tuned["ai"]): Tuned["ai"] {
@@ -599,8 +602,11 @@ export function MatchView({
           </p>
         </aside>
         {world.campaign && !briefing ? (
-          <div className="absolute bottom-2 left-2 z-10 flex max-w-[min(22rem,92vw)] flex-col gap-1 rounded-sm border border-primary/30 bg-black/70 p-2 text-[11px] text-primary sm:top-2 sm:bottom-auto">
-            <p className="font-heading tracking-widest uppercase">Objective</p>
+          <div className="absolute bottom-2 left-2 z-10 flex max-h-[min(42vh,22rem)] max-w-[min(22rem,92vw)] flex-col gap-1 overflow-y-auto rounded-sm border border-primary/30 bg-black/70 p-2 text-[11px] text-primary sm:top-2 sm:bottom-auto sm:max-h-[min(70vh,28rem)]">
+            <p className="font-heading tracking-widest uppercase">
+              {mission?.arc ?? "Objective"}
+              {mission?.year ? ` · ${mission.year}` : ""}
+            </p>
             <p className="text-muted-foreground">{world.campaign.objective}</p>
             {world.campaign.missionId === "edicts" ? (
               <div className="mt-1 flex flex-wrap gap-1">
@@ -769,6 +775,17 @@ export function MatchView({
                   variant="outline"
                   className="h-7 text-[11px]"
                   onClick={() => {
+                    raiseManapadLight(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Light Manapad
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
                     fundGuild(world, "manigramam")
                     paintHud(60, 16, 0)
                   }}
@@ -827,6 +844,19 @@ export function MatchView({
                     {b.short}
                   </Button>
                 ))}
+                {world.campaign.missionId === "tamraparani" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-[11px]"
+                    onClick={() => {
+                      raiseKadalkatti(world)
+                      paintHud(60, 16, 0)
+                    }}
+                  >
+                    Raise Kadalkatti
+                  </Button>
+                ) : null}
               </div>
             ) : null}
             {world.campaign.missionId !== "edicts" ? (

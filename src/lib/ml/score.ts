@@ -34,11 +34,32 @@ export type LiveObs = {
   gatherIdle?: number
 }
 
+export type CampaignKnobs = {
+  relicReturnBias: number
+  escortRadius: number
+  irrigateFirst: number
+  arabPortBias: number
+  loanGrainFloor: number
+  escortAggro: number
+  charmFirst: number
+}
+
+export const DEFAULT_CAMPAIGN: CampaignKnobs = {
+  relicReturnBias: 0.42,
+  escortRadius: 4.8,
+  irrigateFirst: 0.72,
+  arabPortBias: 0.8,
+  loanGrainFloor: 90,
+  escortAggro: 0.62,
+  charmFirst: 0.7,
+}
+
 export type Tuned = {
   ai: AiParams
   quality: DrawQuality
   lodDistance: number
   round: number
+  campaign: CampaignKnobs
 }
 
 export const DEFAULT_TUNED: Tuned = {
@@ -46,6 +67,7 @@ export const DEFAULT_TUNED: Tuned = {
   quality: 2,
   lodDistance: 28,
   round: 0,
+  campaign: { ...DEFAULT_CAMPAIGN },
 }
 
 export function scoreTelemetry(
@@ -121,6 +143,7 @@ export function improveFromScore(
     quality: prev.quality,
     lodDistance: prev.lodDistance,
     round: prev.round + 1,
+    campaign: { ...DEFAULT_CAMPAIGN, ...prev.campaign },
   }
   const fps = live?.fps ?? score.fps
   const inputMs = live?.inputMs ?? score.inputMs
@@ -172,5 +195,55 @@ export function improveFromScore(
   next.ai.militaryRatio = Number(next.ai.militaryRatio.toFixed(2))
   next.ai.agePriority = Number(next.ai.agePriority.toFixed(2))
   next.ai.kite = Number(next.ai.kite.toFixed(2))
+  return next
+}
+
+export function improveFromCampaign(
+  prev: Tuned,
+  games: {
+    missionId: string
+    winner: 0 | 1 | null
+    shipsLost?: number
+    unrest?: number
+    failWhy?: string
+  }[],
+): Tuned {
+  const next: Tuned = {
+    ai: { ...prev.ai },
+    quality: prev.quality,
+    lodDistance: prev.lodDistance,
+    round: prev.round,
+    campaign: { ...DEFAULT_CAMPAIGN, ...prev.campaign },
+  }
+  const knobs = next.campaign
+  const lost = (id: string) => games.filter((g) => g.missionId === id && g.winner === 1)
+  const draw = (id: string) => games.filter((g) => g.missionId === id && g.winner === null)
+  const edictsGrain = lost("edicts").some((g) => (g.failWhy ?? "").toLowerCase().includes("breadbasket"))
+  if (edictsGrain || lost("edicts").length) {
+    knobs.irrigateFirst = Math.min(1, knobs.irrigateFirst + 0.06)
+    knobs.loanGrainFloor = Math.min(160, knobs.loanGrainFloor + 8)
+  }
+  const kayalSunk = lost("kayal").length || games.some((g) => g.missionId === "kayal" && (g.shipsLost ?? 0) >= 2)
+  if (kayalSunk) {
+    knobs.escortRadius = Math.min(8, Number((knobs.escortRadius + 0.15).toFixed(2)))
+    knobs.escortAggro = Math.min(0.95, Number((knobs.escortAggro + 0.04).toFixed(2)))
+  }
+  if (draw("palk").length || lost("palk").length) {
+    knobs.escortAggro = Math.min(0.95, Number((knobs.escortAggro + 0.03).toFixed(2)))
+    next.ai.attackAtArmy = Math.max(3, next.ai.attackAtArmy - 1)
+  }
+  if (lost("tamraparani").length || draw("tamraparani").length) {
+    knobs.charmFirst = Math.min(1, knobs.charmFirst + 0.08)
+  }
+  if (lost("fracture").length || draw("fracture").length) {
+    knobs.escortAggro = Math.min(0.95, Number((knobs.escortAggro + 0.05).toFixed(2)))
+    knobs.arabPortBias = Math.min(1, knobs.arabPortBias + 0.02)
+  }
+  const unrest = games.reduce((s, g) => s + (g.unrest ?? 0), 0) / Math.max(1, games.length)
+  if (unrest > 60) knobs.irrigateFirst = Math.min(1, knobs.irrigateFirst + 0.04)
+  knobs.irrigateFirst = Number(knobs.irrigateFirst.toFixed(2))
+  knobs.relicReturnBias = Number(Math.min(0.85, Math.max(0.15, knobs.relicReturnBias)).toFixed(2))
+  knobs.arabPortBias = Number(knobs.arabPortBias.toFixed(2))
+  knobs.charmFirst = Number(knobs.charmFirst.toFixed(2))
   return next
 }

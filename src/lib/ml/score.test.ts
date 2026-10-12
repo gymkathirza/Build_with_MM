@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { DEFAULT_TUNED, improveFromScore, scoreTelemetry } from "./score"
+import { DEFAULT_TUNED, improveFromCampaign, improveFromScore, scoreTelemetry } from "./score"
 import { createTelemetry } from "../obs/telemetry"
 
 test("live gather idle and wrong move gatherBias", () => {
@@ -25,4 +25,12 @@ test("live gather idle and wrong move gatherBias", () => {
     gatherWrong: 6,
   })
   assert.ok(next.ai.gatherBias > DEFAULT_TUNED.ai.gatherBias)
+})
+
+test("campaign grain losses raise irrigation bias", () => {
+  const next = improveFromCampaign(DEFAULT_TUNED, [
+    { missionId: "edicts", winner: 1, unrest: 80, failWhy: "The southern breadbasket ran dry." },
+  ])
+  assert.ok(next.campaign.irrigateFirst > DEFAULT_TUNED.campaign.irrigateFirst)
+  assert.ok(next.campaign.loanGrainFloor > DEFAULT_TUNED.campaign.loanGrainFloor)
 })

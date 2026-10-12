@@ -224,7 +224,7 @@ export function runHourBenchmark(
   }
   personas: Record<string, { n: number; p0: number; p1: number; south: number }>
 } {
-  let tuned: Tuned = { ...seed, ai: { ...seed.ai } }
+  let tuned: Tuned = { ...seed, ai: { ...seed.ai }, campaign: { ...seed.campaign } }
   const history: CompactRound[] = []
   const totals = {
     p0: 0,

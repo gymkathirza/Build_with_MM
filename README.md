@@ -38,7 +38,9 @@ npm run benchmark      # wall-clock hour: BENCH_MINUTES=60 npm run benchmark
 
 `npm run ml:11h` is the durable command for a wall-clock **≥660 minute** Vast Mere observability + tuner job (`BENCH_MINUTES=660`). Leave it until it prints `Done`. It writes `src/lib/ml/tuned.json` and `src/lib/ml/benchmark-latest.json`.
 
-`npm run ml:8h` or Cursor `/8hml` is the shorter 485-minute variant. `npm run benchmark` is the one-hour variant (`BENCH_MINUTES=60`).
+`npm run ml:8h` is a wall-clock **≥480 minute** Twin-Fish Reign campaign observability + tuner job (`BENCH_MINUTES=485`, `--campaign`). It cycles the five timeline plates with a campaign coach. Leave it until it prints `Done`. Tuner snapshot: `src/lib/ml/tuned.json` (includes `campaign` knobs). Raw dump: `src/lib/ml/benchmark-latest.json`.
+
+`npm run ml:11h` stays on Vast Mere. `npm run benchmark` is the one-hour Vast Mere variant (`BENCH_MINUTES=60`).
 
 ## What Alpha includes
 

@@ -9,5 +9,14 @@
   },
   "quality": 2,
   "lodDistance": 28,
-  "round": 93128
+  "round": 93128,
+  "campaign": {
+    "relicReturnBias": 0.42,
+    "escortRadius": 4.8,
+    "irrigateFirst": 0.72,
+    "arabPortBias": 0.8,
+    "loanGrainFloor": 90,
+    "escortAggro": 0.62,
+    "charmFirst": 0.7
+  }
 }

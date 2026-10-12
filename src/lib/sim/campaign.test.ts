@@ -20,6 +20,7 @@ import {
   fundPatronage,
   fundYuvaraja,
   irrigate,
+  raiseManapadLight,
   raisePalayam,
   repayLoan,
   seatAltibi,
@@ -95,9 +96,9 @@ test("Kayal: three sunk convoys lose the plate", () => {
   const w = createCampaignWorld("kayal")
   beginMission(w)
   w.campaign!.convoys = [
-    { x: 8, y: 80, hp: 1, hpMax: 90, arrived: false, sunk: false },
-    { x: 10, y: 80, hp: 1, hpMax: 90, arrived: false, sunk: false },
-    { x: 12, y: 80, hp: 1, hpMax: 90, arrived: false, sunk: false },
+    { x: 8, y: 80, hp: 1, hpMax: 90, arrived: false, sunk: false, kind: "horse" },
+    { x: 10, y: 80, hp: 1, hpMax: 90, arrived: false, sunk: false, kind: "horse" },
+    { x: 12, y: 80, hp: 1, hpMax: 90, arrived: false, sunk: false, kind: "horse" },
   ]
   w.campaign!.convoysSpawned = 3
   w.campaign!.nextConvoyAt = 99999
@@ -249,6 +250,15 @@ test("plates unlock in order after victories", () => {
   assert.equal(file.slots[0]!.relicSecured, true)
   assert.equal(isUnlocked(file.slots[0]!, "tamraparani"), true)
   assert.equal(CAMPAIGN_MISSIONS.length, 5)
+})
+
+test("Manapad light raises a lighthouse on Kayal", () => {
+  const w = createCampaignWorld("kayal")
+  beginMission(w)
+  w.players[0].timber = 120
+  w.players[0].ore = 40
+  assert.equal(raiseManapadLight(w), true)
+  assert.ok(w.buildings.some((b) => b.owner === 0 && b.type === "lighthouse"))
 })
 
 test("a fresh chronicle starts on the Yuvaraja plate", () => {

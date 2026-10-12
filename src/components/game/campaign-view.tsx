@@ -160,7 +160,7 @@ export function CampaignView() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-[11px] tracking-[0.25em] text-primary/70 uppercase">
-                            {mission.arc} · Plate {mission.number}
+                            {mission.arc} · Plate {mission.number} · {mission.year}
                           </p>
                           <CardTitle className="mt-1 font-heading text-xl tracking-wide text-primary">
                             {mission.title}

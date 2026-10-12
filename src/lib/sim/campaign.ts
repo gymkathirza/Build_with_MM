@@ -3,7 +3,9 @@ import { type BrotherId } from "../campaign/family"
 import { BUILDING_STATS, DT } from "./catalog"
 import {
   createWorld,
+  findBuildSite,
   issueAttackMove,
+  placeBuilding,
   seedBuilding,
   spawnUnit,
   type AiParams,
@@ -18,6 +20,7 @@ export type HorseConvoy = {
   hpMax: number
   arrived: boolean
   sunk: boolean
+  kind: "horse" | "grain"
 }
 
 export type CampaignPhase = "briefing" | "patricide" | "play" | "diplomacy" | "victory" | "defeat"
@@ -78,6 +81,7 @@ export type CampaignRuntime = {
   failWhy: string
   winWhy: string
   kayalHearthId: number | null
+  escortRadius: number
 }
 
 export function isWater(w: World, x: number, y: number) {
@@ -303,6 +307,7 @@ export function sendCaravan(w: World) {
     hpMax: 70,
     arrived: false,
     sunk: false,
+    kind: "grain",
   })
   c.convoysSpawned++
   return true
@@ -437,6 +442,43 @@ export function raisePalayam(w: World) {
   spawnUnit(w, 0, "rowther", x + 1, y)
   spawnUnit(w, 0, "rowther", x + 2, y - 1)
   return true
+}
+
+export function raiseManapadLight(w: World) {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  if (w.buildings.some((b) => b.owner === 0 && b.type === "lighthouse")) {
+    w.events.push({ k: "failed", owner: 0, why: "Manapad already holds a lamp." })
+    return false
+  }
+  const quay = w.buildings.find((b) => b.owner === 0 && b.type === "quay")
+  const hall = p0Hall(w)
+  const nearX = quay?.x ?? hall?.x ?? 20
+  const nearY = (quay?.y ?? hall?.y ?? 24) + 5
+  const site = findBuildSite(w, "lighthouse", nearX, nearY)
+  if (!site) {
+    w.events.push({ k: "failed", owner: 0, why: "No ground for a Manapad light." })
+    return false
+  }
+  const crew = w.units.filter((u) => u.owner === 0 && u.type === "levy").slice(0, 3).map((u) => u.id)
+  return !!placeBuilding(w, 0, "lighthouse", site.x, site.y, crew)
+}
+
+export function raiseKadalkatti(w: World) {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  if (w.buildings.some((b) => b.owner === 0 && b.type === "charm")) {
+    w.events.push({ k: "failed", owner: 0, why: "A Kadalkatti shrine already watches the gulf." })
+    return false
+  }
+  const hall = p0Hall(w)
+  const site = findBuildSite(w, "charm", hall?.x ?? 20, (hall?.y ?? 20) + 8)
+  if (!site) {
+    w.events.push({ k: "failed", owner: 0, why: "No ground for a Kadalkatti shrine." })
+    return false
+  }
+  const crew = w.units.filter((u) => u.owner === 0 && u.type === "levy").slice(0, 3).map((u) => u.id)
+  return !!placeBuilding(w, 0, "charm", site.x, site.y, crew)
 }
 
 export function endCholaLine(w: World) {
@@ -673,6 +715,7 @@ function tickKayal(w: World, c: CampaignRuntime) {
       hpMax: 90,
       arrived: false,
       sunk: false,
+      kind: "horse",
     })
     c.convoysSpawned++
     c.nextConvoyAt = w.tick + 20 * 16
@@ -697,7 +740,7 @@ function tickKayal(w: World, c: CampaignRuntime) {
       if (u.owner !== 1) continue
       if (dist(u.x, u.y, ship.x, ship.y) < 2.2) ship.hp -= dmg * DT
     }
-    const cover = escorts.some((u) => dist(u.x, u.y, ship.x, ship.y) < 4.5)
+    const cover = escorts.some((u) => dist(u.x, u.y, ship.x, ship.y) < c.escortRadius)
     if (cover) ship.hp += 5 * DT
     if (ship.hp <= 0) {
       ship.sunk = true
@@ -759,6 +802,13 @@ function tickPalk(w: World, c: CampaignRuntime) {
   if (w.tick >= c.nextSpawnAt) {
     spawnCorsair(w, w.size * 0.78, w.size * 0.42)
     c.nextSpawnAt = w.tick + Math.floor(20 * 8 * c.pirateScale)
+  }
+  const carrier = w.units.find((u) => u.owner === 0 && u.carry?.res === "relics")
+  for (const u of w.units) {
+    if (u.owner !== 1 || u.type !== "corsair") continue
+    if (u.order.t !== "idle" && u.order.t !== "attackMove") continue
+    if (carrier) issueAttackMove(w, [u.id], carrier.x, carrier.y)
+    else if (relic && relic.amount > 0) issueAttackMove(w, [u.id], relic.x, relic.y)
   }
   if (c.phase !== "victory") {
     c.objective = c.relicHeld
@@ -982,6 +1032,7 @@ export function createCampaignWorld(
     failWhy: spec.lose,
     winWhy: spec.win,
     kayalHearthId: null,
+    escortRadius: 4.8,
   }
   w.campaign = c
   w.players[0].grain = 320
