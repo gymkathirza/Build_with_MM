@@ -765,6 +765,39 @@ test("empty rival hearth hooks a third ashrider wide", () => {
   assert.ok(hooked >= 1, "a spare rider should hook south of an empty hearth")
 })
 
+test("a pressed granary draws a sentry", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 400
+  w.players[0].ore = 200
+  w.players[0].timber = 200
+  const granary = placeBuilding(
+    w,
+    0,
+    "granary",
+    h.x + 18,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  granary.done = true
+  granary.construct = granary.constructMax
+  pushBanner(w, "guard", 0, h.x + 2, h.y)
+  pushBanner(w, "guard", 0, h.x + 3, h.y)
+  pushBanner(w, "guard", 1, granary.x + 2, granary.y)
+  for (let i = 0; i < 16; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const sentry = w.units.find((u) => u.owner === 0 && u.type === "guard")
+  assert.ok(sentry, "need a home guard")
+  const near = Math.hypot(sentry.x - granary.x, sentry.y - granary.y)
+  assert.ok(
+    sentry.order.t === "defend" || sentry.order.t === "attack" || sentry.order.t === "attackMove" || near < 14,
+    `granary should pull a sentry, order ${sentry.order.t} dist ${near}`,
+  )
+})
+
 test("a pressed pit draws a sentry", () => {
   const params = { ...personaById("balanced").params, attackAtArmy: 9 }
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
@@ -1594,6 +1627,32 @@ test("four banners escort the far-camp crew", () => {
     return !!crew && Math.hypot(u.order.x - crew.x, u.order.y - crew.y) < 8
   })
   assert.ok(escort, "a spare banner should walk with the far-camp crew")
+})
+
+test("a relic hauler draws a warden on the walk home", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")!
+  levy.order = { t: "return", drop: h.id }
+  levy.carry = { res: "relics", amt: 4 }
+  levy.x = h.x + 18
+  levy.y = h.y
+  for (let i = 0; i < 3; i++) pushBanner(w, "warden", 0, h.x + 2 + i, h.y)
+  for (let i = 0; i < 70; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const live = w.units.find((u) => u.id === levy.id)!
+  const watch = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "warden" &&
+      ((u.order.t === "defend" && Math.hypot(u.order.x - live.x, u.order.y - live.y) < 10) ||
+        Math.hypot(u.x - live.x, u.y - live.y) < 12),
+  )
+  assert.ok(watch, "a spare warden should walk the relic home")
 })
 
 test("a relic hauler draws a banner on the walk home", () => {

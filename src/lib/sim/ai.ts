@@ -601,6 +601,16 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
             )
           : undefined
       if (hauler && haulEscort) issueDefend(w, [haulEscort.id], hauler.x, hauler.y)
+      const haulWatch =
+        hauler && relicWardenCount >= 3
+          ? military.find(
+              (u) =>
+                u.type === "warden" &&
+                !garrison.some((g) => g.id === u.id) &&
+                (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+            )
+          : undefined
+      if (hauler && haulWatch) issueDefend(w, [haulWatch.id], hauler.x, hauler.y)
     }
   }
 

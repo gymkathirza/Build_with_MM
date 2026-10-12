@@ -846,6 +846,17 @@ function drawBuilding(
     ctx.beginPath()
     ctx.arc(p.sx + 3, p.sy - s * 0.2 - spark * 0.7, 1.6, 0, Math.PI * 2)
     ctx.fill()
+    const mothA = now / 480 + b.id
+    ctx.fillStyle = `rgba(255,220,140,${0.16 + 0.12 * Math.sin(now / 160 + b.id)})`
+    ctx.beginPath()
+    ctx.arc(
+      p.sx + Math.cos(mothA) * s * 0.32,
+      p.sy - s * 0.22 + Math.sin(mothA * 1.3) * 4,
+      1.4,
+      0,
+      Math.PI * 2,
+    )
+    ctx.fill()
     ctx.strokeStyle = "rgba(90,70,40,0.28)"
     ctx.lineWidth = 1.1
     ctx.setLineDash([3, 4])
