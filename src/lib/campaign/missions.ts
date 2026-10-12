@@ -32,7 +32,7 @@ export const CAMPAIGN_MISSIONS: CampaignMission[] = [
     enemy: "malabar",
     duration: "short",
     briefing:
-      "Appoint Takiuddin Abdur Rahman (Al-Tibi) as Prime Minister over Kayal of Manon Mani and Masila Mani, Kulasekharapatnam, Fattan, and Malifattan. Malabar corsairs cut horse ships from Hormuz and Aden. Fund Manigramam and Anjuvannam so Marzban escorts sail with the Pandya dhoni. The Sonakarpalli mosque is the first CSI beat.",
+      "Yuvaraja no longer: Jatavarman Sundara Pandyan I is dead, and his shadow still sits on Madurai. Appoint Takiuddin Abdur Rahman (Al-Tibi) as Prime Minister over Kayal of Manon Mani and Masila Mani, Kulasekharapatnam, Fattan, and Malifattan. Co-sign the old Yuvaraja orders, fund Manigramam and Anjuvannam, and get Hormuz horse ships past Malabar corsairs. Finish the father’s work — the Chola line still waits until 1279.",
     win: "Three horse convoys reach the Kayal quay.",
     lose: "Three convoys sink, or the Kayal hearth falls.",
     objective: "Escort horse ships from Hormuz into Kayal",
@@ -48,7 +48,7 @@ export const CAMPAIGN_MISSIONS: CampaignMission[] = [
     enemy: "lanka",
     duration: "short",
     briefing:
-      "Bhuvanaikabahu I and Savakanmaindan sit astride Palk Strait — Manon Mani’s crossing, Masila Mani’s war. General Kulasekara Cinkaiariyan Aryachakravarti lands, storms Subhagiri (Yapahuwa), and takes the Sacred Tooth Relic. Then keep it in Madurai, or return it when Parakramabahu III comes so Jaffna stays a vassal.",
+      "The five brother kings still share the house while General Kulasekara Cinkaiariyan Aryachakravarti forces Palk Strait — Manon Mani’s crossing, Masila Mani’s war. Bhuvanaikabahu I and Savakanmaindan sit astride the water. Storm Subhagiri (Yapahuwa), take the Sacred Tooth Relic, then keep it in Madurai or return it when Parakramabahu III comes so Jaffna stays a vassal.",
     win: "Capture the Tooth Relic on Yapahuwa, deposit it, then keep or return.",
     lose: "The landing hearth is razed before the choice is sealed.",
     objective: "Land with Aryachakravarti, take the Tooth Relic, then keep or return",
@@ -64,7 +64,7 @@ export const CAMPAIGN_MISSIONS: CampaignMission[] = [
     enemy: "malabar",
     duration: "short",
     briefing:
-      "Marco Polo is in the estuary of Manon Mani and Masila Mani. Light Kulasekharapatnam and Manapad. Fund Kadalkatti shark charmers or pearl divers die. Station Rowther cavalry. Spend Relics on Divine Patronage: Nellaiappar at Tirunelveli, Masilamaninathar at Tharangambadi, Meenakshi at Madurai, Ranganathaswamy at Srirangam.",
+      "Marco Polo is in the estuary of Manon Mani and Masila Mani and names five brother kings. Light Kulasekharapatnam and Manapad. Seat the Confederacy — Jatavarman Vira Pandyan I in the west, Maravarman Vikkiraman III in administration, Jatavarman Sundara Pandyan II in the interior — or those regions stagnate. Fund Kadalkatti shark charmers. Spend Relics on Divine Patronage at Tirunelveli, Tharangambadi / Masilamaninathar, Madurai, and Srirangam.",
     win: "Two lighthouses and one Kadalkatti shrine standing after three beach waves.",
     lose: "Kayal hearth falls, or six pearl divers are taken by sharks.",
     objective: "Light the coast, charm the gulf, hold the sand",
@@ -80,10 +80,10 @@ export const CAMPAIGN_MISSIONS: CampaignMission[] = [
     enemy: "delhi",
     duration: "short",
     briefing:
-      "The emperor favored illegitimate Vira Pandya over legitimate Sundara Pandya III. Civil war splits the coast. Sundara holds a rival camp; Malik Kafur of the Delhi Sultanate comes for Kayal of Manon Mani and Masila Mani. Hold Madurai and the port, or the Second Pandyan Empire ends here.",
-    win: "Raze Sundara’s camp and break two Malik Kafur waves with Kayal still standing.",
-    lose: "Madurai or Kayal hearth falls.",
-    objective: "Hold both hearths; break Sundara and Kafur",
+      "Two queens, two sons. In 1296 the emperor named Jatavarman Vira Pandya II — elder son of a favored consort, the better commander — primary co-regent. In 1303 Jatavarman Sundara Pandyan III, legitimate son of the primary queen, received only a secondary co-regency. In 1308 Sundara murders the emperor. The public and the army revolt and raise Vira. Sundara flees north to the Delhi Sultanate. Malik Kafur comes for Kayal of Manon Mani and Masila Mani. Patricide, then civil war, then the Sultanate.",
+    win: "Hold Vira’s Madurai and Kayal, raze Sundara’s camp, and break two Malik Kafur waves.",
+    lose: "Madurai or Kayal hearth falls after the patricide.",
+    objective: "Survive the patricide; hold both hearths; break Sundara and Kafur",
   },
 ]
 

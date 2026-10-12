@@ -63,7 +63,7 @@ export const FACTIONS = [
     epithet: "Twin-fish of Madurai",
     motto: "The Tamraparani remembers.",
     summary:
-      "Maravarman Kulasekara Pandyan I’s banners. Pearl licenses, horse roads, and the Kayal quay.",
+      "Maravarman Kulasekara Pandyan I’s banners — Yuvaraja, then five brother kings. Pearl licenses, horse roads, and the Kayal quay of Manon Mani and Masila Mani.",
     bonus: "Dhoni run faster on water. Guild gifts unlock Marzban escorts.",
     color: "#c45c2a",
     accent: "#f0b27a",
@@ -295,7 +295,7 @@ export const CAMPAIGN_CHAPTERS = [
     title: "Kayal Under Sail",
     act: "The Marzban Coalition",
     synopsis:
-      "Appoint Takiuddin Abdur Rahman over Kayal. Escort Hormuz horse ships past Malabar corsairs.",
+      "Yuvaraja no longer. Appoint Takiuddin Abdur Rahman over Kayal. Escort Hormuz horse ships past Malabar corsairs.",
     unlocked: true,
     duration: "short",
     faction: "pandya" as FactionId,
@@ -319,7 +319,7 @@ export const CAMPAIGN_CHAPTERS = [
     title: "Lights on the Tamraparani",
     act: "Port Defense",
     synopsis:
-      "Lighthouses, Kadalkatti shark charmers, and Rowther cavalry on the Kayal sand.",
+      "Marco Polo’s five brother kings. Confederacy loyalty, lighthouses, Kadalkatti, Rowther on the sand.",
     unlocked: false,
     duration: "short",
     faction: "pandya" as FactionId,
@@ -331,7 +331,7 @@ export const CAMPAIGN_CHAPTERS = [
     title: "Kayal Open to Kafur",
     act: "The Fracture",
     synopsis:
-      "Vira against Sundara Pandya III. Malik Kafur comes for the port.",
+      "1308 patricide: Sundara murders the emperor. Vira’s army. Then Malik Kafur.",
     unlocked: false,
     duration: "short",
     faction: "pandya" as FactionId,

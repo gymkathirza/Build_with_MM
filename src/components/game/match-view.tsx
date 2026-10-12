@@ -52,12 +52,17 @@ import {
   beginMission,
   campaignBuildTypes,
   chooseRelic,
+  confederacyAvg,
+  confirmPatricide,
   createCampaignWorld,
+  fundBrother,
   fundCosmopolitan,
   fundGuild,
   fundPatronage,
+  fundYuvaraja,
 } from "@/lib/sim/campaign"
 import { CAMPAIGN_ART, missionArt } from "@/lib/campaign/artifacts"
+import { CONFEDERACY_BROTHERS, FAMILY_BEAT } from "@/lib/campaign/family"
 import { EmptyState } from "@/components/game/screen-states"
 import tunedJson from "@/lib/ml/tuned.json"
 
@@ -147,6 +152,7 @@ export function MatchView({
   const [startPearl, setStartPearl] = useState(!mission)
   const [briefing, setBriefing] = useState(Boolean(mission))
   const [diplomacy, setDiplomacy] = useState(false)
+  const [patricide, setPatricide] = useState(false)
 
   useEffect(() => {
     const t = window.setTimeout(() => setStartPearl(false), 1900)
@@ -281,7 +287,8 @@ export function MatchView({
         !pausedRef.current &&
         world.winner === null &&
         world.campaign?.phase !== "briefing" &&
-        world.campaign?.phase !== "diplomacy"
+        world.campaign?.phase !== "diplomacy" &&
+        world.campaign?.phase !== "patricide"
       ) {
         acc += dt
         const step = 1 / TICK_HZ
@@ -576,8 +583,20 @@ export function MatchView({
             {world.campaign.missionId === "kayal" ? (
               <div className="mt-1 flex flex-wrap gap-1">
                 <span className="text-muted-foreground">
-                  Manigramam {world.campaign.manigramam} · Anjuvannam {world.campaign.anjuvannam}
+                  Yuvaraja {world.campaign.yuvaraja | 0} · Manigramam {world.campaign.manigramam} ·
+                  Anjuvannam {world.campaign.anjuvannam}
                 </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    fundYuvaraja(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Co-sign Yuvaraja
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
@@ -600,6 +619,28 @@ export function MatchView({
                 >
                   Seat Anjuvannam
                 </Button>
+              </div>
+            ) : null}
+            {world.campaign.missionId === "tamraparani" || world.campaign.missionId === "fracture" ? (
+              <div className="mt-1 flex flex-wrap gap-1">
+                <span className="text-muted-foreground">
+                  Confederacy {confederacyAvg(world.campaign) | 0} · west {world.campaign.viraWest | 0}{" "}
+                  · admin {world.campaign.vikkiraman | 0} · interior {world.campaign.sundaraInterior | 0}
+                </span>
+                {CONFEDERACY_BROTHERS.map((b) => (
+                  <Button
+                    key={b.id}
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-[11px]"
+                    onClick={() => {
+                      fundBrother(world, b.id)
+                      paintHud(60, 16, 0)
+                    }}
+                  >
+                    {b.short}
+                  </Button>
+                ))}
               </div>
             ) : null}
             <p className="text-muted-foreground">
@@ -722,6 +763,7 @@ export function MatchView({
             imageAlt={missionArt(mission.id).caption}
           >
             <p className="text-sm text-muted-foreground">{mission.briefing}</p>
+            <p className="text-xs text-primary/80">{FAMILY_BEAT[mission.id]}</p>
             <p className="text-sm">
               <span className="text-primary">Win:</span> {mission.win}
             </p>
@@ -733,7 +775,8 @@ export function MatchView({
               onClick={() => {
                 beginMission(world)
                 setBriefing(false)
-                setStartPearl(true)
+                if (mission.id === "fracture") setPatricide(true)
+                else setStartPearl(true)
               }}
             >
               March
@@ -776,6 +819,31 @@ export function MatchView({
               }}
             >
               Return to Parakramabahu III
+            </Button>
+          </Overlay>
+        ) : null}
+        {patricide && mission && winner === null ? (
+          <Overlay
+            wide
+            title="Patricide, 1308"
+            description="Sundara III, son of the primary queen, has murdered Maravarman Kulasekara Pandyan I."
+            image={missionArt("fracture").briefing}
+            imageAlt={missionArt("fracture").caption}
+          >
+            <p className="text-sm text-muted-foreground">
+              The public and the army revolt. They raise Jatavarman Vira Pandya II — son of the favored
+              consort, the better commander. Sundara flees north to the Delhi Sultanate. Malik Kafur
+              comes for Kayal of Manon Mani and Masila Mani.
+            </p>
+            <Button
+              className="w-full"
+              onClick={() => {
+                confirmPatricide(world)
+                setPatricide(false)
+                setStartPearl(true)
+              }}
+            >
+              Take Vira’s banners
             </Button>
           </Overlay>
         ) : null}
@@ -866,7 +934,7 @@ export function MatchView({
         </p>
       </footer>
 
-      {paused && winner === null && !briefing && !diplomacy ? (
+      {paused && winner === null && !briefing && !diplomacy && !patricide ? (
         <Overlay
           title="The field is held"
           description="Simulation is paused. Resume, change banners, or resign the match."

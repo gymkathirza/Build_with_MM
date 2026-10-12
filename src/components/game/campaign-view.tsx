@@ -23,6 +23,7 @@ import {
   type ChronicleSlot,
 } from "@/lib/campaign/save"
 import { missionArt } from "@/lib/campaign/artifacts"
+import { HOUSE_PROFILES } from "@/lib/campaign/family"
 import { factionById, GAME_PAIR } from "@/lib/game-data"
 import { cn } from "@/lib/utils"
 
@@ -62,15 +63,26 @@ export function CampaignView() {
               {CAMPAIGN_TITLE}
             </h1>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Four plates in order. {CAMPAIGN_STEWARD}, 1268–1310. {GAME_PAIR} — pearl sea and temple
-              shore. Kayal, Palk Strait, Yapahuwa, Jaffna, Tharangambadi / Masilamaninathar, then
-              Malik Kafur. General Aryachakravarti takes the Tooth Relic.
+              Four plates in order. {CAMPAIGN_STEWARD} — Yuvaraja in his father’s shadow, then five
+              brother kings, then two queens and two sons. {GAME_PAIR} on every shore. Aryachakravarti
+              takes the Tooth Relic. 1308 is patricide, civil war, and Malik Kafur.
             </p>
           </div>
           <Button variant="outline" render={<Link href="/" />}>
             Main menu
           </Button>
         </header>
+
+        <section aria-label="House of the Twin-Fish" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {HOUSE_PROFILES.map((p) => (
+            <article key={p.id} className="gold-trim rounded-sm bg-card/50 px-3 py-3">
+              <p className="text-[10px] tracking-[0.22em] text-primary/70 uppercase">{p.role}</p>
+              <h2 className="font-heading mt-1 text-sm tracking-wide text-primary">{p.name}</h2>
+              <p className="text-[11px] text-muted-foreground">{p.years}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{p.blurb}</p>
+            </article>
+          ))}
+        </section>
 
         <section aria-label="Chronicles" className="grid gap-3 sm:grid-cols-3">
           {file.slots.map((s) => (
@@ -116,7 +128,7 @@ export function CampaignView() {
         ) : empty ? (
           <EmptyState
             title="This plate is blank"
-            detail="No steward has taken the oath here. Begin Kayal Under Sail — Manon Mani’s quay and Masila Mani’s Twin-Fish gate — to seat Takiuddin Abdur Rahman."
+            detail="No steward has taken the oath here. Begin as Yuvaraja leaving Jatavarman Sundara Pandyan I’s shadow — Kayal of Manon Mani’s quay and Masila Mani’s Twin-Fish gate — and seat Takiuddin Abdur Rahman."
             action={
               <Button
                 render={<Link href={`/match?source=campaign&mission=kayal&slot=${slot.id}`} />}

@@ -1,4 +1,5 @@
 import { CAMPAIGN_MISSIONS, missionById, type MissionId } from "../campaign/missions"
+import { type BrotherId } from "../campaign/family"
 import { BUILDING_STATS, DT } from "./catalog"
 import {
   createWorld,
@@ -19,7 +20,7 @@ export type HorseConvoy = {
   sunk: boolean
 }
 
-export type CampaignPhase = "briefing" | "play" | "diplomacy" | "victory" | "defeat"
+export type CampaignPhase = "briefing" | "patricide" | "play" | "diplomacy" | "victory" | "defeat"
 export type RelicChoice = "keep" | "return"
 
 export type CampaignRuntime = {
@@ -54,6 +55,10 @@ export type CampaignRuntime = {
   loyalty: number
   unrest: number
   tribute: boolean
+  yuvaraja: number
+  viraWest: number
+  vikkiraman: number
+  sundaraInterior: number
   objective: string
   failWhy: string
   winWhy: string
@@ -128,6 +133,8 @@ export function campaignHitBonus(w: World, type: string, x: number, y: number, o
   if (type === "rowther" && (isBeach(w, x, y) || isWater(w, x, y))) m *= 1.45
   if (c.relicHeld && owner === 1) m *= 0.82
   if (c.relicChoice === "keep" && owner === 0) m *= 1.12
+  if (owner === 0 && c.yuvaraja >= 50) m *= 1.08
+  if (owner === 0 && confederacyAvg(c) >= 60) m *= 1.06
   const temple = w.buildings.find((b) => b.owner === 0 && b.type === "temple" && b.done)
   if (temple && owner === 0 && dist(x, y, temple.x, temple.y) < 12) {
     m *= 1 + Math.min(0.2, (c.shaiva + c.vaishnava) / 500)
@@ -162,6 +169,58 @@ export function fundGuild(w: World, which: "manigramam" | "anjuvannam") {
     if (quay) spawnUnit(w, 0, "marzban", quay.x - 2, quay.y)
   }
   return true
+}
+
+export function fundYuvaraja(w: World) {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  const p = w.players[0]
+  if (p.grain < 55) {
+    w.events.push({ k: "failed", owner: 0, why: "Yuvaraja orders want Grain." })
+    return false
+  }
+  p.grain -= 55
+  c.yuvaraja = clamp01(c.yuvaraja + 24)
+  c.loyalty = clamp01(c.loyalty + 8)
+  const hall = p0Hall(w)
+  if (hall) spawnUnit(w, 0, "guard", hall.x + 1, hall.y - 2)
+  return true
+}
+
+export function fundBrother(w: World, which: BrotherId) {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  const p = w.players[0]
+  if (which === "vira-west") {
+    if (p.ore < 30) {
+      w.events.push({ k: "failed", owner: 0, why: "Vira I’s west wants Ore." })
+      return false
+    }
+    p.ore -= 30
+    c.viraWest = clamp01(c.viraWest + 22)
+  } else if (which === "vikkiraman") {
+    if (p.grain < 60) {
+      w.events.push({ k: "failed", owner: 0, why: "Vikkiraman’s administration wants Grain." })
+      return false
+    }
+    p.grain -= 60
+    c.vikkiraman = clamp01(c.vikkiraman + 22)
+  } else {
+    if (p.timber < 50) {
+      w.events.push({ k: "failed", owner: 0, why: "Sundara II’s interior wants Timber." })
+      return false
+    }
+    p.timber -= 50
+    c.sundaraInterior = clamp01(c.sundaraInterior + 22)
+  }
+  c.loyalty = clamp01(c.loyalty + 10)
+  c.csi = clamp01(c.csi + 6)
+  c.unrest = clamp01(c.unrest - 8)
+  return true
+}
+
+export function confederacyAvg(c: CampaignRuntime) {
+  return (c.viraWest + c.vikkiraman + c.sundaraInterior) / 3
 }
 
 export function fundPatronage(w: World, which: "shaiva" | "vaishnava") {
@@ -230,7 +289,21 @@ export function chooseRelic(w: World, choice: RelicChoice) {
 
 export function beginMission(w: World) {
   if (!w.campaign) return
-  if (w.campaign.phase === "briefing") w.campaign.phase = "play"
+  if (w.campaign.phase !== "briefing") return
+  w.campaign.phase = w.campaign.missionId === "fracture" ? "patricide" : "play"
+}
+
+export function confirmPatricide(w: World) {
+  const c = w.campaign
+  if (!c || c.phase !== "patricide") return false
+  c.phase = "play"
+  c.objective = "Hold Vira’s hearths; break Sundara and Kafur"
+  const hall = p0Hall(w)
+  if (hall) {
+    spawnUnit(w, 0, "guard", hall.x + 2, hall.y)
+    spawnUnit(w, 0, "rowther", hall.x + 3, hall.y - 1)
+  }
+  return true
 }
 
 function win(w: World, why: string) {
@@ -305,7 +378,7 @@ function tickKayal(w: World, c: CampaignRuntime) {
   }
   c.objective = `Horse ships ${c.shipsEscorted}/${c.shipsNeeded} · lost ${c.shipsLost}/3 · CSI ${c.csi | 0}`
   if (c.shipsEscorted >= c.shipsNeeded) {
-    win(w, "The Hormuz hulls are under Kayal’s lamps — Manon Mani’s quay, Masila Mani’s Twin-Fish gate.")
+    win(w, "The Hormuz hulls are under Kayal’s lamps — Manon Mani’s quay, Masila Mani’s Twin-Fish gate. The Yuvaraja’s shadow thins.")
   }
   else if (c.shipsLost >= 3) lose(w, "Malabar corsairs emptied the horse road.")
 }
@@ -402,11 +475,24 @@ function tickFracture(w: World, c: CampaignRuntime) {
   const kafurLive = w.units.filter((u) => u.owner === 1 && u.type === "corsair").length
   if (c.kafurWave >= 2 && kafurLive === 0) c.wavesBroken = 2
   c.objective = `Kayal holds · Sundara ${sundaraDown ? "broken" : "camps"} · Kafur ${c.wavesBroken}/2`
-  if (sundaraDown && c.wavesBroken >= 2) win(w, "Vira’s camp stands. Kafur’s waves broke on Kayal.")
+  if (sundaraDown && c.wavesBroken >= 2) {
+    win(
+      w,
+      "The army held for Vira after the patricide. Kafur broke on Kayal of Manon Mani and Masila Mani — the house is split.",
+    )
+  }
 }
 
 function tickGovernance(w: World, c: CampaignRuntime) {
   if (c.tribute && w.tick % 40 === 0) w.players[0].grain += 2
+  const avg = confederacyAvg(c)
+  if (avg < 28 && (c.missionId === "tamraparani" || c.missionId === "fracture")) {
+    c.unrest = clamp01(c.unrest + 4 * DT)
+    if (w.tick % 40 === 0 && w.players[0].grain > 0) w.players[0].grain -= 1
+  } else if (avg >= 60 && w.tick % 40 === 0) {
+    c.csi = clamp01(c.csi + 1)
+    w.players[0].grain += 1
+  }
   if (c.csi >= 78 && c.shaiva + c.vaishnava < 40 && w.tick >= c.nextRevoltAt) {
     const hall = p0Hall(w)
     if (hall) spawnUnit(w, 1, "guard", hall.x + 10, hall.y - 8)
@@ -418,7 +504,7 @@ function tickGovernance(w: World, c: CampaignRuntime) {
 export function tickCampaign(w: World) {
   const c = w.campaign
   if (!c) return
-  if (c.phase === "briefing" || c.phase === "diplomacy") return
+  if (c.phase === "briefing" || c.phase === "diplomacy" || c.phase === "patricide") return
   if (c.phase !== "play") return
   const halls = w.buildings.filter((b) => b.owner === 0 && b.type === "hearth")
   if (!halls.length) {
@@ -488,6 +574,10 @@ export function createCampaignWorld(
     loyalty: 40,
     unrest: 18,
     tribute: opts?.relicChoice === "return",
+    yuvaraja: spec.id === "kayal" ? 22 : 48,
+    viraWest: spec.id === "tamraparani" || spec.id === "fracture" ? 32 : 40,
+    vikkiraman: spec.id === "tamraparani" || spec.id === "fracture" ? 30 : 40,
+    sundaraInterior: spec.id === "tamraparani" || spec.id === "fracture" ? 34 : 40,
     objective: spec.objective,
     failWhy: spec.lose,
     winWhy: spec.win,

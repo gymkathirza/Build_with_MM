@@ -833,7 +833,13 @@ function tickBuildings(w: World) {
 
 export function tick(w: World) {
   if (w.winner !== null) return
-  if (w.campaign?.phase === "briefing" || w.campaign?.phase === "diplomacy") return
+  if (
+    w.campaign?.phase === "briefing" ||
+    w.campaign?.phase === "diplomacy" ||
+    w.campaign?.phase === "patricide"
+  ) {
+    return
+  }
   w.tick++
   if (w.events.length > 40) w.events.length = 0
   tickBuildings(w)

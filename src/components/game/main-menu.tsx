@@ -11,7 +11,7 @@ const ITEMS = [
   {
     href: "/campaign",
     label: "Campaign",
-    hint: "Twin-Fish Reign. Manon Mani and Masila Mani. Aryachakravarti. Kayal to Kafur.",
+    hint: "Twin-Fish Reign. Yuvaraja to patricide. Manon Mani and Masila Mani. Aryachakravarti. Kayal to Kafur.",
   },
   {
     href: "/skirmish",
@@ -133,8 +133,8 @@ function WorldPlate() {
           Kayal of Manon Mani and Masila Mani, 1268–1310
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Twin-fish coinage. Aryachakravarti still has to force Palk Strait. The Tooth Relic sits on
-          Yapahuwa.
+          Twin-fish coinage. Five brother kings. Aryachakravarti still has to force Palk Strait. The
+          Tooth Relic sits on Yapahuwa.
         </p>
       </div>
     </aside>

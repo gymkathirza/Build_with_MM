@@ -3,7 +3,17 @@ import { test } from "node:test"
 import { isUnlocked, markVictory, emptyFile } from "../campaign/save"
 import { CAMPAIGN_MISSIONS } from "../campaign/missions"
 import { createWorld, seedBuilding, spawnUnit, tick } from "./engine"
-import { beginMission, chooseRelic, createCampaignWorld, fundCosmopolitan, fundGuild, fundPatronage } from "./campaign"
+import {
+  beginMission,
+  chooseRelic,
+  confirmPatricide,
+  createCampaignWorld,
+  fundBrother,
+  fundCosmopolitan,
+  fundGuild,
+  fundPatronage,
+  fundYuvaraja,
+} from "./campaign"
 
 test("skirmish worlds skip campaign state", () => {
   const w = createWorld("ashen", "gilded", undefined, { mapId: "emberglass" })
@@ -78,6 +88,15 @@ test("Kayal: three sunk convoys lose the plate", () => {
   assert.equal(w.campaign?.phase, "defeat")
 })
 
+test("Kayal: Yuvaraja orders spend Grain and raise the shadow meter", () => {
+  const w = createCampaignWorld("kayal")
+  beginMission(w)
+  w.players[0].grain = 200
+  const y0 = w.campaign!.yuvaraja
+  assert.equal(fundYuvaraja(w), true)
+  assert.ok(w.campaign!.yuvaraja > y0)
+})
+
 test("Kayal: funding both guilds unlocks Marzban escorts", () => {
   const w = createCampaignWorld("kayal")
   beginMission(w)
@@ -150,9 +169,35 @@ test("Tamraparani: lighthouses and shrine plus three waves win", () => {
   assert.equal(w.winner, 0)
 })
 
+test("Tamraparani: seating brothers raises Confederacy loyalty", () => {
+  const w = createCampaignWorld("tamraparani")
+  beginMission(w)
+  w.players[0].grain = 200
+  w.players[0].ore = 80
+  w.players[0].timber = 120
+  assert.equal(fundBrother(w, "vira-west"), true)
+  assert.equal(fundBrother(w, "vikkiraman"), true)
+  assert.equal(fundBrother(w, "sundara-interior"), true)
+  assert.ok(w.campaign!.viraWest >= 50)
+  assert.ok(w.campaign!.vikkiraman >= 50)
+  assert.ok(w.campaign!.sundaraInterior >= 50)
+})
+
+test("Fracture: March opens the 1308 patricide beat", () => {
+  const w = createCampaignWorld("fracture")
+  beginMission(w)
+  assert.equal(w.campaign?.phase, "patricide")
+  const frozen = w.tick
+  tick(w)
+  assert.equal(w.tick, frozen)
+  assert.equal(confirmPatricide(w), true)
+  assert.equal(w.campaign?.phase, "play")
+})
+
 test("Fracture: Sundara down and two Kafur waves with Kayal standing", () => {
   const w = createCampaignWorld("fracture")
   beginMission(w)
+  confirmPatricide(w)
   w.buildings = w.buildings.filter((b) => !(b.owner === 1 && b.type === "hearth"))
   w.units = w.units.filter((u) => !(u.owner === 1 && u.type === "corsair"))
   w.campaign!.kafurWave = 2
