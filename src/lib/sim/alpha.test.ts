@@ -832,6 +832,39 @@ test("a pressed lodge draws a sentry", () => {
   )
 })
 
+test("a pressed yard draws a sentry", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 400
+  w.players[0].ore = 200
+  w.players[0].timber = 200
+  const yard = placeBuilding(
+    w,
+    0,
+    "yard",
+    h.x + 18,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  yard.done = true
+  yard.construct = yard.constructMax
+  pushBanner(w, "guard", 0, h.x + 2, h.y)
+  pushBanner(w, "guard", 0, h.x + 3, h.y)
+  pushBanner(w, "guard", 1, yard.x + 2, yard.y)
+  for (let i = 0; i < 16; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const sentry = w.units.find((u) => u.owner === 0 && u.type === "guard")
+  assert.ok(sentry, "need a home guard")
+  const near = Math.hypot(sentry.x - yard.x, sentry.y - yard.y)
+  assert.ok(
+    sentry.order.t === "defend" || sentry.order.t === "attack" || sentry.order.t === "attackMove" || near < 14,
+    `yard should pull a sentry, order ${sentry.order.t} dist ${near}`,
+  )
+})
+
 test("idle levy walks a relic when no scout is free", () => {
   const params = { ...personaById("balanced").params, attackAtArmy: 9 }
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
@@ -1344,6 +1377,35 @@ test("a wounded ashrider peels to the lodge", () => {
   assert.ok(
     live.order.t === "move" || Math.hypot(live.x - lodge.x, live.y - lodge.y) < 8,
     "a wounded ashrider should peel to the lodge",
+  )
+})
+
+test("a wounded warden peels to the lodge", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9, kite: 0.6 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  const lodge = placeBuilding(
+    w,
+    0,
+    "lodge",
+    h.x + 10,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  lodge.done = true
+  lodge.construct = lodge.constructMax
+  pushBanner(w, "warden", 0, h.x + 22, h.y)
+  const bow = w.units.find((u) => u.owner === 0 && u.type === "warden")!
+  bow.hp = bow.hpMax * 0.2
+  for (let i = 0; i < 30; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const live = w.units.find((u) => u.id === bow.id)!
+  assert.ok(
+    live.order.t === "move" || Math.hypot(live.x - lodge.x, live.y - lodge.y) < 8,
+    "a wounded warden should peel to the lodge",
   )
 })
 

@@ -389,8 +389,8 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
   if (tuned.kite >= 0.5 && w.tick % 20 === owner) {
     const wounded = military.filter((u) => u.hp < u.hpMax * 0.38 && !garrison.some((g) => g.id === u.id))
     if (wounded.length) {
-      const riders = wounded.filter((u) => u.type === "ashrider")
-      const rest = wounded.filter((u) => u.type !== "ashrider")
+      const riders = wounded.filter((u) => u.type === "ashrider" || u.type === "warden")
+      const rest = wounded.filter((u) => u.type !== "ashrider" && u.type !== "warden")
       if (riders.length && lodge) issueMove(w, riders.map((u) => u.id), lodge.x, lodge.y)
       else if (riders.length) {
         issueMove(w, riders.map((u) => u.id), h.x + (owner === 0 ? 3 : -3), h.y)
@@ -593,7 +593,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
       (b) =>
         b.owner === owner &&
         b.done &&
-        (b.type === "camp" || b.type === "pit" || b.type === "granary" || b.type === "lodge") &&
+        (b.type === "camp" || b.type === "pit" || b.type === "granary" || b.type === "lodge" || b.type === "yard") &&
         foesNear(w, b.x, b.y, 10, owner).length > 0,
     )
     const sentry = military.find(

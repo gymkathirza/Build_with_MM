@@ -404,6 +404,17 @@ function drawTerrain(
       ctx.ellipse(p.sx + drift * 0.4, p.sy - drift * 0.6, 2.2, 1.1, 0.4, 0, Math.PI * 2)
       ctx.fill()
     }
+    const hawkX = ((hash(3, 9) % 1000) / 1000) * size
+    const hawkY = ((hash(8, 2) % 1000) / 1000) * size
+    const hp = worldToScreen(cam, hawkX + Math.sin(t / 1400) * 8, hawkY)
+    const wing = Math.sin(t / 160) * 4
+    ctx.strokeStyle = "rgba(90,50,20,0.5)"
+    ctx.lineWidth = 1.3
+    ctx.beginPath()
+    ctx.moveTo(hp.sx - 8, hp.sy + wing * 0.15)
+    ctx.quadraticCurveTo(hp.sx - 2, hp.sy - wing, hp.sx, hp.sy)
+    ctx.quadraticCurveTo(hp.sx + 2, hp.sy - wing, hp.sx + 8, hp.sy + wing * 0.15)
+    ctx.stroke()
   }
   if (quality > 0 && world.mapId === "emberglass") {
     for (let i = 0; i < 7; i++) {
