@@ -408,7 +408,11 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         !isFarCampCrew(w, u, owner) &&
         foesNear(w, u.x, u.y, 8, owner).length > 0,
     )
-    if (scared.length) issueMove(w, scared.map((u) => u.id), h.x, h.y)
+    if (scared.length) {
+      const grainHouse = w.buildings.find((b) => b.owner === owner && b.type === "granary" && b.done)
+      const shelter = grainHouse ?? h
+      issueMove(w, scared.map((u) => u.id), shelter.x, shelter.y)
+    }
   }
 
   const foeMilitaryHome = enemyHall

@@ -384,6 +384,18 @@ function drawTerrain(
     ctx.beginPath()
     ctx.arc(perch.sx + 4, perch.sy - 2.2, 0.8, 0, Math.PI * 2)
     ctx.fill()
+    const perch2 = worldToScreen(cam, size * 0.4, size * 0.58)
+    ctx.fillStyle = "rgba(20,24,22,0.5)"
+    ctx.beginPath()
+    ctx.ellipse(perch2.sx, perch2.sy, 3.6, 2.1, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.beginPath()
+    ctx.arc(perch2.sx - 2.4, perch2.sy - 1.8, 1.6, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = `rgba(255,210,90,${0.3 + 0.22 * Math.sin(t / 260 + 1)})`
+    ctx.beginPath()
+    ctx.arc(perch2.sx - 3.2, perch2.sy - 2, 0.7, 0, Math.PI * 2)
+    ctx.fill()
     const batX = perch.sx - 28 + Math.sin(t / 900) * 36
     const batY = perch.sy - 18 + Math.sin(t / 220) * 5
     const wing = Math.sin(t / 80) * 5
