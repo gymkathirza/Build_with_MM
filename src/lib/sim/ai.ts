@@ -662,6 +662,8 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         : undefined
     if (farLodge && spareWarden) {
       issueDefend(w, [spareWarden.id], farLodge.x, farLodge.y)
+    } else if (farPit && spareWarden) {
+      issueDefend(w, [spareWarden.id], farPit.x, farPit.y)
     } else if (farCamp && spareWarden) {
       issueDefend(w, [spareWarden.id], farCamp.x, farCamp.y)
     }

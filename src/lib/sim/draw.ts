@@ -1248,7 +1248,11 @@ export function drawWorld(
         if (
           camp.owner !== hearth.owner ||
           !camp.done ||
-          (camp.type !== "camp" && camp.type !== "pit" && camp.type !== "granary" && camp.type !== "lodge")
+          (camp.type !== "camp" &&
+            camp.type !== "pit" &&
+            camp.type !== "granary" &&
+            camp.type !== "lodge" &&
+            camp.type !== "yard")
         )
           continue
         if (Math.hypot(camp.x - hearth.x, camp.y - hearth.y) <= 16) continue
