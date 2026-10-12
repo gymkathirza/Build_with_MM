@@ -946,6 +946,11 @@ function drawBuilding(
     ctx.beginPath()
     ctx.arc(p.sx + 3, p.sy - s * 0.12 - spark * 0.4, 1.4, 0, Math.PI * 2)
     ctx.fill()
+    const spark2 = (now / 35 + b.id * 3 + 7) % 14
+    ctx.fillStyle = `rgba(255,140,50,${0.16 - spark2 * 0.01})`
+    ctx.beginPath()
+    ctx.arc(p.sx - 2, p.sy - s * 0.18 - spark2 * 0.45, 1.2, 0, Math.PI * 2)
+    ctx.fill()
   }
   if (quality > 1 && b.done && b.type === "yard") {
     const flap = Math.sin(now / 220 + b.id) * 3

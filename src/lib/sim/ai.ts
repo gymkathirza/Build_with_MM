@@ -411,7 +411,8 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     if (scared.length) {
       const grainHouse = w.buildings.find((b) => b.owner === owner && b.type === "granary" && b.done)
       const camp = w.buildings.find((b) => b.owner === owner && b.type === "camp" && b.done)
-      const shelter = grainHouse ?? camp ?? h
+      const pit = w.buildings.find((b) => b.owner === owner && b.type === "pit" && b.done)
+      const shelter = grainHouse ?? camp ?? pit ?? h
       issueMove(w, scared.map((u) => u.id), shelter.x, shelter.y)
     }
   }
