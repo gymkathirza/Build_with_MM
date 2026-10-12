@@ -25,7 +25,11 @@ function ownerFarOutposts(w: World, owner: Owner) {
     (b) =>
       b.owner === owner &&
       b.done &&
-      (b.type === "camp" || b.type === "pit" || b.type === "granary" || b.type === "yard") &&
+      (b.type === "camp" ||
+        b.type === "pit" ||
+        b.type === "granary" ||
+        b.type === "yard" ||
+        b.type === "lodge") &&
       Math.hypot(b.x - h.x, b.y - h.y) > 16,
   )
 }
