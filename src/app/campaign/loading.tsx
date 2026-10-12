@@ -6,7 +6,7 @@ export default function Loading() {
     <CinematicShell>
       <LoadingState
         title="Opening Kayal’s chronicle"
-        detail="Twin-fish plates are being sorted: Marzban, Palk, Tamraparani, Fracture."
+        detail="Twin-fish plates are being sorted: Konerinmaikondan, Marzban, Palk, Tamraparani, Fracture."
       />
     </CinematicShell>
   )

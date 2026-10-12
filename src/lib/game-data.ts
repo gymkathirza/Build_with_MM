@@ -290,20 +290,32 @@ export type DifficultyId = (typeof DIFFICULTIES)[number]["id"]
 
 export const CAMPAIGN_CHAPTERS = [
   {
-    id: "kayal",
+    id: "edicts",
     number: 1,
-    title: "Kayal Under Sail",
-    act: "The Marzban Coalition",
+    title: "Konerinmaikondan",
+    act: "Yuvaraja Years",
     synopsis:
-      "Yuvaraja no longer. Appoint Takiuddin Abdur Rahman over Kayal. Escort Hormuz horse ships past Malabar corsairs.",
+      "Seventeen years as co-ruler. Bureaucracy Tree, Port Integration at Sonakarpalli, drought grain, Bank of Madurai.",
     unlocked: true,
     duration: "short",
     faction: "pandya" as FactionId,
     map: "kayal" as MapId,
   },
   {
-    id: "palk",
+    id: "kayal",
     number: 2,
+    title: "Kayal Under Sail",
+    act: "The Marzban Coalition",
+    synopsis:
+      "Yuvaraja no longer. Appoint Takiuddin Abdur Rahman over Kayal. Escort Hormuz horse ships past Malabar corsairs.",
+    unlocked: false,
+    duration: "short",
+    faction: "pandya" as FactionId,
+    map: "kayal" as MapId,
+  },
+  {
+    id: "palk",
+    number: 3,
     title: "Storm of Subhagiri",
     act: "Preemptive Strike",
     synopsis:
@@ -315,7 +327,7 @@ export const CAMPAIGN_CHAPTERS = [
   },
   {
     id: "tamraparani",
-    number: 3,
+    number: 4,
     title: "Lights on the Tamraparani",
     act: "Port Defense",
     synopsis:
@@ -327,7 +339,7 @@ export const CAMPAIGN_CHAPTERS = [
   },
   {
     id: "fracture",
-    number: 4,
+    number: 5,
     title: "Kayal Open to Kafur",
     act: "The Fracture",
     synopsis:

@@ -63,9 +63,9 @@ export function CampaignView() {
               {CAMPAIGN_TITLE}
             </h1>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Four plates in order. {CAMPAIGN_STEWARD} — Yuvaraja in his father’s shadow, then five
-              brother kings, then two queens and two sons. {GAME_PAIR} on every shore. Aryachakravarti
-              takes the Tooth Relic. 1308 is patricide, civil war, and Malik Kafur.
+              Five plates in order. {CAMPAIGN_STEWARD} — Yuvaraja edicts in his father’s shadow, then
+              five brother kings, then two queens and two sons. {GAME_PAIR} on every shore.
+              Aryachakravarti takes the Tooth Relic. 1308 is patricide, civil war, and Malik Kafur.
             </p>
           </div>
           <Button variant="outline" render={<Link href="/" />}>
@@ -109,9 +109,9 @@ export function CampaignView() {
               </p>
               <p className="text-xs text-muted-foreground">
                 {s.completed.length
-                  ? `${s.completed.length}/4 plates · ${s.relicSecured ? "Tooth Relic secured" : "relic still in Yapahuwa"}`
+                  ? `${s.completed.length}/5 plates · ${s.relicSecured ? "Tooth Relic secured" : "relic still in Yapahuwa"}`
                   : s.started
-                    ? "Kayal waits"
+                    ? "Konerinmaikondan waits"
                     : "Empty"}
               </p>
             </button>
@@ -128,13 +128,13 @@ export function CampaignView() {
         ) : empty ? (
           <EmptyState
             title="This plate is blank"
-            detail="No steward has taken the oath here. Begin as Yuvaraja leaving Jatavarman Sundara Pandyan I’s shadow — Kayal of Manon Mani’s quay and Masila Mani’s Twin-Fish gate — and seat Takiuddin Abdur Rahman."
+            detail="No steward has taken the oath here. Begin as Yuvaraja under Jatavarman Sundara Pandyan I — Konerinmaikondan decrees, Sonakarpalli at Kayal of Manon Mani and Masila Mani, drought grain, and Aiyan Malavarayan’s temple books."
             action={
               <Button
-                render={<Link href={`/match?source=campaign&mission=kayal&slot=${slot.id}`} />}
+                render={<Link href={`/match?source=campaign&mission=edicts&slot=${slot.id}`} />}
                 onClick={() => beginSlot(slot)}
               >
-                Begin Kayal Under Sail
+                Begin Konerinmaikondan
               </Button>
             }
           />

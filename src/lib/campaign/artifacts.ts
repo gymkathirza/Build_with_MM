@@ -23,6 +23,12 @@ export type MissionArt = {
 }
 
 export const MISSION_ART: Record<string, MissionArt> = {
+  edicts: {
+    card: CAMPAIGN_ART.kayalDockyard,
+    briefing: CAMPAIGN_ART.tradeRoutes,
+    caption:
+      "Kayal of Manon Mani and Masila Mani in the Yuvaraja years — Sonakarpalli, grain road, temple books.",
+  },
   kayal: {
     card: CAMPAIGN_ART.kayalDockyard,
     briefing: CAMPAIGN_ART.tradeRoutes,

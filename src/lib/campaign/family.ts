@@ -77,6 +77,14 @@ export const HOUSE_PROFILES: HouseProfile[] = [
     blurb:
       "Storms Subhagiri (Yapahuwa) and takes the Tooth Relic. Spell Aryachakravarti, never Aryacakravarti.",
   },
+  {
+    id: "aiyan",
+    name: "Aiyan Malavarayan",
+    role: "Temple books · Bank of Madurai",
+    years: "Yuvaraja years",
+    blurb:
+      "Coordinates rituals, festivals, and artisans with the prince. Temple gold funds emergency loans; repay with plunder or Kayal customs, or morale cracks.",
+  },
 ]
 
 export type BrotherId = "vira-west" | "vikkiraman" | "sundara-interior"
@@ -88,6 +96,8 @@ export const CONFEDERACY_BROTHERS: { id: BrotherId; short: string; cost: "grain"
 ]
 
 export const FAMILY_BEAT: Record<string, string> = {
+  edicts:
+    "Seventeen years as Yuvaraja. Joint edicts with the father carry Konerinmaikondan. Work the Nadu and Sabha, back Sonakarpalli with the Sonagars, keep grain moving, and keep Aiyan Malavarayan’s temple books.",
   kayal:
     "Yuvaraja years first: finish Jatavarman Sundara Pandyan I’s unfinished work. Co-sign orders in the father’s shadow, then hold Kayal of Manon Mani and Masila Mani.",
   palk:

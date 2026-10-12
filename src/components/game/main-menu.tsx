@@ -11,7 +11,7 @@ const ITEMS = [
   {
     href: "/campaign",
     label: "Campaign",
-    hint: "Twin-Fish Reign. Yuvaraja to patricide. Manon Mani and Masila Mani. Aryachakravarti. Kayal to Kafur.",
+    hint: "Twin-Fish Reign. Yuvaraja edicts to patricide. Manon Mani and Masila Mani. Aryachakravarti. Kayal to Kafur.",
   },
   {
     href: "/skirmish",

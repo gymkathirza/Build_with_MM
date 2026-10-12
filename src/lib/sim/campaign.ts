@@ -22,6 +22,7 @@ export type HorseConvoy = {
 
 export type CampaignPhase = "briefing" | "patricide" | "play" | "diplomacy" | "victory" | "defeat"
 export type RelicChoice = "keep" | "return"
+export type PortFaction = "arab" | "chinese"
 
 export type CampaignRuntime = {
   missionId: MissionId
@@ -56,6 +57,14 @@ export type CampaignRuntime = {
   unrest: number
   tribute: boolean
   yuvaraja: number
+  konerin: number
+  portAllocated: boolean
+  portFaction: PortFaction | null
+  portIntegrated: boolean
+  irrigated: boolean
+  grainCaravans: number
+  templeDebt: number
+  veteranArmy: boolean
   viraWest: number
   vikkiraman: number
   sundaraInterior: number
@@ -126,6 +135,18 @@ export function campaignSpeed(w: World, type: string, x: number, y: number) {
   return 1
 }
 
+export function campaignConstructBonus(w: World) {
+  if (!w.campaign) return 1
+  const k = w.campaign.konerin
+  if (w.campaign.missionId === "edicts") {
+    if (k >= 50) return 1.55
+    if (k >= 25) return 1.12
+    return 0.72
+  }
+  if (k >= 50) return 1.2
+  return 1
+}
+
 export function campaignHitBonus(w: World, type: string, x: number, y: number, owner?: 0 | 1) {
   if (!w.campaign) return 1
   const c = w.campaign
@@ -184,6 +205,135 @@ export function fundYuvaraja(w: World) {
   c.loyalty = clamp01(c.loyalty + 8)
   const hall = p0Hall(w)
   if (hall) spawnUnit(w, 0, "guard", hall.x + 1, hall.y - 2)
+  return true
+}
+
+export function fundKonerin(w: World) {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  const p = w.players[0]
+  if (p.grain < 50) {
+    w.events.push({ k: "failed", owner: 0, why: "Konerinmaikondan decrees want Grain." })
+    return false
+  }
+  p.grain -= 50
+  c.konerin = clamp01(c.konerin + 22)
+  c.yuvaraja = clamp01(c.yuvaraja + 10)
+  c.loyalty = clamp01(c.loyalty + 8)
+  c.unrest = clamp01(c.unrest - 10)
+  return true
+}
+
+export function allocatePort(w: World, which: PortFaction) {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  if (c.portAllocated) {
+    w.events.push({ k: "failed", owner: 0, why: "Crown land at Sonakarpalli is already granted." })
+    return false
+  }
+  const p = w.players[0]
+  if (which === "arab") {
+    if (p.ore < 25) {
+      w.events.push({ k: "failed", owner: 0, why: "Sonagar grants want Ore." })
+      return false
+    }
+    p.ore -= 25
+    c.csi = clamp01(c.csi + 16)
+    c.unrest = clamp01(c.unrest + 8)
+  } else {
+    if (p.timber < 45) {
+      w.events.push({ k: "failed", owner: 0, why: "Chinese merchant grants want Timber." })
+      return false
+    }
+    p.timber -= 45
+    c.csi = clamp01(c.csi + 12)
+    c.unrest = clamp01(c.unrest + 12)
+  }
+  c.portAllocated = true
+  c.portFaction = which
+  const hall = p0Hall(w)
+  const quay = w.buildings.find((b) => b.owner === 0 && b.type === "quay")
+  const mx = (quay?.x ?? hall?.x ?? 20) + 4
+  const my = (quay?.y ?? hall?.y ?? 20) - 3
+  const existing = w.buildings.find((b) => b.owner === 0 && b.type === "mosque")
+  if (!existing) seedBuilding(w, 0, "mosque", mx, my, false)
+  return true
+}
+
+export function irrigate(w: World) {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  if (c.irrigated) {
+    w.events.push({ k: "failed", owner: 0, why: "The irrigation tanks already hold." })
+    return false
+  }
+  const p = w.players[0]
+  if (p.timber < 55 || p.grain < 35) {
+    w.events.push({ k: "failed", owner: 0, why: "Canals want Timber and Grain." })
+    return false
+  }
+  p.timber -= 55
+  p.grain -= 35
+  c.irrigated = true
+  c.unrest = clamp01(c.unrest - 18)
+  c.loyalty = clamp01(c.loyalty + 10)
+  return true
+}
+
+export function sendCaravan(w: World) {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  const p = w.players[0]
+  if (p.grain < 35) {
+    w.events.push({ k: "failed", owner: 0, why: "A grain caravan wants Grain to load." })
+    return false
+  }
+  p.grain -= 35
+  c.convoys.push({
+    x: w.size * 0.12,
+    y: w.size * 0.18,
+    hp: 70,
+    hpMax: 70,
+    arrived: false,
+    sunk: false,
+  })
+  c.convoysSpawned++
+  return true
+}
+
+export function takeLoan(w: World) {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  if (c.templeDebt >= 2) {
+    w.events.push({ k: "failed", owner: 0, why: "Aiyan Malavarayan will not extend another book." })
+    return false
+  }
+  const p = w.players[0]
+  p.grain += 90
+  p.relics += 1
+  c.templeDebt += 1
+  c.loyalty = clamp01(c.loyalty - 8)
+  c.unrest = clamp01(c.unrest + 6)
+  return true
+}
+
+export function repayLoan(w: World) {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  if (c.templeDebt <= 0) {
+    w.events.push({ k: "failed", owner: 0, why: "The Bank of Madurai holds no open book." })
+    return false
+  }
+  const p = w.players[0]
+  if (p.relics >= 1) p.relics -= 1
+  else if (p.grain >= 80) p.grain -= 80
+  else {
+    w.events.push({ k: "failed", owner: 0, why: "Repay with Relics or Grain." })
+    return false
+  }
+  c.templeDebt -= 1
+  c.loyalty = clamp01(c.loyalty + 12)
+  c.unrest = clamp01(c.unrest - 10)
   return true
 }
 
@@ -320,6 +470,70 @@ function lose(w: World, why: string) {
   c.phase = "defeat"
   c.failWhy = why
   w.winner = 1
+}
+
+function tickEdicts(w: World, c: CampaignRuntime) {
+  const p = w.players[0]
+  const hall = p0Hall(w)
+  const hx = hall?.x ?? w.size * 0.22
+  const hy = hall?.y ?? w.size * 0.4
+  if (!c.irrigated) {
+    p.grain = Math.max(0, p.grain - 2.6 * DT)
+    c.unrest = clamp01(c.unrest + 0.85 * DT)
+  } else if (w.tick % 40 === 0) {
+    p.grain += 3
+    c.unrest = clamp01(c.unrest - 2)
+  }
+  if (c.templeDebt > 0) {
+    c.loyalty = clamp01(c.loyalty - 1.6 * DT)
+    c.unrest = clamp01(c.unrest + 1.4 * DT)
+  }
+  const mosque = w.buildings.find((b) => b.owner === 0 && b.type === "mosque")
+  if (mosque && !mosque.done && c.portAllocated) {
+    mosque.construct += DT * (0.4 + c.konerin / 80)
+    if (mosque.construct >= mosque.constructMax) {
+      mosque.done = true
+      mosque.hp = mosque.hpMax
+      c.portIntegrated = true
+      c.csi = clamp01(c.csi + 14)
+    }
+  }
+  if (mosque?.done) c.portIntegrated = true
+  for (const ship of c.convoys) {
+    if (ship.arrived || ship.sunk) continue
+    const dx = hx - ship.x
+    const dy = hy - ship.y
+    const d = Math.hypot(dx, dy) || 1
+    ship.x += (dx / d) * 2.1 * DT
+    ship.y += (dy / d) * 2.1 * DT
+    for (const u of w.units) {
+      if (u.owner !== 1) continue
+      if (dist(u.x, u.y, ship.x, ship.y) < 2.2) ship.hp -= 7 * DT
+    }
+    if (ship.hp <= 0) {
+      ship.sunk = true
+      c.shipsLost++
+    } else if (d < 3.2) {
+      ship.arrived = true
+      c.grainCaravans++
+      p.grain += 45
+    }
+  }
+  if (c.portAllocated && c.konerin < 50 && w.tick >= c.nextRevoltAt) {
+    spawnUnit(w, 1, "guard", hx + 12, hy - 7)
+    c.nextRevoltAt = w.tick + 20 * 16
+    c.unrest = clamp01(c.unrest + 8)
+  }
+  const tanks = c.irrigated ? "tanks" : `${c.grainCaravans}/2 caravans`
+  c.objective = `Konerin ${c.konerin | 0}/50 · mosque ${c.portIntegrated ? 1 : 0}/1 · ${tanks} · debt ${c.templeDebt}`
+  if (c.konerin >= 50 && c.portIntegrated && (c.irrigated || c.grainCaravans >= 2)) {
+    c.veteranArmy = true
+    win(
+      w,
+      "Konerinmaikondan stands on the decrees. Sonakarpalli is integrated, the breadbasket holds, and a veteran army waits on the next plate.",
+    )
+  } else if (c.unrest >= 100) lose(w, "The Nadu and Sabha rebel. The prince’s word is not law.")
+  else if (p.grain <= 0 && !c.irrigated) lose(w, "The southern breadbasket ran dry.")
 }
 
 function tickKayal(w: World, c: CampaignRuntime) {
@@ -512,7 +726,8 @@ export function tickCampaign(w: World) {
     return
   }
   tickGovernance(w, c)
-  if (c.missionId === "kayal") tickKayal(w, c)
+  if (c.missionId === "edicts") tickEdicts(w, c)
+  else if (c.missionId === "kayal") tickKayal(w, c)
   else if (c.missionId === "palk") tickPalk(w, c)
   else if (c.missionId === "tamraparani") tickTamra(w, c)
   else tickFracture(w, c)
@@ -535,7 +750,14 @@ function convertP1ToCorsairs(w: World, keep = 2) {
 export function createCampaignWorld(
   missionId: string,
   ai?: AiParams,
-  opts?: { pirateScale?: number; relicChoice?: RelicChoice | null },
+  opts?: {
+    pirateScale?: number
+    relicChoice?: RelicChoice | null
+    veteranArmy?: boolean
+    templeDebt?: number
+    konerin?: number
+    portIntegrated?: boolean
+  },
 ): World {
   const spec = missionById(missionId) ?? CAMPAIGN_MISSIONS[0]!
   const pirateScale = opts?.pirateScale ?? 1
@@ -574,7 +796,15 @@ export function createCampaignWorld(
     loyalty: 40,
     unrest: 18,
     tribute: opts?.relicChoice === "return",
-    yuvaraja: spec.id === "kayal" ? 22 : 48,
+    yuvaraja: spec.id === "edicts" ? 18 : spec.id === "kayal" ? Math.max(22, opts?.konerin ?? 22) : Math.max(48, opts?.konerin ?? 48),
+    konerin: opts?.konerin ?? (spec.id === "edicts" ? 12 : 40),
+    portAllocated: false,
+    portFaction: null,
+    portIntegrated: opts?.portIntegrated ?? false,
+    irrigated: false,
+    grainCaravans: 0,
+    templeDebt: opts?.templeDebt ?? 0,
+    veteranArmy: opts?.veteranArmy ?? false,
     viraWest: spec.id === "tamraparani" || spec.id === "fracture" ? 32 : 40,
     vikkiraman: spec.id === "tamraparani" || spec.id === "fracture" ? 30 : 40,
     sundaraInterior: spec.id === "tamraparani" || spec.id === "fracture" ? 34 : 40,
@@ -588,6 +818,27 @@ export function createCampaignWorld(
   w.players[0].timber = 280
   w.players[0].ore = 160
   w.popCap = Math.max(w.popCap, 40)
+  if (c.templeDebt > 0) {
+    c.loyalty = clamp01(c.loyalty - 12 * c.templeDebt)
+    c.unrest = clamp01(c.unrest + 10 * c.templeDebt)
+  }
+
+  if (spec.id === "edicts") {
+    const quay = seedBuilding(w, 0, "quay", p0.x + 6, p0.y + 8, true)
+    seedBuilding(w, 0, "granary", p0.x - 4, p0.y + 2, true)
+    spawnUnit(w, 0, "levy", p0.x + 2, p0.y)
+    spawnUnit(w, 0, "levy", p0.x + 3, p0.y - 1)
+    spawnUnit(w, 0, "guard", p0.x + 2, p0.y - 2)
+    spawnUnit(w, 0, "dhoni", quay.x + 2, quay.y + 3)
+    convertP1ToCorsairs(w, 0)
+    spawnUnit(w, 1, "guard", p1.x - 3, p1.y)
+    spawnUnit(w, 1, "guard", p1.x - 2, p1.y + 2)
+    w.players[1].grain = 60
+    w.players[1].timber = 40
+    c.csi = 28
+    c.unrest = 22
+    c.nextRevoltAt = 20 * 18
+  }
 
   if (spec.id === "kayal") {
     const quay = seedBuilding(w, 0, "quay", p0.x + 6, p0.y + 8, true)
@@ -607,6 +858,10 @@ export function createCampaignWorld(
     spawnUnit(w, 0, "guard", p0.x + 3, p0.y)
     spawnUnit(w, 0, "guard", p0.x + 4, p0.y - 1)
     spawnUnit(w, 0, "warden", p0.x + 2, p0.y + 2)
+    if (c.veteranArmy) {
+      spawnUnit(w, 0, "guard", p0.x + 5, p0.y - 2)
+      spawnUnit(w, 0, "rowther", p0.x + 3, p0.y + 1)
+    }
     stripRelics(w)
     const rx = p1.x - 5
     const ry = p1.y - 2
@@ -684,6 +939,6 @@ export function campaignBuildTypes(missionId: string) {
     "mosque",
   ]
   if (missionId === "tamraparani" || missionId === "fracture") extra.push("charm", "lodge")
-  if (missionId === "kayal" || missionId === "palk") extra.push("lodge")
+  if (missionId === "kayal" || missionId === "palk" || missionId === "edicts") extra.push("lodge")
   return extra
 }

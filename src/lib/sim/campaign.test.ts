@@ -4,15 +4,22 @@ import { isUnlocked, markVictory, emptyFile } from "../campaign/save"
 import { CAMPAIGN_MISSIONS } from "../campaign/missions"
 import { createWorld, seedBuilding, spawnUnit, tick } from "./engine"
 import {
+  allocatePort,
   beginMission,
+  campaignConstructBonus,
   chooseRelic,
   confirmPatricide,
   createCampaignWorld,
   fundBrother,
   fundCosmopolitan,
   fundGuild,
+  fundKonerin,
   fundPatronage,
   fundYuvaraja,
+  irrigate,
+  repayLoan,
+  sendCaravan,
+  takeLoan,
 } from "./campaign"
 
 test("skirmish worlds skip campaign state", () => {
@@ -210,15 +217,132 @@ test("Fracture: Sundara down and two Kafur waves with Kayal standing", () => {
 test("plates unlock in order after victories", () => {
   let file = emptyFile()
   const slot = file.slots[0]!
-  assert.equal(isUnlocked(slot, "kayal"), true)
+  assert.equal(isUnlocked(slot, "edicts"), true)
+  assert.equal(isUnlocked(slot, "kayal"), false)
   assert.equal(isUnlocked(slot, "palk"), false)
+  file = markVictory(file, slot.id, "edicts")
+  assert.equal(isUnlocked(file.slots[0]!, "kayal"), true)
+  assert.equal(isUnlocked(file.slots[0]!, "palk"), false)
   file = markVictory(file, slot.id, "kayal")
   assert.equal(isUnlocked(file.slots[0]!, "palk"), true)
   assert.equal(isUnlocked(file.slots[0]!, "tamraparani"), false)
   file = markVictory(file, slot.id, "palk")
   assert.equal(file.slots[0]!.relicSecured, true)
   assert.equal(isUnlocked(file.slots[0]!, "tamraparani"), true)
-  assert.equal(CAMPAIGN_MISSIONS.length, 4)
+  assert.equal(CAMPAIGN_MISSIONS.length, 5)
+})
+
+test("legacy Kayal-first chronicles still unlock Palk", () => {
+  let file = emptyFile()
+  file = markVictory(file, file.slots[0]!.id, "kayal")
+  assert.equal(isUnlocked(file.slots[0]!, "kayal"), true)
+  assert.equal(isUnlocked(file.slots[0]!, "palk"), true)
+  assert.equal(isUnlocked(file.slots[0]!, "edicts"), true)
+})
+
+test("briefing freezes edicts until March", () => {
+  const w = createCampaignWorld("edicts")
+  assert.equal(w.campaign?.phase, "briefing")
+  const t0 = w.tick
+  tick(w)
+  assert.equal(w.tick, t0)
+  beginMission(w)
+  tick(w)
+  assert.equal(w.tick, t0 + 1)
+  assert.equal(w.campaign?.phase, "play")
+})
+
+test("Konerinmaikondan: prestige, Sonakarpalli, tanks, and a repaid book win the Yuvaraja plate", () => {
+  const w = createCampaignWorld("edicts")
+  beginMission(w)
+  w.players[0].grain = 400
+  w.players[0].timber = 200
+  w.players[0].ore = 80
+  assert.equal(fundKonerin(w), true)
+  assert.equal(fundKonerin(w), true)
+  assert.ok(w.campaign!.konerin >= 50)
+  assert.ok(campaignConstructBonus(w) > 1.4)
+  assert.equal(allocatePort(w, "arab"), true)
+  assert.equal(w.campaign!.portAllocated, true)
+  assert.ok(w.buildings.some((b) => b.owner === 0 && b.type === "mosque"))
+  assert.equal(irrigate(w), true)
+  const mosque = w.buildings.find((b) => b.owner === 0 && b.type === "mosque")!
+  mosque.done = true
+  mosque.construct = mosque.constructMax
+  w.campaign!.portIntegrated = true
+  assert.equal(takeLoan(w), true)
+  assert.equal(w.campaign!.templeDebt, 1)
+  w.players[0].relics = 1
+  assert.equal(repayLoan(w), true)
+  assert.equal(w.campaign!.templeDebt, 0)
+  tick(w)
+  assert.equal(w.winner, 0)
+  assert.equal(w.campaign?.veteranArmy, true)
+  assert.equal(w.campaign?.phase, "victory")
+})
+
+test("Konerinmaikondan: two grain caravans can replace irrigation tanks", () => {
+  const w = createCampaignWorld("edicts")
+  beginMission(w)
+  w.players[0].grain = 400
+  w.players[0].ore = 80
+  fundKonerin(w)
+  fundKonerin(w)
+  allocatePort(w, "arab")
+  const mosque = w.buildings.find((b) => b.owner === 0 && b.type === "mosque")!
+  mosque.done = true
+  mosque.construct = mosque.constructMax
+  w.campaign!.portIntegrated = true
+  assert.equal(sendCaravan(w), true)
+  assert.equal(sendCaravan(w), true)
+  const hall = w.buildings.find((b) => b.owner === 0 && b.type === "hearth")!
+  for (const s of w.campaign!.convoys) {
+    s.x = hall.x
+    s.y = hall.y
+  }
+  for (let i = 0; i < 8 && w.winner === null; i++) tick(w)
+  assert.equal(w.winner, 0)
+  assert.ok((w.campaign?.grainCaravans ?? 0) >= 2)
+})
+
+test("Konerinmaikondan: empty granaries lose the drought", () => {
+  const w = createCampaignWorld("edicts")
+  beginMission(w)
+  w.players[0].grain = 0
+  tick(w)
+  assert.equal(w.winner, 1)
+  assert.equal(w.campaign?.phase, "defeat")
+})
+
+test("Konerinmaikondan: Nadu revolt at full unrest", () => {
+  const w = createCampaignWorld("edicts")
+  beginMission(w)
+  w.campaign!.unrest = 100
+  w.players[0].grain = 200
+  tick(w)
+  assert.equal(w.winner, 1)
+})
+
+test("edicts victory carries a veteran army onto Palk", () => {
+  const w = createCampaignWorld("palk", undefined, { veteranArmy: true })
+  beginMission(w)
+  assert.ok(w.units.some((u) => u.owner === 0 && u.type === "rowther"))
+  assert.ok(w.units.filter((u) => u.owner === 0 && u.type === "guard").length >= 3)
+})
+
+test("markVictory persists Konerin, debt, and veteran army", () => {
+  let file = emptyFile()
+  file = markVictory(file, file.slots[0]!.id, "edicts", {
+    veteranArmy: true,
+    templeDebt: 1,
+    konerin: 56,
+    portIntegrated: true,
+  })
+  const slot = file.slots[0]!
+  assert.equal(slot.veteranArmy, true)
+  assert.equal(slot.templeDebt, 1)
+  assert.equal(slot.konerin, 56)
+  assert.equal(slot.portIntegrated, true)
 })
 
 test("campaign tick stays cheap on Kayal", () => {

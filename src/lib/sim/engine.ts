@@ -8,7 +8,13 @@ import {
   type BuildingType,
   type UnitType,
 } from "./catalog"
-import { campaignHitBonus, campaignSpeed, tickCampaign, type CampaignRuntime } from "./campaign"
+import {
+  campaignConstructBonus,
+  campaignHitBonus,
+  campaignSpeed,
+  tickCampaign,
+  type CampaignRuntime,
+} from "./campaign"
 import {
   contestNodes,
   hallPositions,
@@ -691,7 +697,7 @@ function tickUnit(w: World, u: Unit) {
     const reach = BUILDING_STATS[b.type].radius + 0.7
     if (dist(u.x, u.y, b.x, b.y) > reach) steer(u, b.x, b.y, speed, w.buildings, w.size)
     else {
-      b.construct += DT * 1.15
+      b.construct += DT * 1.15 * campaignConstructBonus(w)
       if (b.construct >= b.constructMax) {
         b.done = true
         b.hp = b.hpMax

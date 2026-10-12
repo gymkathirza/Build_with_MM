@@ -18,11 +18,25 @@ Not an ascetic spiritual journey. Royal religious patronage, faction diplomacy, 
 
 ---
 
-## Four plates, in order
+## Five plates, in order
 
-Sealed until the previous victory. One local chronicle on this device.
+Sealed until the previous victory. One local chronicle on this device. Yuvaraja administrative years (1251–1268) are plate 1; the war chronicle begins at Kayal.
 
-### 1. Kayal Under Sail — Marzban Coalition
+Chronicles that already hold a Kayal victory without **edicts** still open Palk — the Yuvaraja plate is new, not a lock on older wax.
+
+### 1. Konerinmaikondan — Yuvaraja Years
+
+**c. 1251–1268, Kayal of Manon Mani and Masila Mani.** Seventeen years as co-ruler with **Jatavarman Sundara Pandyan I**. Not idle palace years: Nadu and Sabha assemblies, joint edicts, Sonagar commerce, drought logistics, and temple books. The prince’s word on a decree carries the title **Konerinmaikondan** — King Without Equal.
+
+- **Win:** raise Konerinmaikondan prestige to 50, finish Port Integration (Sonakarpalli mosque standing), and survive the drought (irrigation tanks **or** two grain caravans home).
+- **Lose:** the hearth falls, grain runs out before the tanks hold, or the Nadu rebels (unrest 100).
+- **Mechanics:**
+  - **Bureaucracy Tree.** Grain seals Konerinmaikondan. High prestige bypasses assembly vetoes and speeds construction.
+  - **Port Integration.** Allocate crown land to **Sonagars** (Arab traders, Ore) or a Chinese merchant faction (Timber). Traditionalist advisors protest. Mosque construction ticks on its own; finish it for elite deep-sea lanes later.
+  - **Supply Chain.** Drought drains Grain and raises unrest until irrigation tanks (Timber + Grain) hold. Grain caravans from the inland breadbasket can substitute.
+  - **Bank of Madurai.** Emergency loans from temple gold with **Aiyan Malavarayan**. Repay with Relics or Grain, or morale cracks on this plate and the next. Success carries a **veteran army** onto Storm of Subhagiri.
+
+### 2. Kayal Under Sail — Marzban Coalition
 
 **1268s, the estuary of Manon Mani and Masila Mani. Yuvaraja no longer.** The father’s shadow still sits on Madurai. Appoint **Takiuddin Abdur Rahman** (Al-Tibi, Persian Gulf) as Prime Minister and port governor over Kayal, Kulasekharapatnam, Fattan, and Malifattan. Co-sign the old Yuvaraja orders for veteran banners.
 
@@ -32,7 +46,7 @@ Malabar corsairs cut the horse ships out of **Hormuz** and **Aden**. You hold th
 - **Lose:** three convoys sink, or the Kayal hearth falls.
 - **Mechanics:** **Yuvaraja / shadow of the father** — Grain co-signs orders, raises the Yuvaraja meter, and calls a veteran guard. Dual loyalty — **Manigramam** versus **Anjuvannam**. Fund both to unlock **Marzban escorts**. Blend **Pandya dhoni** with armed Arab merchant hulls. CSI starts here: fund the mosque, or trade stays thin.
 
-### 2. Storm of Subhagiri — Relic Diplomacy
+### 3. Storm of Subhagiri — Relic Diplomacy
 
 **Late 1270s, Palk Strait — Manon Mani’s crossing, Masila Mani’s war.** The five brother kings still share the house. **Bhuvanaikabahu I** and **Savakanmaindan** sit astride the strait. **Jaffna** watches. General **Kulasekara Cinkaiariyan Aryachakravarti** lands, storms **Subhagiri (Yapahuwa)**, and takes the **Sacred Tooth Relic of the Buddha** toward Madurai.
 
@@ -45,7 +59,7 @@ Capture first: the enemy host is debuffed while the relic is in Pandya hands. Th
 - **Lose:** the landing hearth is razed before the choice is sealed.
 - **Mechanics:** naval landing, cliff fortress, multi-stage relic quest. Keep or return both lower later pirate spawn; return stretches it further and pays tribute on later plates.
 
-### 3. Lights on the Tamraparani — Divine Patronage
+### 4. Lights on the Tamraparani — Divine Patronage
 
 Marco Polo names **five brother kings**. **Confederacy System:** seat **Jatavarman Vira Pandyan I** (west), **Maravarman Vikkiraman III** (administration from ~1283), and **Jatavarman Sundara Pandyan II** (interior from 1277). Loyalty boosts stability; neglect stagnates those regions (unrest, Grain drip).
 
@@ -62,7 +76,7 @@ Personal lean: **Shaivism**. Pragmatic funding of **Vaishnavism** for domain uni
 - **Lose:** Kayal hearth falls, or six pearl divers are taken by sharks.
 - **Mechanics:** lighthouses, charmers, Rowther. **Divine Patronage** — Shaiva and Vaishnava meters; unrest falls, loyalty rises, localized combat buffs beside a standing temple.
 
-### 4. The Fracture — two queens, patricide, civil war, Malik Kafur
+### 5. The Fracture — two queens, patricide, civil war, Malik Kafur
 
 Two queens, two sons. **1296:** **Jatavarman Vira Pandya II** (elder illegitimate son of a favored consort, the better commander) named primary co-regent. **1303:** **Jatavarman Sundara Pandyan III** (legitimate son of the primary queen) given only a secondary co-regency.
 
@@ -82,9 +96,9 @@ The **Cosmopolitan Stability Index** is the coast’s weather. Confederacy seats
 
 Home → **Campaign** → pick a chronicle plate → briefing → **March**.
 
-Empty chronicles offer **Begin Kayal Under Sail**. The **House of the Twin-Fish** profiles sit on the campaign table (father, mother, four brothers, two heirs, Aryachakravarti). A damaged seal (corrupt save) can be recast. Victory unlocks the next plate. Defeat returns you to the same briefing. After Yapahuwa, a **Relic Diplomacy** overlay asks keep or return. After March on the Fracture, a **Patricide** overlay raises Vira. Desktop: two-column chapter cards plus profile grid. Mobile: stacked plates, full-width March.
+Empty chronicles offer **Begin Konerinmaikondan**. The **House of the Twin-Fish** profiles sit on the campaign table (father, mother, four brothers, two heirs, Aryachakravarti, Aiyan Malavarayan). A damaged seal (corrupt save) can be recast. Victory unlocks the next plate. Defeat returns you to the same briefing. After Yapahuwa, a **Relic Diplomacy** overlay asks keep or return. After March on the Fracture, a **Patricide** overlay raises Vira. Desktop: two-column chapter cards plus profile grid. Mobile: stacked plates, full-width March.
 
-Match URL: `/match?source=campaign&mission=kayal` (then `palk`, `tamraparani`, `fracture`).
+Match URL: `/match?source=campaign&mission=edicts` (then `kayal`, `palk`, `tamraparani`, `fracture`).
 
 ---
 
@@ -94,7 +108,11 @@ All of this is extra state on the existing tick. Skirmish worlds never allocate 
 
 | Lever | What it does |
 |---|---|
-| Yuvaraja | Grain co-signs father’s orders. Raises Yuvaraja meter; veteran guard; combat buff at 50. |
+| Bureaucracy Tree / Konerinmaikondan | Grain seals joint edicts. Prestige ≥ 50 bypasses Nadu/Sabha vetoes and speeds construction. |
+| Port Integration | Crown land to Sonagars or Chinese merchants at Sonakarpalli. Mosque auto-constructs; traditionalists revolt if prestige is thin. |
+| Supply Chain | Drought drains Grain. Irrigation tanks or two grain caravans. Success: veteran army on Palk. |
+| Bank of Madurai | Temple gold loans with Aiyan Malavarayan. Repay with Relics or Grain, or loyalty falls and unrest rises. |
+| Yuvaraja | Grain co-signs father’s orders on Kayal. Raises Yuvaraja meter; veteran guard; combat buff at 50. |
 | Confederacy System | Seat Vira I (Ore), Vikkiraman (Grain), Sundara II (Timber). Average ≥ 60 feeds CSI and Grain. Average < 28 stagnates (unrest, Grain drip). |
 | Dual loyalty | Grain funds Manigramam; ore funds Anjuvannam. Both ≥ 50 unlocks Marzban escorts. |
 | Horse convoys | Lightweight hulls. Slow if CSI is starved. |
@@ -112,7 +130,7 @@ Renderer: CC0 campaign cards blit onto quay, hulls, Rowther, relic, pearls, ligh
 
 ## States
 
-- **Empty** — blank chronicle. Inscribe Kayal of Manon Mani and Masila Mani.
+- **Empty** — blank chronicle. Inscribe Konerinmaikondan at Kayal of Manon Mani and Masila Mani.
 - **Briefing** — paused sim, historical beat, house line, win/lose lines, March.
 - **Patricide** — 1308 overlay; Take Vira’s banners. Sim paused.
 - **Diplomacy** — Tooth Relic captured; keep or return. Sim paused.
@@ -123,7 +141,7 @@ Renderer: CC0 campaign cards blit onto quay, hulls, Rowther, relic, pearls, ligh
 
 ## Constraints honored
 
-Original engine IP (Hearth Hall, Banner Yard, Ember/Forge language stays on the HUD). Campaign copy uses Kayal, Madurai, Tharangambadi, Masilamaninathar, Tirunelveli, Srirangam, Tiruchendur, Tirukkadaiyur, Yapahuwa, Jaffna, Palk Strait, Takiuddin Abdur Rahman, Aryachakravarti, Parakramabahu III, Jatavarman Sundara Pandyan I, Hemkatna Raja Lakshmi, Jatavarman Vira Pandyan I, Maravarman Vikkiraman III, Jatavarman Sundara Pandyan II, Jatavarman Vira Pandya II, Jatavarman Sundara Pandyan III, Malik Kafur. Spell the general **Aryachakravarti**, never Aryacakravarti. **Manon Mani** (pearl/sea) is paired with **Masila Mani** (temple/sovereign) in game details, scripts, and every named place.
+Original engine IP (Hearth Hall, Banner Yard, Ember/Forge language stays on the HUD). Campaign copy uses Kayal, Madurai, Tharangambadi, Masilamaninathar, Tirunelveli, Srirangam, Tiruchendur, Tirukkadaiyur, Yapahuwa, Jaffna, Palk Strait, Takiuddin Abdur Rahman, Aryachakravarti, Parakramabahu III, Jatavarman Sundara Pandyan I, Hemkatna Raja Lakshmi, Jatavarman Vira Pandyan I, Maravarman Vikkiraman III, Jatavarman Sundara Pandyan II, Jatavarman Vira Pandya II, Jatavarman Sundara Pandyan III, Malik Kafur, Konerinmaikondan, Sonakarpalli, Sonagars, Aiyan Malavarayan. Spell the general **Aryachakravarti**, never Aryacakravarti. **Manon Mani** (pearl/sea) is paired with **Masila Mani** (temple/sovereign) in game details, scripts, and every named place.
 
 ---
 
@@ -133,6 +151,8 @@ Thirteen original 1024×1024 PNGs from `media/mkp1/` (catalog `docs/mkp1-artifac
 
 | Use | Asset |
 |---|---|
+| Konerinmaikondan card / quay | kayal-dockyard |
+| Konerinmaikondan briefing | trade-routes |
 | Kayal card / quay | kayal-dockyard |
 | Kayal briefing | trade-routes |
 | Palk card | palk-strait-chart |

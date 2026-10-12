@@ -2,11 +2,11 @@ export const CAMPAIGN_ID = "twin-fish-reign"
 export const CAMPAIGN_TITLE = "Twin-Fish Reign"
 export const CAMPAIGN_STEWARD = "Maravarman Kulasekara Pandyan I"
 
-export type MissionId = "kayal" | "palk" | "tamraparani" | "fracture"
+export type MissionId = "edicts" | "kayal" | "palk" | "tamraparani" | "fracture"
 
 export type CampaignMission = {
   id: MissionId
-  number: 1 | 2 | 3 | 4
+  number: 1 | 2 | 3 | 4 | 5
   arc: string
   title: string
   year: string
@@ -22,8 +22,24 @@ export type CampaignMission = {
 
 export const CAMPAIGN_MISSIONS: CampaignMission[] = [
   {
-    id: "kayal",
+    id: "edicts",
     number: 1,
+    arc: "Yuvaraja Years",
+    title: "Konerinmaikondan",
+    year: "c. 1251–1268",
+    map: "kayal",
+    faction: "pandya",
+    enemy: "malabar",
+    duration: "short",
+    briefing:
+      "Seventeen years as co-ruler with Jatavarman Sundara Pandyan I. Work the Nadu and Sabha. Joint edicts carry the title Konerinmaikondan — King Without Equal — so the prince’s word stands as royal law. Back Sonakarpalli mosques with the Sonagars at Kayal of Manon Mani and Masila Mani. Keep grain moving when the breadbasket dries. Coordinate temple gold with Aiyan Malavarayan: the Bank of Madurai will lend, and it will collect.",
+    win: "Raise Konerinmaikondan prestige, finish Port Integration, and survive the drought.",
+    lose: "The hearth falls, grain runs out, or the Nadu rebels.",
+    objective: "Edicts, Sonakarpalli, grain road, temple books",
+  },
+  {
+    id: "kayal",
+    number: 2,
     arc: "The Marzban Coalition",
     title: "Kayal Under Sail",
     year: "c. 1268–1270",
@@ -39,7 +55,7 @@ export const CAMPAIGN_MISSIONS: CampaignMission[] = [
   },
   {
     id: "palk",
-    number: 2,
+    number: 3,
     arc: "Preemptive Strike",
     title: "Storm of Subhagiri",
     year: "Late 1270s",
@@ -55,7 +71,7 @@ export const CAMPAIGN_MISSIONS: CampaignMission[] = [
   },
   {
     id: "tamraparani",
-    number: 3,
+    number: 4,
     arc: "Port Defense",
     title: "Lights on the Tamraparani",
     year: "c. 1288–1293",
@@ -71,7 +87,7 @@ export const CAMPAIGN_MISSIONS: CampaignMission[] = [
   },
   {
     id: "fracture",
-    number: 4,
+    number: 5,
     arc: "The Fracture",
     title: "Kayal Open to Kafur",
     year: "1308",

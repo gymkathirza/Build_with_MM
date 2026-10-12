@@ -49,6 +49,7 @@ import { personaById } from "@/lib/sim/personas"
 import { missionById } from "@/lib/campaign/missions"
 import { loadFile, markVictory, writeFile } from "@/lib/campaign/save"
 import {
+  allocatePort,
   beginMission,
   campaignBuildTypes,
   chooseRelic,
@@ -58,8 +59,13 @@ import {
   fundBrother,
   fundCosmopolitan,
   fundGuild,
+  fundKonerin,
   fundPatronage,
   fundYuvaraja,
+  irrigate,
+  repayLoan,
+  sendCaravan,
+  takeLoan,
 } from "@/lib/sim/campaign"
 import { CAMPAIGN_ART, missionArt } from "@/lib/campaign/artifacts"
 import { CONFEDERACY_BROTHERS, FAMILY_BEAT } from "@/lib/campaign/family"
@@ -139,6 +145,10 @@ export function MatchView({
       return createCampaignWorld(mission.id, tuned.ai, {
         pirateScale,
         relicChoice: slot?.relicChoice ?? null,
+        veteranArmy: slot?.veteranArmy,
+        templeDebt: slot?.templeDebt,
+        konerin: slot?.konerin,
+        portIntegrated: slot?.portIntegrated,
       })
     }
     return createWorld(factionId, enemyFaction, tuned.ai, { mapId, persona: personaId })
@@ -163,7 +173,13 @@ export function MatchView({
     if (winner !== 0 || !mission) return
     const cur = loadFile()
     writeFile(
-      markVictory(cur.file, slotId, mission.id, { relicChoice: world.campaign?.relicChoice ?? null }),
+      markVictory(cur.file, slotId, mission.id, {
+        relicChoice: world.campaign?.relicChoice ?? null,
+        veteranArmy: world.campaign?.veteranArmy,
+        templeDebt: world.campaign?.templeDebt,
+        konerin: world.campaign?.konerin,
+        portIntegrated: world.campaign?.portIntegrated,
+      }),
     )
   }, [winner, mission, slotId, world.campaign?.relicChoice])
 
@@ -439,7 +455,7 @@ export function MatchView({
       <div className="flex h-dvh flex-col items-center justify-center bg-[#140e0a] px-4">
         <EmptyState
           title="This plate would not open"
-          detail="No Twin-Fish mission matches that seal. Return to Campaign and pick Kayal, Palk, Tamraparani, or the Fracture."
+          detail="No Twin-Fish mission matches that seal. Return to Campaign and pick Konerinmaikondan, Kayal, Palk, Tamraparani, or the Fracture."
           action={
             <Link href="/campaign" className={buttonVariants()}>
               Campaign
@@ -580,6 +596,95 @@ export function MatchView({
           <div className="absolute bottom-2 left-2 z-10 flex max-w-[min(22rem,92vw)] flex-col gap-1 rounded-sm border border-primary/30 bg-black/70 p-2 text-[11px] text-primary sm:top-2 sm:bottom-auto">
             <p className="font-heading tracking-widest uppercase">Objective</p>
             <p className="text-muted-foreground">{world.campaign.objective}</p>
+            {world.campaign.missionId === "edicts" ? (
+              <div className="mt-1 flex flex-wrap gap-1">
+                <span className="text-muted-foreground">
+                  Konerin {world.campaign.konerin | 0} · CSI {world.campaign.csi | 0} · unrest{" "}
+                  {world.campaign.unrest | 0} · debt {world.campaign.templeDebt}
+                  {world.campaign.portAllocated
+                    ? ` · ${world.campaign.portFaction === "chinese" ? "Chinese grant" : "Sonagar grant"}`
+                    : ""}
+                  {world.campaign.irrigated ? " · tanks" : ""}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    fundKonerin(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Seal Konerinmaikondan
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    allocatePort(world, "arab")
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Grant Sonagars
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    allocatePort(world, "chinese")
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Grant Chinese quay
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    irrigate(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Raise irrigation tanks
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    sendCaravan(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Send grain caravan
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    takeLoan(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Temple loan
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    repayLoan(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Repay Aiyan
+                </Button>
+              </div>
+            ) : null}
             {world.campaign.missionId === "kayal" ? (
               <div className="mt-1 flex flex-wrap gap-1">
                 <span className="text-muted-foreground">
@@ -643,10 +748,13 @@ export function MatchView({
                 ))}
               </div>
             ) : null}
+            {world.campaign.missionId !== "edicts" ? (
             <p className="text-muted-foreground">
               Shaiva {world.campaign.shaiva | 0} · Vaishnava {world.campaign.vaishnava | 0} · CSI{" "}
               {world.campaign.csi | 0}
             </p>
+            ) : null}
+            {world.campaign.missionId !== "edicts" ? (
             <div className="flex flex-wrap gap-1">
               <Button
                 size="sm"
@@ -693,6 +801,7 @@ export function MatchView({
                 Seat shrine
               </Button>
             </div>
+            ) : null}
             {world.campaign.night ? (
               <p className="text-destructive">Night — raise a lighthouse or the sand spawns corsairs.</p>
             ) : null}

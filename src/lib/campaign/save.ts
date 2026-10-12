@@ -11,6 +11,10 @@ export type ChronicleSlot = {
   relicSecured: boolean
   relicChoice: RelicChoiceSave | null
   started: boolean
+  veteranArmy: boolean
+  templeDebt: number
+  konerin: number
+  portIntegrated: boolean
 }
 
 export type ChronicleFile = {
@@ -18,9 +22,42 @@ export type ChronicleFile = {
 }
 
 const EMPTY_SLOTS: ChronicleSlot[] = [
-  { id: "slot-1", label: "Chronicle I", completed: [], relicSecured: false, relicChoice: null, started: false },
-  { id: "slot-2", label: "Chronicle II", completed: [], relicSecured: false, relicChoice: null, started: false },
-  { id: "slot-3", label: "Chronicle III", completed: [], relicSecured: false, relicChoice: null, started: false },
+  {
+    id: "slot-1",
+    label: "Chronicle I",
+    completed: [],
+    relicSecured: false,
+    relicChoice: null,
+    started: false,
+    veteranArmy: false,
+    templeDebt: 0,
+    konerin: 0,
+    portIntegrated: false,
+  },
+  {
+    id: "slot-2",
+    label: "Chronicle II",
+    completed: [],
+    relicSecured: false,
+    relicChoice: null,
+    started: false,
+    veteranArmy: false,
+    templeDebt: 0,
+    konerin: 0,
+    portIntegrated: false,
+  },
+  {
+    id: "slot-3",
+    label: "Chronicle III",
+    completed: [],
+    relicSecured: false,
+    relicChoice: null,
+    started: false,
+    veteranArmy: false,
+    templeDebt: 0,
+    konerin: 0,
+    portIntegrated: false,
+  },
 ]
 
 export function emptyFile(): ChronicleFile {
@@ -46,6 +83,10 @@ function normalize(raw: unknown): ChronicleFile | null {
         relicSecured: s.relicSecured === true,
         relicChoice: s.relicChoice === "keep" || s.relicChoice === "return" ? s.relicChoice : null,
         started: s.started === true || completed.length > 0,
+        veteranArmy: s.veteranArmy === true,
+        templeDebt: typeof s.templeDebt === "number" && s.templeDebt > 0 ? Math.min(4, Math.floor(s.templeDebt)) : 0,
+        konerin: typeof s.konerin === "number" && s.konerin > 0 ? Math.min(100, Math.floor(s.konerin)) : 0,
+        portIntegrated: s.portIntegrated === true,
       }
     }),
   }
@@ -78,6 +119,10 @@ export function clearFile() {
 export function isUnlocked(slot: ChronicleSlot, missionId: MissionId) {
   const i = CAMPAIGN_MISSIONS.findIndex((m) => m.id === missionId)
   if (i <= 0) return true
+  if (slot.completed.includes(missionId)) return true
+  if (missionId === "kayal") {
+    return slot.completed.includes("edicts") || slot.completed.includes("palk")
+  }
   return slot.completed.includes(CAMPAIGN_MISSIONS[i - 1]!.id)
 }
 
@@ -85,7 +130,13 @@ export function markVictory(
   file: ChronicleFile,
   slotId: string,
   missionId: MissionId,
-  extras?: { relicChoice?: RelicChoiceSave | null },
+  extras?: {
+    relicChoice?: RelicChoiceSave | null
+    veteranArmy?: boolean
+    templeDebt?: number
+    konerin?: number
+    portIntegrated?: boolean
+  },
 ): ChronicleFile {
   return {
     slots: file.slots.map((s) => {
@@ -98,6 +149,10 @@ export function markVictory(
         completed,
         relicSecured: s.relicSecured || missionId === "palk",
         relicChoice: missionId === "palk" ? relicChoice : s.relicChoice,
+        veteranArmy: extras?.veteranArmy ?? s.veteranArmy,
+        templeDebt: extras?.templeDebt ?? s.templeDebt,
+        konerin: extras?.konerin ?? s.konerin,
+        portIntegrated: extras?.portIntegrated ?? s.portIntegrated,
       }
     }),
   }
