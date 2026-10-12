@@ -25,7 +25,7 @@ function ownerFarOutposts(w: World, owner: Owner) {
     (b) =>
       b.owner === owner &&
       b.done &&
-      (b.type === "camp" || b.type === "pit" || b.type === "granary") &&
+      (b.type === "camp" || b.type === "pit" || b.type === "granary" || b.type === "yard") &&
       Math.hypot(b.x - h.x, b.y - h.y) > 16,
   )
 }
@@ -643,10 +643,13 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         Math.hypot(b.x - h.x, b.y - h.y) > 16,
     )
     const farPit = farSites.find((b) => b.type === "pit")
+    const farGranary = farSites.find((b) => b.type === "granary")
     if (farLodge && spareRider) {
       issueDefend(w, [spareRider.id], farLodge.x, farLodge.y)
     } else if (farPit && spareRider) {
       issueDefend(w, [spareRider.id], farPit.x, farPit.y)
+    } else if (farGranary && spareRider) {
+      issueDefend(w, [spareRider.id], farGranary.x, farGranary.y)
     } else if (farCamp && spareRider) {
       issueDefend(w, [spareRider.id], farCamp.x, farCamp.y)
     }

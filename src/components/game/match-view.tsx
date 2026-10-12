@@ -803,7 +803,7 @@ function Selection({
         levies hop to the next nearest of that job; a right-click lock holds the node you picked.
         Ashriders ride first. A lone rider scouts an empty hearth. Three riders hook an empty
         hearth. Idle levies walk a relic if no
-        scout is free. A spare levy crews a far camp, pit, or granary. A third warden overwatches
+        scout is free. A spare levy crews a far camp, pit, granary, or yard. A third warden overwatches
         the camp. A fourth ashrider patrols a far lodge or pit; a third warden overwatches the lodge or pit. A far timber, ore, or grain haul draws a banner. A relic levy does not steal that crew; a spare banner walks with them. Pressed
         camps, pits, yards, and lodges draw a sentry.
         Recall walks banners home. Wounded ashriders and wardens peel to the lodge. The age rite waits if the
