@@ -694,7 +694,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     const storeHauler = levies.find(
       (u) =>
         u.order.t === "return" &&
-        (u.carry?.res === "timber" || u.carry?.res === "ore") &&
+        (u.carry?.res === "timber" || u.carry?.res === "ore" || u.carry?.res === "grain") &&
         Math.hypot(u.x - h.x, u.y - h.y) > 16,
     )
     const storeEscort =
