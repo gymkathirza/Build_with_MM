@@ -711,6 +711,22 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
           )
         : undefined
     if (hunter && huntGuard) issueDefend(w, [huntGuard.id], hunter.x, hunter.y)
+    const deerHunter = levies.find((u) => {
+      const order = u.order
+      if (order.t !== "gather") return false
+      const n = w.nodes.find((q) => q.id === order.node)
+      return n?.fauna === "deer"
+    })
+    const deerGuard =
+      deerHunter && guards.length >= 5
+        ? military.find(
+            (u) =>
+              u.type === "guard" &&
+              !garrison.some((g) => g.id === u.id) &&
+              (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+          )
+        : undefined
+    if (deerHunter && deerGuard) issueDefend(w, [deerGuard.id], deerHunter.x, deerHunter.y)
     const storeHauler = levies.find(
       (u) =>
         u.order.t === "return" &&
