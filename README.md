@@ -19,8 +19,8 @@ npm run dev
 
 Open [http://127.0.0.1:43147](http://127.0.0.1:43147) (port **43147**, not 3000).
 
-1. Skirmish
-2. **Vast Mere** is selected by default (huge plate, pop 100). Click any other named plate — the preview and March URL must change.
+1. **Campaign** — Twin-Fish Reign (Maravarman Kulasekara Pandyan I). Five timeline plates: Yuvaraja (1251–1268), Kayal emporium from 1268, Chola end and Aryachakravarti’s island war, five brother kings / Relic Diplomacy, then 1296–1323 fracture.
+2. **Skirmish** — **Vast Mere** is selected by default (huge plate, pop 100). Click any other named plate — the preview and March URL must change.
 3. Pick a rival persona, then **March**.
 4. WASD pan, wheel zoom, left-select, right-order. Relics use the clam-and-pearl icon.
 
@@ -42,6 +42,7 @@ npm run benchmark      # wall-clock hour: BENCH_MINUTES=60 npm run benchmark
 
 ## What Alpha includes
 
+- Playable campaign: Twin-Fish Reign, five timeline missions from Yuvaraja years to Malik Kafur.
 - Playable skirmish on six maps (Lost Cartograph stays sealed).
 - Nine AI personas (challenging through random-dominant).
 - Observatory FPS / sim / input latency plus gather hop / idle / wrong-node counts, posted to `/api/obs` for the tuner.

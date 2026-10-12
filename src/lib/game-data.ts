@@ -1,6 +1,8 @@
 export const GAME_TITLE = "Build with Manon Mani"
 export const GAME_SHORT = "Manon Mani"
-export const GAME_TAGLINE = "Four banners. Four epochs. One treaty left to break."
+export const GAME_PAIR = "Manon Mani and Masila Mani"
+export const GAME_TAGLINE =
+  "Manon Mani’s pearl sea beside Masila Mani’s temple shore. Twin-fish of Madurai."
 export const GAME_VERSION = "0.1.0-alpha"
 export const GAME_CHANNEL = "Alpha pre-release"
 
@@ -56,6 +58,51 @@ export type ResourceId = (typeof RESOURCES)[number]["id"]
 
 export const FACTIONS = [
   {
+    id: "pandya",
+    name: "Pandya Empire",
+    epithet: "Twin-fish of Madurai",
+    motto: "The Tamraparani remembers.",
+    summary:
+      "Maravarman Kulasekara Pandyan I’s banners — Yuvaraja, then five brother kings. Pearl licenses, horse roads, and the Kayal quay of Manon Mani and Masila Mani.",
+    bonus: "Dhoni run faster on water. Guild gifts unlock Marzban escorts.",
+    color: "#c45c2a",
+    accent: "#f0b27a",
+    skirmish: false,
+  },
+  {
+    id: "malabar",
+    name: "Malabar Corsairs",
+    epithet: "Cutters of the horse road",
+    motto: "The monsoon hides our keels.",
+    summary: "Pirates off the Malabar coast who hunt Hormuz and Aden horse ships.",
+    bonus: "Night spawns on unlit sand.",
+    color: "#6a2a32",
+    accent: "#d48a8a",
+    skirmish: false,
+  },
+  {
+    id: "lanka",
+    name: "Subhagiri Host",
+    epithet: "Bhuvanaikabahu and Savakanmaindan",
+    motto: "The strait is a gate, not a road.",
+    summary: "Sri Lankan banners holding Palk Strait and the cliff of Yapahuwa.",
+    bonus: "Cliff fortress hit points.",
+    color: "#2f6a45",
+    accent: "#9dcf8a",
+    skirmish: false,
+  },
+  {
+    id: "delhi",
+    name: "Kafur’s Host",
+    epithet: "Delhi Sultanate vanguard",
+    motto: "Kayal will open.",
+    summary: "Malik Kafur’s northern pressure on a fractured Pandya coast.",
+    bonus: "Timed waves from the dry north.",
+    color: "#5a3a78",
+    accent: "#c4a8e0",
+    skirmish: false,
+  },
+  {
     id: "ashen",
     name: "Ashen Compact",
     epithet: "Highland forge-clans",
@@ -65,6 +112,7 @@ export const FACTIONS = [
     bonus: "Forge halls produce Banner Guard 15% faster. Ore pits near lava seams yield extra.",
     color: "#c45c2a",
     accent: "#f0b27a",
+    skirmish: true,
   },
   {
     id: "verdant",
@@ -76,6 +124,7 @@ export const FACTIONS = [
     bonus: "Timber regenerates on claimed groves. Reliquaries research rites at half grain cost.",
     color: "#2f6a45",
     accent: "#9dcf8a",
+    skirmish: true,
   },
   {
     id: "saltwind",
@@ -87,6 +136,7 @@ export const FACTIONS = [
     bonus: "Tide Slips build one age early. Cavalry ignore shallow-water slow.",
     color: "#2a6d7a",
     accent: "#8fd4dc",
+    skirmish: true,
   },
   {
     id: "gilded",
@@ -98,6 +148,7 @@ export const FACTIONS = [
     bonus: "Markets mint Relics from surplus Grain. Age rites cost less Ore.",
     color: "#b8862b",
     accent: "#f3d48a",
+    skirmish: true,
   },
 ] as const
 
@@ -167,6 +218,42 @@ export const MAPS = [
     players: 0,
     status: "error" as const,
   },
+  {
+    id: "kayal",
+    name: "Kayal Estuary",
+    size: "Medium",
+    terrain: "Tamraparani mouth, monsoon shelter, horse quay",
+    notes: "Campaign plate. Palayakayal after Korkai silted.",
+    players: 2,
+    status: "campaign" as const,
+  },
+  {
+    id: "palk",
+    name: "Palk Strait",
+    size: "Medium",
+    terrain: "Naval lane, Yapahuwa cliff, landing beach",
+    notes: "Campaign plate. Subhagiri and the Tooth Relic.",
+    players: 2,
+    status: "campaign" as const,
+  },
+  {
+    id: "tamraparani",
+    name: "Tamraparani Lights",
+    size: "Medium",
+    terrain: "Estuary, pearl grounds, beach approaches",
+    notes: "Campaign plate. Lighthouses toward Kulasekharapatnam and Manapad.",
+    players: 2,
+    status: "campaign" as const,
+  },
+  {
+    id: "madurai-fracture",
+    name: "Madurai Fracture",
+    size: "Medium",
+    terrain: "Inland camp, Kayal on the east water",
+    notes: "Campaign plate. Vira, Sundara, and Malik Kafur.",
+    players: 2,
+    status: "campaign" as const,
+  },
 ] as const
 
 export type MapId = (typeof MAPS)[number]["id"]
@@ -203,76 +290,64 @@ export type DifficultyId = (typeof DIFFICULTIES)[number]["id"]
 
 export const CAMPAIGN_CHAPTERS = [
   {
-    id: "hearth",
+    id: "edicts",
     number: 1,
-    title: "The Last Hearth",
-    act: "Act I — Kindling",
+    title: "Konerinmaikondan",
+    act: "Yuvaraja Years",
     synopsis:
-      "Winter takes the upland villages. Hold Emberglass Pass long enough for the Compact to light a second forge.",
+      "Yuvaraja 1251–1268. Konerinmaikondan, academies, Bank of Madurai, Sonakarpalli, drought drill.",
     unlocked: true,
-    duration: "22 min",
-    faction: "ashen" as FactionId,
-    map: "emberglass" as MapId,
+    duration: "short",
+    faction: "pandya" as FactionId,
+    map: "kayal" as MapId,
   },
   {
-    id: "ash-wind",
+    id: "kayal",
     number: 2,
-    title: "Ash on the Wind",
-    act: "Act I — Kindling",
+    title: "Kayal Under Sail",
+    act: "Kayal Emporium",
     synopsis:
-      "A Conclave embassy arrives with timber and terms. Escort them through Nightgrove before the Khanate riders close the river.",
-    unlocked: true,
-    duration: "28 min",
-    faction: "verdant" as FactionId,
-    map: "nightgrove" as MapId,
+      "From 1268: dredge the Tamraparani, light Manapad, raise Palayam, seat Al-Tibi, escort horse-ships.",
+    unlocked: false,
+    duration: "short",
+    faction: "pandya" as FactionId,
+    map: "kayal" as MapId,
   },
   {
-    id: "salt-treaty",
+    id: "palk",
     number: 3,
-    title: "Treaty of Salt",
-    act: "Act II — Accord",
+    title: "Storm of Subhagiri",
+    act: "Chola End and Island War",
     synopsis:
-      "On the Shattercoast, three banners try to write peace in tide-ink. The fourth is already landing.",
-    unlocked: true,
-    duration: "34 min",
-    faction: "saltwind" as FactionId,
-    map: "shattercoast" as MapId,
+      "1279 ends the Chola line. Aryachakravarti storms Yapahuwa and takes the Tooth Relic.",
+    unlocked: false,
+    duration: "short",
+    faction: "pandya" as FactionId,
+    map: "palk" as MapId,
   },
   {
-    id: "grove-burns",
+    id: "tamraparani",
     number: 4,
-    title: "The Grove Burns",
-    act: "Act II — Accord",
+    title: "Five Brother Kings",
+    act: "Relic Diplomacy",
     synopsis:
-      "Relic-fire catches in the old rings. Choose which groves to drown, and which to let become ash.",
+      "Marco Polo names five brother kings. Seat the Confederacy, then keep or return the Tooth Relic.",
     unlocked: false,
-    duration: "31 min",
-    faction: "verdant" as FactionId,
-    map: "nightgrove" as MapId,
+    duration: "short",
+    faction: "pandya" as FactionId,
+    map: "tamraparani" as MapId,
   },
   {
-    id: "reliquary-night",
+    id: "fracture",
     number: 5,
-    title: "Reliquary Night",
-    act: "Act III — Dominion",
+    title: "Kayal Open to Kafur",
+    act: "The Fracture",
     synopsis:
-      "The Synod opens a sun vault under Hollowmere. Whatever is inside does not honour the accord.",
+      "1296–1323: Vira co-regent, Sundara second, 1308 patricide, then Malik Kafur.",
     unlocked: false,
-    duration: "40 min",
-    faction: "gilded" as FactionId,
-    map: "hollowmere" as MapId,
-  },
-  {
-    id: "dominion-price",
-    number: 6,
-    title: "Dominion's Price",
-    act: "Act III — Dominion",
-    synopsis:
-      "Four ages later, the same four banners meet on Sunvault Dunes to decide whether the treaty was ever real.",
-    unlocked: false,
-    duration: "48 min",
-    faction: "gilded" as FactionId,
-    map: "sunvault" as MapId,
+    duration: "short",
+    faction: "pandya" as FactionId,
+    map: "madurai-fracture" as MapId,
   },
 ] as const
 

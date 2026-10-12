@@ -8,6 +8,10 @@ export const UNIT_STATS = {
   guard: { hp: 75, atk: 8, armor: 2, range: 1.8, speed: 8.5, pop: 1, cd: 1.05 },
   ashrider: { hp: 110, atk: 12, armor: 1, range: 1.7, speed: 15, pop: 2, cd: 1.0 },
   warden: { hp: 55, atk: 9, armor: 0, range: 7.5, speed: 10, pop: 1, cd: 1.2 },
+  dhoni: { hp: 70, atk: 6, armor: 1, range: 5.5, speed: 13, pop: 2, cd: 1.15 },
+  marzban: { hp: 95, atk: 10, armor: 2, range: 2.0, speed: 10, pop: 1, cd: 1.0 },
+  corsair: { hp: 52, atk: 7, armor: 0, range: 1.7, speed: 12.5, pop: 1, cd: 1.0 },
+  rowther: { hp: 120, atk: 13, armor: 1, range: 1.8, speed: 16, pop: 2, cd: 0.95 },
 } as const
 
 export type UnitType = keyof typeof UNIT_STATS
@@ -19,6 +23,11 @@ export const BUILDING_STATS = {
   camp: { hp: 500, radius: 2.0, pop: 0 },
   pit: { hp: 500, radius: 2.0, pop: 0 },
   granary: { hp: 450, radius: 2.0, pop: 0 },
+  lighthouse: { hp: 520, radius: 2.0, pop: 0 },
+  charm: { hp: 420, radius: 1.8, pop: 0 },
+  quay: { hp: 700, radius: 2.4, pop: 0 },
+  temple: { hp: 640, radius: 2.2, pop: 0 },
+  mosque: { hp: 560, radius: 2.0, pop: 0 },
 } as const
 
 export type BuildingType = keyof typeof BUILDING_STATS
@@ -33,6 +42,15 @@ export const COSTS = {
   camp: { grain: 0, timber: 50, ore: 0, relics: 0, time: 12, pop: 0, age: 0 },
   pit: { grain: 0, timber: 60, ore: 15, relics: 0, time: 14, pop: 0, age: 0 },
   granary: { grain: 0, timber: 45, ore: 0, relics: 0, time: 12, pop: 0, age: 0 },
+  dhoni: { grain: 40, timber: 55, ore: 10, relics: 0, time: 14, pop: 2, age: 0 },
+  marzban: { grain: 50, timber: 10, ore: 35, relics: 0, time: 13, pop: 1, age: 0 },
+  corsair: { grain: 0, timber: 0, ore: 0, relics: 0, time: 8, pop: 1, age: 0 },
+  rowther: { grain: 70, timber: 15, ore: 40, relics: 0, time: 15, pop: 2, age: 0 },
+  lighthouse: { grain: 0, timber: 80, ore: 25, relics: 0, time: 16, pop: 0, age: 0 },
+  charm: { grain: 40, timber: 50, ore: 0, relics: 1, time: 14, pop: 0, age: 0 },
+  quay: { grain: 0, timber: 100, ore: 20, relics: 0, time: 18, pop: 0, age: 0 },
+  temple: { grain: 40, timber: 70, ore: 15, relics: 1, time: 16, pop: 0, age: 0 },
+  mosque: { grain: 30, timber: 60, ore: 10, relics: 1, time: 15, pop: 0, age: 0 },
   age1: { grain: 280, timber: 0, ore: 140, relics: 0, time: 22, pop: 0, age: 0 },
   upgrade: { grain: 60, timber: 50, ore: 30, relics: 0, time: 0, pop: 0, age: 1 },
 } as const
@@ -51,6 +69,10 @@ export const UNIT_LABEL: Record<UnitType, string> = {
   guard: "Banner Guard",
   ashrider: "Ashrider",
   warden: "Grove Warden",
+  dhoni: "Pandya Dhoni",
+  marzban: "Marzban Escort",
+  corsair: "Malabar Corsair",
+  rowther: "Rowther Cavalry",
 }
 
 export const BUILDING_LABEL: Record<BuildingType, string> = {
@@ -60,4 +82,9 @@ export const BUILDING_LABEL: Record<BuildingType, string> = {
   camp: "Timber Camp",
   pit: "Ore Pit",
   granary: "Granary",
+  lighthouse: "Stone Lighthouse",
+  charm: "Kadalkatti Shrine",
+  quay: "Kayal Quay",
+  temple: "Temple of Masila Mani",
+  mosque: "Sonakarpalli Mosque",
 }

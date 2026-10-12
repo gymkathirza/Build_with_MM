@@ -17,6 +17,10 @@ export const MAP_SPECS: Record<string, MapSpec> = {
   hollowmere: { id: "hollowmere", size: 170, popCap: 56, startLevies: 6, pad: 20 },
   sunvault: { id: "sunvault", size: 200, popCap: 72, startLevies: 8, pad: 24 },
   [HUGE_MAP_ID]: { id: HUGE_MAP_ID, size: 280, popCap: 100, startLevies: 12, pad: 32 },
+  kayal: { id: "kayal", size: 108, popCap: 36, startLevies: 5, pad: 14 },
+  palk: { id: "palk", size: 118, popCap: 40, startLevies: 5, pad: 16 },
+  tamraparani: { id: "tamraparani", size: 100, popCap: 32, startLevies: 5, pad: 14 },
+  "madurai-fracture": { id: "madurai-fracture", size: 124, popCap: 44, startLevies: 6, pad: 16 },
 }
 
 export function specFor(mapId: string): MapSpec {

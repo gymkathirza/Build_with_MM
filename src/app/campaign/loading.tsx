@@ -5,8 +5,8 @@ export default function Loading() {
   return (
     <CinematicShell>
       <LoadingState
-        title="Opening the chronicles"
-        detail="Wax seals and chapter plates are being sorted by act."
+        title="Opening Kayal’s chronicle"
+        detail="Timeline plates: Yuvaraja, Kayal emporium, island war, brother kings, Fracture."
       />
     </CinematicShell>
   )

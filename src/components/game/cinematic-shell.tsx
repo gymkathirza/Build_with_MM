@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { GAME_TITLE } from "@/lib/game-data"
+import { GAME_PAIR, GAME_TITLE } from "@/lib/game-data"
 import { cn } from "@/lib/utils"
 
 export function CinematicShell({
@@ -23,7 +23,7 @@ export function CinematicShell({
         </p>
       ) : (
         <p className="relative z-10 px-4 pb-3 text-center text-[11px] tracking-widest text-muted-foreground/70 uppercase">
-          {GAME_TITLE} · local skirmish vs AI
+          {GAME_TITLE} · {GAME_PAIR} · local skirmish vs AI
         </p>
       )}
     </div>

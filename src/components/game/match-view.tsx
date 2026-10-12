@@ -46,6 +46,35 @@ import { DEFAULT_TUNED, type DrawQuality, type Tuned } from "@/lib/ml/score"
 import { factionById, mapById } from "@/lib/game-data"
 import { hallPositions, specFor } from "@/lib/sim/maps"
 import { personaById } from "@/lib/sim/personas"
+import { missionById } from "@/lib/campaign/missions"
+import { loadFile, markVictory, writeFile } from "@/lib/campaign/save"
+import {
+  allocatePort,
+  beginMission,
+  campaignBuildTypes,
+  chooseRelic,
+  confederacyAvg,
+  confirmPatricide,
+  createCampaignWorld,
+  dredgeMouth,
+  endCholaLine,
+  fundAcademy,
+  fundBrother,
+  fundCosmopolitan,
+  fundGuild,
+  fundKonerin,
+  fundPatronage,
+  fundYuvaraja,
+  irrigate,
+  raisePalayam,
+  repayLoan,
+  seatAltibi,
+  sendCaravan,
+  takeLoan,
+} from "@/lib/sim/campaign"
+import { CAMPAIGN_ART, missionArt } from "@/lib/campaign/artifacts"
+import { CONFEDERACY_BROTHERS, FAMILY_BEAT } from "@/lib/campaign/family"
+import { EmptyState } from "@/components/game/screen-states"
 import tunedJson from "@/lib/ml/tuned.json"
 
 type Pending = { kind: "build"; type: BuildingType } | { kind: "attackMove" } | null
@@ -72,6 +101,8 @@ export function MatchView({
   difficulty = "marshal",
   mapId = "vast-mere",
   personaId = "balanced",
+  missionId = "",
+  slotId = "slot-1",
 }: {
   factionId: string
   enemyFaction?: string
@@ -79,6 +110,8 @@ export function MatchView({
   difficulty?: string
   mapId?: string
   personaId?: string
+  missionId?: string
+  slotId?: string
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const spec = specFor(mapId)
@@ -107,21 +140,54 @@ export function MatchView({
       ai: difficultyAi(difficulty, { ...LOADED_TUNED.ai, ...persona.params }),
     }
   })
-  const [world] = useState<World>(() =>
-    createWorld(factionId, enemyFaction, tuned.ai, { mapId, persona: personaId }),
-  )
+  const mission = missionId ? missionById(missionId) : undefined
+  const campaignUnknown = Boolean(missionId) && !mission
+  const [world] = useState<World>(() => {
+    if (mission) {
+      const saved = loadFile()
+      const slot = saved.file.slots.find((s) => s.id === slotId)
+      const pirateScale = slot?.relicSecured ? (slot.relicChoice === "return" ? 1.7 : 1.45) : 1
+      return createCampaignWorld(mission.id, tuned.ai, {
+        pirateScale,
+        relicChoice: slot?.relicChoice ?? null,
+        relicSecured: slot?.relicSecured,
+        veteranArmy: slot?.veteranArmy,
+        templeDebt: slot?.templeDebt,
+        konerin: slot?.konerin,
+        portIntegrated: slot?.portIntegrated,
+      })
+    }
+    return createWorld(factionId, enemyFaction, tuned.ai, { mapId, persona: personaId })
+  })
   const [selected, setSelected] = useState<number[]>([])
   const [paused, setPaused] = useState(false)
   const [pending, setPending] = useState<Pending>(null)
   const [winner, setWinner] = useState<0 | 1 | null>(null)
   const [endPearl, setEndPearl] = useState(false)
   const [hudPulse, setHudPulse] = useState(0)
-  const [startPearl, setStartPearl] = useState(true)
+  const [startPearl, setStartPearl] = useState(!mission)
+  const [briefing, setBriefing] = useState(Boolean(mission))
+  const [diplomacy, setDiplomacy] = useState(false)
+  const [patricide, setPatricide] = useState(false)
 
   useEffect(() => {
     const t = window.setTimeout(() => setStartPearl(false), 1900)
     return () => window.clearTimeout(t)
   }, [])
+
+  useEffect(() => {
+    if (winner !== 0 || !mission) return
+    const cur = loadFile()
+    writeFile(
+      markVictory(cur.file, slotId, mission.id, {
+        relicChoice: world.campaign?.relicChoice ?? null,
+        veteranArmy: world.campaign?.veteranArmy,
+        templeDebt: world.campaign?.templeDebt,
+        konerin: world.campaign?.konerin,
+        portIntegrated: world.campaign?.portIntegrated,
+      }),
+    )
+  }, [winner, mission, slotId, world.campaign?.relicChoice])
 
   useEffect(() => {
     pausedRef.current = paused
@@ -180,6 +246,7 @@ export function MatchView({
     let fps = 60
     let hudAt = performance.now()
     let postedWin = false
+    let postedDiplomacy = false
     let sampleN = 0
     let lastObsPost = 0
     const p0Ai = bot
@@ -238,7 +305,13 @@ export function MatchView({
       cam.y = Math.max(8, Math.min(world.size - 8, cam.y))
 
       let simMs = 0
-      if (!pausedRef.current && world.winner === null) {
+      if (
+        !pausedRef.current &&
+        world.winner === null &&
+        world.campaign?.phase !== "briefing" &&
+        world.campaign?.phase !== "diplomacy" &&
+        world.campaign?.phase !== "patricide"
+      ) {
         acc += dt
         const step = 1 / TICK_HZ
         let safety = 0
@@ -313,6 +386,10 @@ export function MatchView({
           }
         }
       }
+      if (!postedDiplomacy && world.campaign?.phase === "diplomacy") {
+        postedDiplomacy = true
+        setDiplomacy(true)
+      }
       if (!postedWin && world.winner !== null) {
         postedWin = true
         setWinner(world.winner)
@@ -376,7 +453,24 @@ export function MatchView({
   const selUnits = world.units.filter((u) => selected.includes(u.id))
   const selBuild = world.buildings.find((b) => selected.includes(b.id))
   const p = world.players[0]
-  const faction = factionById(factionId)
+  const faction = factionById(mission?.faction ?? factionId)
+  const campaignBuild = mission ? campaignBuildTypes(mission.id) : []
+
+  if (campaignUnknown) {
+    return (
+      <div className="flex h-dvh flex-col items-center justify-center bg-[#140e0a] px-4">
+        <EmptyState
+          title="This plate would not open"
+          detail="No Twin-Fish mission matches that seal. Return to Campaign and pick Konerinmaikondan, Kayal, Palk, Tamraparani, or the Fracture."
+          action={
+            <Link href="/campaign" className={buttonVariants()}>
+              Campaign
+            </Link>
+          }
+        />
+      </div>
+    )
+  }
 
   function orderAt(sx: number, sy: number, ids: number[]) {
     const t0 = performance.now()
@@ -423,10 +517,12 @@ export function MatchView({
       <header className="relative z-20 flex shrink-0 flex-wrap items-center gap-2 border-b border-primary/25 bg-black/55 px-2 py-1.5">
         <PearlLogo size={28} className="hidden shrink-0 sm:block" />
         <p className="font-heading hidden text-[11px] tracking-[0.28em] text-primary uppercase sm:block">
-          {faction.name}
+          {mission ? mission.title : faction.name}
         </p>
         <p className="hidden max-w-[12rem] truncate text-[11px] text-muted-foreground sm:block">
-          {mapById(mapId).name} · {personaById(personaId).name}
+          {mission
+            ? `${mapById(mission.map).name} · ${mission.year}`
+            : `${mapById(mapId).name} · ${personaById(personaId).name}`}
         </p>
         <Chip icon={<Wheat className="size-3.5" />} label="Grain" valueRef={grainRef} initial={240} />
         <Chip icon={<Trees className="size-3.5" />} label="Timber" valueRef={timberRef} initial={220} />
@@ -502,6 +598,296 @@ export function MatchView({
             60 fps
           </p>
         </aside>
+        {world.campaign && !briefing ? (
+          <div className="absolute bottom-2 left-2 z-10 flex max-w-[min(22rem,92vw)] flex-col gap-1 rounded-sm border border-primary/30 bg-black/70 p-2 text-[11px] text-primary sm:top-2 sm:bottom-auto">
+            <p className="font-heading tracking-widest uppercase">Objective</p>
+            <p className="text-muted-foreground">{world.campaign.objective}</p>
+            {world.campaign.missionId === "edicts" ? (
+              <div className="mt-1 flex flex-wrap gap-1">
+                <span className="text-muted-foreground">
+                  Konerin {world.campaign.konerin | 0} · CSI {world.campaign.csi | 0} · unrest{" "}
+                  {world.campaign.unrest | 0} · debt {world.campaign.templeDebt}
+                  {world.campaign.portAllocated
+                    ? ` · ${world.campaign.portFaction === "chinese" ? "Chinese grant" : "Sonagar grant"}`
+                    : ""}
+                  {world.campaign.irrigated ? " · tanks" : ""}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    fundKonerin(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Seal Konerinmaikondan
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    allocatePort(world, "arab")
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Grant Sonagars
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    allocatePort(world, "chinese")
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Grant Chinese quay
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    irrigate(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Raise irrigation tanks
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    sendCaravan(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Send grain caravan
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    takeLoan(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Temple loan
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    repayLoan(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Repay Aiyan
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    fundAcademy(world, "chaturvedi")
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Fund Chaturvedimangalam
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    fundAcademy(world, "scriptorium")
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Fund scriptorium
+                </Button>
+              </div>
+            ) : null}
+            {world.campaign.missionId === "kayal" ? (
+              <div className="mt-1 flex flex-wrap gap-1">
+                <span className="text-muted-foreground">
+                  Yuvaraja {world.campaign.yuvaraja | 0} · Al-Tibi {world.campaign.altibi ? "seated" : "open"}{" "}
+                  · dredge {world.campaign.dredged ? "clear" : "silt"} · Palayam{" "}
+                  {world.campaign.palayam ? "stands" : "open"}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    fundYuvaraja(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Co-sign Yuvaraja
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    seatAltibi(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Seat Al-Tibi
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    dredgeMouth(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Dredge Tamraparani
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    raisePalayam(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Raise Rowther Palayam
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    fundGuild(world, "manigramam")
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Fund Manigramam
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    fundGuild(world, "anjuvannam")
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Seat Anjuvannam
+                </Button>
+              </div>
+            ) : null}
+            {world.campaign.missionId === "palk" ? (
+              <div className="mt-1 flex flex-wrap gap-1">
+                <span className="text-muted-foreground">
+                  Chola line {world.campaign.cholaEnded ? "closed" : "open"} · relic{" "}
+                  {world.campaign.relicHeld ? "held" : "at Yapahuwa"}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    endCholaLine(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  End Chola line (1279)
+                </Button>
+              </div>
+            ) : null}
+            {world.campaign.missionId === "tamraparani" || world.campaign.missionId === "fracture" ? (
+              <div className="mt-1 flex flex-wrap gap-1">
+                <span className="text-muted-foreground">
+                  Confederacy {confederacyAvg(world.campaign) | 0} · west {world.campaign.viraWest | 0}{" "}
+                  · admin {world.campaign.vikkiraman | 0} · interior {world.campaign.sundaraInterior | 0}
+                </span>
+                {CONFEDERACY_BROTHERS.map((b) => (
+                  <Button
+                    key={b.id}
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-[11px]"
+                    onClick={() => {
+                      fundBrother(world, b.id)
+                      paintHud(60, 16, 0)
+                    }}
+                  >
+                    {b.short}
+                  </Button>
+                ))}
+              </div>
+            ) : null}
+            {world.campaign.missionId !== "edicts" ? (
+            <p className="text-muted-foreground">
+              Shaiva {world.campaign.shaiva | 0} · Vaishnava {world.campaign.vaishnava | 0} · CSI{" "}
+              {world.campaign.csi | 0}
+            </p>
+            ) : null}
+            {world.campaign.missionId !== "edicts" ? (
+            <div className="flex flex-wrap gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-[11px]"
+                onClick={() => {
+                  fundPatronage(world, "shaiva")
+                  paintHud(60, 16, 0)
+                }}
+              >
+                Fund Shaiva
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-[11px]"
+                onClick={() => {
+                  fundPatronage(world, "vaishnava")
+                  paintHud(60, 16, 0)
+                }}
+              >
+                Fund Vaishnava
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-[11px]"
+                onClick={() => {
+                  fundCosmopolitan(world, "mosque")
+                  paintHud(60, 16, 0)
+                }}
+              >
+                Seat mosque
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-[11px]"
+                onClick={() => {
+                  fundCosmopolitan(world, "stupa")
+                  paintHud(60, 16, 0)
+                }}
+              >
+                Seat shrine
+              </Button>
+            </div>
+            ) : null}
+            {world.campaign.night ? (
+              <p className="text-destructive">Night — raise a lighthouse or the sand spawns corsairs.</p>
+            ) : null}
+          </div>
+        ) : null}
         {pending ? (
           <div className="pointer-events-none absolute top-2 left-2 z-10 max-w-[min(18rem,70vw)] rounded-sm border border-primary/40 bg-black/70 px-3 py-2 text-xs text-primary">
             <p className="font-heading tracking-widest uppercase">
@@ -516,19 +902,139 @@ export function MatchView({
         <PearlFlourish play={endPearl} variant="end" />
         {winner !== null ? (
           <Overlay
-            title={winner === 0 ? "The field is yours" : "The hearth is gone"}
+            wide={Boolean(mission)}
+            title={
+              mission
+                ? winner === 0
+                  ? world.campaign?.winWhy ?? "The plate is yours"
+                  : world.campaign?.failWhy ?? "The hearth is gone"
+                : winner === 0
+                  ? "The field is yours"
+                  : "The hearth is gone"
+            }
             description={
-              winner === 0
-                ? "The rival banner is broken. Build with Manon Mani records the skirmish as a win."
-                : "Your Hearth Hall fell. Resign, or return to the hall and raise another."
+              mission
+                ? winner === 0
+                  ? "Twin-Fish Reign records the victory. The next plate unseals on the campaign table."
+                  : "Retry this plate from the briefing, or return to the chronicle."
+                : winner === 0
+                  ? "The rival banner is broken. Build with Manon Mani records the skirmish as a win."
+                  : "Your Hearth Hall fell. Resign, or return to the hall and raise another."
             }
           >
-            <Link href="/skirmish" className={buttonVariants({ className: "w-full" })}>
-              Another skirmish
-            </Link>
+            {mission ? (
+              <>
+                <Link href="/campaign" className={buttonVariants({ className: "w-full" })}>
+                  Campaign table
+                </Link>
+                <Link
+                  href={`/match?source=campaign&mission=${mission.id}&slot=${slotId}`}
+                  className={buttonVariants({ variant: "outline", className: "w-full" })}
+                >
+                  Retry this plate
+                </Link>
+              </>
+            ) : (
+              <Link href="/skirmish" className={buttonVariants({ className: "w-full" })}>
+                Another skirmish
+              </Link>
+            )}
             <Link href="/" className={buttonVariants({ variant: "outline", className: "w-full" })}>
               Main menu
             </Link>
+          </Overlay>
+        ) : null}
+        {briefing && mission && winner === null ? (
+          <Overlay
+            wide
+            title={mission.title}
+            description={`${mission.arc} · ${mission.year}`}
+            image={missionArt(mission.id).briefing}
+            imageAlt={missionArt(mission.id).caption}
+          >
+            <p className="text-sm text-muted-foreground">{mission.briefing}</p>
+            <p className="text-xs text-primary/80">{FAMILY_BEAT[mission.id]}</p>
+            <p className="text-sm">
+              <span className="text-primary">Win:</span> {mission.win}
+            </p>
+            <p className="text-sm">
+              <span className="text-destructive">Lose:</span> {mission.lose}
+            </p>
+            <Button
+              className="w-full"
+              onClick={() => {
+                beginMission(world)
+                setBriefing(false)
+                if (mission.id === "fracture") setPatricide(true)
+                else setStartPearl(true)
+              }}
+            >
+              March
+            </Button>
+            <Link href="/campaign" className={buttonVariants({ variant: "outline", className: "w-full" })}>
+              Back to campaign
+            </Link>
+          </Overlay>
+        ) : null}
+        {diplomacy && mission && winner === null ? (
+          <Overlay
+            wide
+            title="Relic Diplomacy"
+            description="Aryachakravarti holds the Tooth Relic. Keep it in Madurai, or return it when Parakramabahu III comes so Jaffna stays a vassal."
+            image={CAMPAIGN_ART.toothRelic}
+            imageAlt="Sacred Tooth Relic of Yapahuwa"
+          >
+            <p className="text-sm text-muted-foreground">
+              Manon Mani’s crossing, Masila Mani’s war. Capture already debuffed the host. Choose now.
+            </p>
+            <Button
+              className="w-full"
+              onClick={() => {
+                chooseRelic(world, "keep")
+                setDiplomacy(false)
+                setWinner(0)
+                setEndPearl(true)
+              }}
+            >
+              Keep in Madurai
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                chooseRelic(world, "return")
+                setDiplomacy(false)
+                setWinner(0)
+                setEndPearl(true)
+              }}
+            >
+              Return to Parakramabahu III
+            </Button>
+          </Overlay>
+        ) : null}
+        {patricide && mission && winner === null ? (
+          <Overlay
+            wide
+            title="Patricide, 1308"
+            description="Sundara III, son of the primary queen, has murdered Maravarman Kulasekara Pandyan I."
+            image={missionArt("fracture").briefing}
+            imageAlt={missionArt("fracture").caption}
+          >
+            <p className="text-sm text-muted-foreground">
+              The public and the army revolt. They raise Jatavarman Vira Pandya II — son of the favored
+              consort, the better commander. Sundara flees north to the Delhi Sultanate. Malik Kafur
+              comes for Kayal of Manon Mani and Masila Mani.
+            </p>
+            <Button
+              className="w-full"
+              onClick={() => {
+                confirmPatricide(world)
+                setPatricide(false)
+                setStartPearl(true)
+              }}
+            >
+              Take Vira’s banners
+            </Button>
           </Overlay>
         ) : null}
       </div>
@@ -587,7 +1093,10 @@ export function MatchView({
               >
                 Shore hall
               </Button>
-              {(["yard", "camp", "pit", "lodge", "granary"] as const).map((type) => (
+              {(mission
+                ? (["yard", "camp", "pit", "granary", ...campaignBuild] as const)
+                : (["yard", "camp", "pit", "lodge", "granary"] as const)
+              ).map((type) => (
                 <Button
                   key={type}
                   size="sm"
@@ -602,7 +1111,12 @@ export function MatchView({
               ))}
             </div>
           </div>
-          <TrainPanel world={world} selected={selBuild} onTrain={() => paintHud(60, 16, 0)} />
+          <TrainPanel
+            world={world}
+            selected={selBuild}
+            onTrain={() => paintHud(60, 16, 0)}
+            campaign={Boolean(mission)}
+          />
         </div>
         <p className="px-3 pb-1.5 text-[11px] text-muted-foreground">
           WASD pan · wheel zoom · left select · right order · F strike-move · G defend hearth · H hold ·
@@ -610,7 +1124,7 @@ export function MatchView({
         </p>
       </footer>
 
-      {paused && winner === null ? (
+      {paused && winner === null && !briefing && !diplomacy && !patricide ? (
         <Overlay
           title="The field is held"
           description="Simulation is paused. Resume, change banners, or resign the match."
@@ -621,8 +1135,11 @@ export function MatchView({
           <Link href="/settings" className={buttonVariants({ variant: "outline", className: "w-full" })}>
             Settings
           </Link>
-          <Link href="/" className={buttonVariants({ variant: "destructive", className: "w-full" })}>
-            Resign to menu
+          <Link
+            href={mission ? "/campaign" : "/"}
+            className={buttonVariants({ variant: "destructive", className: "w-full" })}
+          >
+            Resign to {mission ? "campaign" : "menu"}
           </Link>
         </Overlay>
       ) : null}
@@ -728,10 +1245,12 @@ function TrainPanel({
   world,
   selected,
   onTrain,
+  campaign = false,
 }: {
   world: World
   selected?: Building
   onTrain: () => void
+  campaign?: boolean
 }) {
   const owned = world.buildings.filter((x) => x.owner === 0 && x.done)
   const b =
@@ -744,7 +1263,14 @@ function TrainPanel({
     if (hall.type === "yard") {
       options.push({ type: "guard", buildingId: hall.id }, { type: "warden", buildingId: hall.id })
     }
-    if (hall.type === "lodge") options.push({ type: "ashrider", buildingId: hall.id })
+    if (hall.type === "lodge") {
+      options.push({ type: "ashrider", buildingId: hall.id })
+      if (campaign) options.push({ type: "rowther", buildingId: hall.id })
+    }
+    if (hall.type === "quay") {
+      options.push({ type: "dhoni", buildingId: hall.id })
+      if (world.campaign?.escortsUnlocked) options.push({ type: "marzban", buildingId: hall.id })
+    }
   }
   return (
     <div className="rounded-sm border border-primary/20 bg-card/50 p-2">

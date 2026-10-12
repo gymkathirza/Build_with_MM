@@ -11,7 +11,7 @@ const ITEMS = [
   {
     href: "/campaign",
     label: "Campaign",
-    hint: "Six chapters. Four banners. The treaty unravels in order.",
+    hint: "Twin-Fish Reign. Yuvaraja first, then Kayal, Aryachakravarti, brother kings, patricide. Manon Mani and Masila Mani."
   },
   {
     href: "/skirmish",
@@ -129,9 +129,12 @@ function WorldPlate() {
         </text>
       </svg>
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-        <p className="font-heading text-sm tracking-widest text-primary uppercase">The Inner Sea, Ember year 412</p>
+        <p className="font-heading text-sm tracking-widest text-primary uppercase">
+          Kayal of Manon Mani and Masila Mani, 1268–1310
+        </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Four capitals still fly. Reeds hold the mere. The fords will not.
+          Twin-fish coinage. Five brother kings. Aryachakravarti still has to force Palk Strait. The
+          Tooth Relic sits on Yapahuwa.
         </p>
       </div>
     </aside>
