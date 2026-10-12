@@ -25,6 +25,21 @@ test("briefing freezes the 20 Hz sim until March", () => {
   assert.equal(w.campaign?.phase, "play")
 })
 
+test("Kayal does not auto-win on March", () => {
+  const w = createCampaignWorld("kayal")
+  beginMission(w)
+  const quay = w.buildings.find((b) => b.owner === 0 && b.type === "quay")
+  assert.ok(quay)
+  for (let i = 0; i < 20 * 20; i++) tick(w)
+  assert.equal(w.winner, null)
+  assert.ok((w.campaign?.shipsEscorted ?? 0) < 3)
+  const live = w.campaign!.convoys.find((s) => !s.arrived && !s.sunk)
+  if (live) {
+    const d = Math.hypot(live.x - quay!.x, live.y - quay!.y)
+    assert.ok(d > 8, `convoy too close to quay (${d})`)
+  }
+})
+
 test("Kayal: three horse ships at the quay win the Marzban plate", () => {
   const w = createCampaignWorld("kayal")
   beginMission(w)

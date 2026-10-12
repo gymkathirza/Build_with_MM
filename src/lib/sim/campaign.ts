@@ -255,15 +255,15 @@ function tickKayal(w: World, c: CampaignRuntime) {
   const hy = quay?.y ?? w.size * 0.68
   if (w.tick >= c.nextConvoyAt && c.convoysSpawned < c.shipsNeeded + 1) {
     c.convoys.push({
-      x: 4,
-      y: w.size * 0.78,
+      x: w.size * 0.9,
+      y: w.size * 0.84,
       hp: 90,
       hpMax: 90,
       arrived: false,
       sunk: false,
     })
     c.convoysSpawned++
-    c.nextConvoyAt = w.tick + 20 * 9
+    c.nextConvoyAt = w.tick + 20 * 16
   }
   const escorts = w.units.filter(
     (u) => u.owner === 0 && (u.type === "dhoni" || u.type === "marzban"),
@@ -273,7 +273,7 @@ function tickKayal(w: World, c: CampaignRuntime) {
     const dx = hx - ship.x
     const dy = hy - ship.y
     const d = Math.hypot(dx, dy) || 1
-    const hull = c.csi < 22 ? 5.2 : 7.5
+    const hull = c.csi < 22 ? 1.7 : 2.4
     ship.x += (dx / d) * hull * DT
     ship.y += (dy / d) * hull * DT
     for (const u of w.units) {
@@ -476,7 +476,7 @@ export function createCampaignWorld(
     wavesNeeded: 3,
     kafurWave: 0,
     nextSpawnAt: 20 * 4,
-    nextConvoyAt: 20 * 3,
+    nextConvoyAt: 20 * 12,
     nextWaveAt: 20 * 8,
     nextRevoltAt: 20 * 18,
     convoysSpawned: 0,
