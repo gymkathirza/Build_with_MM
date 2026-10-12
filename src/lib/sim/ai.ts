@@ -700,6 +700,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     )
     const spareWarden = wardenCount >= 3 ? spareWardens[0] : undefined
     const huntWarden = wardenCount >= 4 ? spareWardens[1] ?? spareWardens[0] : undefined
+    const relicWarden = wardenCount >= 5 ? spareWardens[2] ?? spareWardens[1] ?? spareWardens[0] : undefined
     if (farLodge && spareWarden) {
       issueDefend(w, [spareWarden.id], farLodge.x, farLodge.y)
     } else if (farPit && spareWarden) {
@@ -708,9 +709,10 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
       issueDefend(w, [spareWarden.id], farGranary.x, farGranary.y)
     } else if (farYard && spareWarden) {
       issueDefend(w, [spareWarden.id], farYard.x, farYard.y)
-    } else if (farCamp && spareWarden) {
+    } else     if (farCamp && spareWarden) {
       issueDefend(w, [spareWarden.id], farCamp.x, farCamp.y)
     }
+    if (relicNode && relicWarden) issueDefend(w, [relicWarden.id], relicNode.x, relicNode.y)
     const crewLevy = levies.find((u) => isFarCampCrew(w, u, owner))
     const escortGuard =
       guards.length >= 4 && crewLevy

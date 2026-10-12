@@ -427,6 +427,15 @@ function drawTerrain(
     ctx.fill()
     const batX = perch.sx - 28 + Math.sin(t / 900) * 36
     const batY = perch.sy - 18 + Math.sin(t / 220) * 5
+    const bat2X = perch2.sx + 22 + Math.cos(t / 1100) * 28
+    const bat2Y = perch2.sy - 14 + Math.sin(t / 260) * 4
+    const wing2 = Math.sin(t / 90 + 1) * 4
+    ctx.strokeStyle = "rgba(18,16,20,0.4)"
+    ctx.beginPath()
+    ctx.moveTo(bat2X - 5, bat2Y + wing2 * 0.2)
+    ctx.quadraticCurveTo(bat2X - 2, bat2Y - wing2, bat2X, bat2Y)
+    ctx.quadraticCurveTo(bat2X + 2, bat2Y - wing2, bat2X + 5, bat2Y + wing2 * 0.2)
+    ctx.stroke()
     const wing = Math.sin(t / 80) * 5
     ctx.strokeStyle = "rgba(18,16,20,0.5)"
     ctx.lineWidth = 1.2

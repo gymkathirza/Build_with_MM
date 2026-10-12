@@ -1597,6 +1597,31 @@ test("a third warden overwatches a far yard", () => {
   assert.ok(watch, "a spare warden should overwatch the far yard")
 })
 
+test("a fifth warden overwatches a relic", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  w.players[0].grain = 400
+  w.players[0].timber = 200
+  const relic = w.nodes.find((n) => n.type === "relics" && n.amount > 0)
+  assert.ok(relic, "emberglass should seed a relic")
+  for (let i = 0; i < 5; i++) pushBanner(w, "warden", 0, h.x + 2 + i, h.y)
+  for (let i = 0; i < 50; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const watch = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "warden" &&
+      ((u.order.t === "defend" && Math.hypot(u.order.x - relic.x, u.order.y - relic.y) < 4) ||
+        (u.order.t === "move" && Math.hypot(u.order.x - relic.x, u.order.y - relic.y) < 4) ||
+        Math.hypot(u.x - relic.x, u.y - relic.y) < 12),
+  )
+  assert.ok(watch, "a spare warden should overwatch a relic")
+})
+
 test("relic scout leaves the far-camp crew on the trail", () => {
   const params = personaById("balanced").params
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
