@@ -642,8 +642,11 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         b.type === "lodge" &&
         Math.hypot(b.x - h.x, b.y - h.y) > 16,
     )
+    const farPit = farSites.find((b) => b.type === "pit")
     if (farLodge && spareRider) {
       issueDefend(w, [spareRider.id], farLodge.x, farLodge.y)
+    } else if (farPit && spareRider) {
+      issueDefend(w, [spareRider.id], farPit.x, farPit.y)
     } else if (farCamp && spareRider) {
       issueDefend(w, [spareRider.id], farCamp.x, farCamp.y)
     }

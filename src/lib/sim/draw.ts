@@ -451,6 +451,19 @@ function drawTerrain(
         ctx.strokeStyle = `rgba(180,70,30,${0.18 + 0.1 * Math.sin(performance.now() / 400 + i)})`
       }
     }
+    if (quality > 1) {
+      const ember = performance.now()
+      for (let i = 0; i < 4; i++) {
+        const rise = (ember / 30 + i * 13) % 22
+        const ex = ((hash(i * 13, 3) % 1000) / 1000) * size
+        const ey = ((hash(i * 29, 17) % 1000) / 1000) * size
+        const ep = worldToScreen(cam, ex, ey)
+        ctx.fillStyle = `rgba(255,140,50,${0.22 - rise * 0.008})`
+        ctx.beginPath()
+        ctx.arc(ep.sx, ep.sy - rise * 0.8, 1.5, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
   }
   if (quality > 0) {
     for (let i = 0; i < 16; i++) {
@@ -1050,14 +1063,16 @@ function drawUnit(
     ctx.beginPath()
     ctx.arc(p.sx + 8, y - size * 0.12, 2.2, 0, Math.PI * 2)
     ctx.fill()
-    if (u.carry.res === "timber" || u.carry.res === "ore" || u.carry.res === "grain") {
+    if (u.carry.res === "timber" || u.carry.res === "ore" || u.carry.res === "grain" || u.carry.res === "relics") {
       const drop = (t / 40 + u.id * 3) % 10
       ctx.fillStyle =
         u.carry.res === "ore"
           ? `rgba(180,190,200,${0.22 - drop * 0.016})`
           : u.carry.res === "timber"
             ? `rgba(90,60,30,${0.2 - drop * 0.014})`
-            : `rgba(212,184,90,${0.2 - drop * 0.014})`
+            : u.carry.res === "relics"
+              ? `rgba(255,230,140,${0.24 - drop * 0.016})`
+              : `rgba(212,184,90,${0.2 - drop * 0.014})`
       ctx.beginPath()
       ctx.arc(p.sx - (faceLeft ? -4 : 4), y + 3 + drop * 0.35, 1.3, 0, Math.PI * 2)
       ctx.fill()
