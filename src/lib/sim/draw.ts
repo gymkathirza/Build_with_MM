@@ -439,6 +439,16 @@ function drawTerrain(
     ctx.quadraticCurveTo(hp.sx - 2, hp.sy - wing, hp.sx, hp.sy)
     ctx.quadraticCurveTo(hp.sx + 2, hp.sy - wing, hp.sx + 8, hp.sy + wing * 0.15)
     ctx.stroke()
+    const hawk2X = ((hash(11, 4) % 1000) / 1000) * size
+    const hawk2Y = ((hash(5, 17) % 1000) / 1000) * size
+    const hp2 = worldToScreen(cam, hawk2X + Math.cos(t / 1600) * 7, hawk2Y)
+    const wing2 = Math.sin(t / 150 + 1) * 3.5
+    ctx.strokeStyle = "rgba(90,50,20,0.42)"
+    ctx.beginPath()
+    ctx.moveTo(hp2.sx - 7, hp2.sy + wing2 * 0.15)
+    ctx.quadraticCurveTo(hp2.sx - 2, hp2.sy - wing2, hp2.sx, hp2.sy)
+    ctx.quadraticCurveTo(hp2.sx + 2, hp2.sy - wing2, hp2.sx + 7, hp2.sy + wing2 * 0.15)
+    ctx.stroke()
   }
   if (quality > 0 && world.mapId === "emberglass") {
     for (let i = 0; i < 7; i++) {
@@ -1126,7 +1136,9 @@ function drawUnit(
             ? `rgba(90,60,30,${0.2 - drop * 0.014})`
             : u.carry.res === "relics"
               ? `rgba(255,230,140,${0.24 - drop * 0.016})`
-              : `rgba(212,184,90,${0.2 - drop * 0.014})`
+              : world.nodes.some((n) => n.fauna && Math.hypot(n.x - u.x, n.y - u.y) < 14)
+                ? `rgba(160,70,40,${0.22 - drop * 0.014})`
+                : `rgba(212,184,90,${0.2 - drop * 0.014})`
       ctx.beginPath()
       ctx.arc(p.sx - (faceLeft ? -4 : 4), y + 3 + drop * 0.35, 1.3, 0, Math.PI * 2)
       ctx.fill()
