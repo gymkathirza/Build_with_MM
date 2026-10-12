@@ -644,12 +644,15 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     )
     const farPit = farSites.find((b) => b.type === "pit")
     const farGranary = farSites.find((b) => b.type === "granary")
+    const farYard = farSites.find((b) => b.type === "yard")
     if (farLodge && spareRider) {
       issueDefend(w, [spareRider.id], farLodge.x, farLodge.y)
     } else if (farPit && spareRider) {
       issueDefend(w, [spareRider.id], farPit.x, farPit.y)
     } else if (farGranary && spareRider) {
       issueDefend(w, [spareRider.id], farGranary.x, farGranary.y)
+    } else if (farYard && spareRider) {
+      issueDefend(w, [spareRider.id], farYard.x, farYard.y)
     } else if (farCamp && spareRider) {
       issueDefend(w, [spareRider.id], farCamp.x, farCamp.y)
     }
@@ -667,6 +670,8 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
       issueDefend(w, [spareWarden.id], farLodge.x, farLodge.y)
     } else if (farPit && spareWarden) {
       issueDefend(w, [spareWarden.id], farPit.x, farPit.y)
+    } else if (farGranary && spareWarden) {
+      issueDefend(w, [spareWarden.id], farGranary.x, farGranary.y)
     } else if (farCamp && spareWarden) {
       issueDefend(w, [spareWarden.id], farCamp.x, farCamp.y)
     }

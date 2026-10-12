@@ -1112,6 +1112,38 @@ test("a fourth ashrider patrols a far granary", () => {
   assert.ok(patrol, "a spare ashrider should patrol the far granary")
 })
 
+test("a fourth ashrider patrols a far yard", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  w.players[0].grain = 400
+  w.players[0].timber = 200
+  const yard = placeBuilding(
+    w,
+    0,
+    "yard",
+    h.x + 22,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  yard.done = true
+  yard.construct = yard.constructMax
+  for (let i = 0; i < 4; i++) pushBanner(w, "ashrider", 0, h.x + 2 + i, h.y)
+  for (let i = 0; i < 50; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const patrol = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "ashrider" &&
+      ((u.order.t === "defend" && Math.hypot(u.order.x - yard.x, u.order.y - yard.y) < 4) ||
+        Math.hypot(u.x - yard.x, u.y - yard.y) < 10),
+  )
+  assert.ok(patrol, "a spare ashrider should patrol the far yard")
+})
+
 test("extra levies walk a far pit", () => {
   const params = personaById("balanced").params
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
@@ -1350,6 +1382,38 @@ test("a third warden overwatches a far pit", () => {
         Math.hypot(u.x - pit.x, u.y - pit.y) < 10),
   )
   assert.ok(watch, "a spare warden should overwatch the far pit")
+})
+
+test("a third warden overwatches a far granary", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  w.players[0].grain = 400
+  w.players[0].timber = 200
+  const granary = placeBuilding(
+    w,
+    0,
+    "granary",
+    h.x + 22,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  granary.done = true
+  granary.construct = granary.constructMax
+  for (let i = 0; i < 3; i++) pushBanner(w, "warden", 0, h.x + 2 + i, h.y)
+  for (let i = 0; i < 50; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const watch = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "warden" &&
+      ((u.order.t === "defend" && Math.hypot(u.order.x - granary.x, u.order.y - granary.y) < 4) ||
+        Math.hypot(u.x - granary.x, u.y - granary.y) < 10),
+  )
+  assert.ok(watch, "a spare warden should overwatch the far granary")
 })
 
 test("relic scout leaves the far-camp crew on the trail", () => {
