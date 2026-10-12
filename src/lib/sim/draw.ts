@@ -150,15 +150,180 @@ function drawTerrain(
         ctx.fill()
       }
     }
-    if (world.mapId === "shattercoast" && quality > 1) {
-      for (let i = 0; i < 5; i++) {
-        const foam = 0.1 + 0.08 * Math.sin(t / 380 + i)
-        ctx.strokeStyle = `rgba(230,245,245,${foam})`
-        ctx.lineWidth = 1.2
+    if (world.mapId === "hollowmere" && quality > 1) {
+      for (let i = 0; i < 4; i++) {
+        const ring = (t / 16 + i * 9) % 22
+        ctx.strokeStyle = `rgba(180,220,210,${0.16 - ring * 0.006})`
+        ctx.lineWidth = 1.1
         ctx.beginPath()
-        ctx.ellipse(lake.sx + (i - 2) * lrx * 0.18, lake.sy + lry * 0.35, lrx * 0.16, lry * 0.08, 0.15, 0, Math.PI * 2)
+        ctx.ellipse(
+          lake.sx + Math.cos(i * 1.7) * lrx * 0.35,
+          lake.sy + Math.sin(i) * lry * 0.3,
+          3 + ring * 0.35,
+          1.6 + ring * 0.18,
+          0.2,
+          0,
+          Math.PI * 2,
+        )
         ctx.stroke()
       }
+      const birdX = lake.sx + lrx * 0.48
+      const birdY = lake.sy + lry * 0.18 + Math.sin(t / 700) * 2
+      ctx.strokeStyle = "rgba(30,70,90,0.55)"
+      ctx.lineWidth = 1.3
+      ctx.beginPath()
+      ctx.moveTo(birdX, birdY)
+      ctx.lineTo(birdX + 6, birdY - 2)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(birdX + 2, birdY - 1)
+      ctx.quadraticCurveTo(birdX + 4, birdY - 6, birdX + 9, birdY - 2)
+      ctx.stroke()
+      const bird2X = lake.sx - lrx * 0.32
+      const bird2Y = lake.sy + lry * 0.42 + Math.sin(t / 820) * 1.8
+      ctx.strokeStyle = "rgba(30,70,90,0.42)"
+      ctx.beginPath()
+      ctx.moveTo(bird2X, bird2Y)
+      ctx.lineTo(bird2X - 5, bird2Y - 2)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(bird2X - 2, bird2Y - 1)
+      ctx.quadraticCurveTo(bird2X - 4, bird2Y - 5, bird2X - 8, bird2Y - 2)
+      ctx.stroke()
+    }
+    if (world.mapId === "vast-mere" && quality > 1) {
+      for (let i = 0; i < 8; i++) {
+        const a = i * 0.72 + 0.35
+        const rx = lake.sx + Math.cos(a) * lrx * 1.06
+        const ry = lake.sy + Math.sin(a) * lry * 1.14
+        const sway = Math.sin(t / 420 + i) * 2.2
+        ctx.strokeStyle = "rgba(46,82,38,0.48)"
+        ctx.lineWidth = 1.35
+        ctx.beginPath()
+        ctx.moveTo(rx, ry)
+        ctx.quadraticCurveTo(rx + sway, ry - 7, rx + sway * 0.35, ry - 15)
+        ctx.stroke()
+      }
+      const heron = lake.sx + lrx * 0.82
+      const heronY = lake.sy + lry * 0.7 + Math.sin(t / 900) * 1.2
+      ctx.strokeStyle = "rgba(30,40,38,0.55)"
+      ctx.lineWidth = 1.4
+      ctx.beginPath()
+      ctx.moveTo(heron, heronY)
+      ctx.lineTo(heron, heronY - 10)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(heron, heronY - 10)
+      ctx.quadraticCurveTo(heron + 5, heronY - 12, heron + 8, heronY - 9)
+      ctx.stroke()
+      ctx.fillStyle = "rgba(40,50,48,0.55)"
+      ctx.beginPath()
+      ctx.arc(heron, heronY - 11, 1.6, 0, Math.PI * 2)
+      ctx.fill()
+      const jump = (t / 18) % 36
+      ctx.strokeStyle = `rgba(210,235,230,${0.16 - jump * 0.004})`
+      ctx.lineWidth = 1.1
+      ctx.beginPath()
+      ctx.ellipse(lake.sx - lrx * 0.35, lake.sy + lry * 0.15, 3 + jump * 0.22, 1.5 + jump * 0.1, 0.2, 0, Math.PI * 2)
+      ctx.stroke()
+      if (jump < 10) {
+        ctx.fillStyle = `rgba(230,245,240,${0.22 - jump * 0.015})`
+        ctx.beginPath()
+        ctx.arc(lake.sx - lrx * 0.35, lake.sy + lry * 0.15 - jump * 0.7, 1.8, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      const frogX = lake.sx + lrx * 0.55
+      const frogY = lake.sy + lry * 0.62 + Math.sin(t / 640) * 1.4
+      ctx.fillStyle = "rgba(48,92,52,0.55)"
+      ctx.beginPath()
+      ctx.ellipse(frogX, frogY, 3.2, 2.1, 0.15, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = "rgba(220,230,120,0.42)"
+      ctx.beginPath()
+      ctx.arc(frogX + 2.2, frogY - 1.2, 1.1, 0, Math.PI * 2)
+      ctx.fill()
+      const frog2X = lake.sx - lrx * 0.22
+      const frog2Y = lake.sy + lry * 0.48 + Math.sin(t / 720 + 1) * 1.2
+      ctx.fillStyle = "rgba(48,92,52,0.45)"
+      ctx.beginPath()
+      ctx.ellipse(frog2X, frog2Y, 2.8, 1.8, -0.2, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = "rgba(220,230,120,0.35)"
+      ctx.beginPath()
+      ctx.arc(frog2X - 2, frog2Y - 1, 1, 0, Math.PI * 2)
+      ctx.fill()
+      for (let i = 0; i < 5; i++) {
+        const a = t / 900 + i * 1.3
+        ctx.fillStyle = `rgba(255,230,160,${0.1 + 0.1 * Math.sin(t / 260 + i)})`
+        ctx.beginPath()
+        ctx.arc(
+          lake.sx + Math.cos(a) * lrx * 1.25,
+          lake.sy - lry * 0.8 + Math.sin(a * 0.7) * 8,
+          1.3,
+          0,
+          Math.PI * 2,
+        )
+        ctx.fill()
+      }
+      for (let i = 0; i < 4; i++) {
+        const a = t / 2400 + i * 1.4
+        ctx.fillStyle = `rgba(210,230,220,${0.05 + 0.04 * Math.sin(t / 900 + i)})`
+        ctx.beginPath()
+        ctx.ellipse(
+          lake.sx + Math.cos(a) * lrx * 1.4,
+          lake.sy + Math.sin(a * 0.6) * lry * 1.6,
+          18,
+          7,
+          0.15,
+          0,
+          Math.PI * 2,
+        )
+        ctx.fill()
+      }
+    }
+    if (quality > 1) {
+      for (let i = 0; i < 6; i++) {
+        const foam = 0.07 + 0.08 * Math.sin(t / 380 + i)
+        ctx.strokeStyle = `rgba(230,245,245,${world.mapId === "shattercoast" ? foam + 0.04 : foam})`
+        ctx.lineWidth = 1.15
+        ctx.beginPath()
+        ctx.ellipse(
+          lake.sx + Math.cos(t / 1400 + i) * lrx * 0.22,
+          lake.sy + lry * (0.28 + 0.08 * Math.sin(t / 900 + i)),
+          lrx * (0.14 + (i % 3) * 0.03),
+          lry * 0.07,
+          0.15,
+          0,
+          Math.PI * 2,
+        )
+        ctx.stroke()
+      }
+    }
+    if (world.mapId === "shattercoast" && quality > 1) {
+      for (let i = 0; i < 7; i++) {
+        const spray = (t / 50 + i * 9) % 18
+        ctx.fillStyle = `rgba(230,245,250,${0.18 - spray * 0.008})`
+        ctx.beginPath()
+        ctx.arc(lake.sx + Math.cos(i * 0.9) * lrx * 0.92, lake.sy + lry * 0.72 - spray, 1.5, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      const gullX = lake.sx + Math.sin(t / 1600) * lrx * 0.7
+      const gullY = lake.sy - lry * 0.55 + Math.sin(t / 420) * 6
+      ctx.strokeStyle = "rgba(240,246,248,0.55)"
+      ctx.lineWidth = 1.3
+      ctx.beginPath()
+      ctx.moveTo(gullX - 7, gullY)
+      ctx.quadraticCurveTo(gullX - 2, gullY - 4, gullX, gullY)
+      ctx.quadraticCurveTo(gullX + 2, gullY - 4, gullX + 7, gullY)
+      ctx.stroke()
+      const gull2X = lake.sx + Math.cos(t / 1800) * lrx * 0.55
+      const gull2Y = lake.sy - lry * 0.4 + Math.sin(t / 500) * 5
+      ctx.strokeStyle = "rgba(240,246,248,0.42)"
+      ctx.beginPath()
+      ctx.moveTo(gull2X - 6, gull2Y)
+      ctx.quadraticCurveTo(gull2X - 2, gull2Y - 3, gull2X, gull2Y)
+      ctx.quadraticCurveTo(gull2X + 2, gull2Y - 3, gull2X + 6, gull2Y)
+      ctx.stroke()
     }
     if (quality > 1) {
       for (let i = 0; i < 6; i++) {
@@ -207,6 +372,113 @@ function drawTerrain(
     }
   }
 
+  if (quality > 1 && world.mapId === "nightgrove") {
+    for (let i = 0; i < 8; i++) {
+      const hx = ((hash(i * 53, 19) % 1000) / 1000) * size
+      const hy = ((hash(i * 37, 29) % 1000) / 1000) * size
+      const hp = worldToScreen(cam, hx, hy)
+      ctx.fillStyle = `rgba(160,200,210,${0.04 + 0.04 * Math.sin(performance.now() / 900 + i)})`
+      ctx.beginPath()
+      ctx.ellipse(hp.sx, hp.sy, 22 * cam.z * 0.2, 10 * cam.z * 0.2, 0.2, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    const t = performance.now()
+    for (let i = 0; i < 10; i++) {
+      const a = t / 1400 + i * 0.7
+      const fx = ((hash(i * 17, 71) % 1000) / 1000) * size
+      const fy = ((hash(i * 31, 43) % 1000) / 1000) * size
+      const fp = worldToScreen(cam, fx + Math.cos(a) * 3, fy + Math.sin(a * 1.3) * 2)
+      ctx.fillStyle = `rgba(190,255,170,${0.16 + 0.2 * Math.sin(t / 280 + i)})`
+      ctx.beginPath()
+      ctx.arc(fp.sx, fp.sy, 1.6, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    const beam = worldToScreen(cam, size * 0.28, size * 0.22)
+    ctx.fillStyle = `rgba(180,210,220,${0.05 + 0.03 * Math.sin(t / 1100)})`
+    ctx.beginPath()
+    ctx.moveTo(beam.sx - 8, beam.sy - 40)
+    ctx.lineTo(beam.sx + 18, beam.sy + 50)
+    ctx.lineTo(beam.sx - 14, beam.sy + 50)
+    ctx.closePath()
+    ctx.fill()
+    const perch = worldToScreen(cam, size * 0.62, size * 0.3)
+    ctx.fillStyle = "rgba(20,24,22,0.55)"
+    ctx.beginPath()
+    ctx.ellipse(perch.sx, perch.sy, 4.2, 2.4, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.beginPath()
+    ctx.arc(perch.sx + 3, perch.sy - 2, 1.8, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = `rgba(255,210,90,${0.35 + 0.25 * Math.sin(t / 240)})`
+    ctx.beginPath()
+    ctx.arc(perch.sx + 4, perch.sy - 2.2, 0.8, 0, Math.PI * 2)
+    ctx.fill()
+    const perch2 = worldToScreen(cam, size * 0.4, size * 0.58)
+    ctx.fillStyle = "rgba(20,24,22,0.5)"
+    ctx.beginPath()
+    ctx.ellipse(perch2.sx, perch2.sy, 3.6, 2.1, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.beginPath()
+    ctx.arc(perch2.sx - 2.4, perch2.sy - 1.8, 1.6, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = `rgba(255,210,90,${0.3 + 0.22 * Math.sin(t / 260 + 1)})`
+    ctx.beginPath()
+    ctx.arc(perch2.sx - 3.2, perch2.sy - 2, 0.7, 0, Math.PI * 2)
+    ctx.fill()
+    const batX = perch.sx - 28 + Math.sin(t / 900) * 36
+    const batY = perch.sy - 18 + Math.sin(t / 220) * 5
+    const wing = Math.sin(t / 80) * 5
+    ctx.strokeStyle = "rgba(18,16,20,0.5)"
+    ctx.lineWidth = 1.2
+    ctx.beginPath()
+    ctx.moveTo(batX - 6, batY + wing * 0.2)
+    ctx.quadraticCurveTo(batX - 2, batY - wing, batX, batY)
+    ctx.quadraticCurveTo(batX + 2, batY - wing, batX + 6, batY + wing * 0.2)
+    ctx.stroke()
+  }
+  if (quality > 1 && world.mapId === "sunvault") {
+    for (let i = 0; i < 10; i++) {
+      const hx = ((hash(i * 11, 61) % 1000) / 1000) * size
+      const hy = ((hash(i * 43, 13) % 1000) / 1000) * size
+      const hp = worldToScreen(cam, hx, hy)
+      ctx.fillStyle = `rgba(255,220,120,${0.06 + 0.06 * Math.sin(performance.now() / 700 + i)})`
+      ctx.beginPath()
+      ctx.arc(hp.sx, hp.sy, 1.6, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    const t = performance.now()
+    for (let i = 0; i < 6; i++) {
+      const drift = (t / 40 + i * 11) % 28
+      const sx = ((hash(i * 19, 5) % 1000) / 1000) * size
+      const sy = ((hash(i * 7, 23) % 1000) / 1000) * size
+      const p = worldToScreen(cam, sx, sy)
+      ctx.fillStyle = `rgba(255,236,180,${0.16 - drift * 0.004})`
+      ctx.beginPath()
+      ctx.ellipse(p.sx + drift * 0.4, p.sy - drift * 0.6, 2.2, 1.1, 0.4, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    const hawkX = ((hash(3, 9) % 1000) / 1000) * size
+    const hawkY = ((hash(8, 2) % 1000) / 1000) * size
+    const hp = worldToScreen(cam, hawkX + Math.sin(t / 1400) * 8, hawkY)
+    const wing = Math.sin(t / 160) * 4
+    ctx.strokeStyle = "rgba(90,50,20,0.5)"
+    ctx.lineWidth = 1.3
+    ctx.beginPath()
+    ctx.moveTo(hp.sx - 8, hp.sy + wing * 0.15)
+    ctx.quadraticCurveTo(hp.sx - 2, hp.sy - wing, hp.sx, hp.sy)
+    ctx.quadraticCurveTo(hp.sx + 2, hp.sy - wing, hp.sx + 8, hp.sy + wing * 0.15)
+    ctx.stroke()
+    const hawk2X = ((hash(11, 4) % 1000) / 1000) * size
+    const hawk2Y = ((hash(5, 17) % 1000) / 1000) * size
+    const hp2 = worldToScreen(cam, hawk2X + Math.cos(t / 1600) * 7, hawk2Y)
+    const wing2 = Math.sin(t / 150 + 1) * 3.5
+    ctx.strokeStyle = "rgba(90,50,20,0.42)"
+    ctx.beginPath()
+    ctx.moveTo(hp2.sx - 7, hp2.sy + wing2 * 0.15)
+    ctx.quadraticCurveTo(hp2.sx - 2, hp2.sy - wing2, hp2.sx, hp2.sy)
+    ctx.quadraticCurveTo(hp2.sx + 2, hp2.sy - wing2, hp2.sx + 7, hp2.sy + wing2 * 0.15)
+    ctx.stroke()
+  }
   if (quality > 0 && world.mapId === "emberglass") {
     for (let i = 0; i < 7; i++) {
       const hx = ((hash(i * 41, 7) % 1000) / 1000) * size
@@ -220,6 +492,28 @@ function drawTerrain(
       ctx.moveTo(a.sx, a.sy)
       ctx.lineTo(b.sx, b.sy)
       ctx.stroke()
+      if (quality > 1) {
+        const wobble = Math.sin(performance.now() / 180 + i) * 3
+        ctx.strokeStyle = `rgba(255,140,60,${0.12 + 0.1 * Math.sin(performance.now() / 260 + i)})`
+        ctx.beginPath()
+        ctx.moveTo(a.sx + 2, a.sy - 4)
+        ctx.quadraticCurveTo((a.sx + b.sx) / 2 + wobble, (a.sy + b.sy) / 2 - 8, b.sx, b.sy - 6)
+        ctx.stroke()
+        ctx.strokeStyle = `rgba(180,70,30,${0.18 + 0.1 * Math.sin(performance.now() / 400 + i)})`
+      }
+    }
+    if (quality > 1) {
+      const ember = performance.now()
+      for (let i = 0; i < 4; i++) {
+        const rise = (ember / 30 + i * 13) % 22
+        const ex = ((hash(i * 13, 3) % 1000) / 1000) * size
+        const ey = ((hash(i * 29, 17) % 1000) / 1000) * size
+        const ep = worldToScreen(cam, ex, ey)
+        ctx.fillStyle = `rgba(255,140,50,${0.22 - rise * 0.008})`
+        ctx.beginPath()
+        ctx.arc(ep.sx, ep.sy - rise * 0.8, 1.5, 0, Math.PI * 2)
+        ctx.fill()
+      }
     }
   }
   if (quality > 0) {
@@ -313,7 +607,17 @@ export function nodeLabel(n: Node) {
   return "Relic"
 }
 
-function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: DrawQuality, w: number, h: number) {
+function drawNode(
+  ctx: CanvasRenderingContext2D,
+  n: Node,
+  cam: Cam,
+  quality: DrawQuality,
+  w: number,
+  h: number,
+  contested = false,
+  hunted = false,
+  worked = false,
+) {
   const p = worldToScreen(cam, n.x, n.y)
   const s = Math.max(n.fauna ? 40 : 34, cam.z * (n.fauna ? 2.8 : 2.35))
   if (culled(p.sx, p.sy, s, w, h)) return
@@ -327,7 +631,48 @@ function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: Dra
     blit(ctx, nodeSpr(n), -s / 2, p.sy - s * 0.72 + bob, s, s)
     ctx.restore()
   } else {
-    blit(ctx, nodeSpr(n), p.sx - s / 2 + wander, p.sy - s * 0.72 + bob, s, s)
+    const grainSway = !n.fauna && n.type === "grain" && quality > 1 ? Math.sin(now / 380 + n.id) * 1.8 : 0
+    blit(ctx, nodeSpr(n), p.sx - s / 2 + wander + grainSway, p.sy - s * 0.72 + bob, s, s)
+    if (quality > 1 && !n.fauna && n.type === "grain") {
+      ctx.strokeStyle = `rgba(180,150,50,${0.28 + 0.12 * Math.sin(now / 320 + n.id)})`
+      ctx.lineWidth = 1.2
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath()
+        ctx.moveTo(p.sx - 4 + i * 4, p.sy + 2)
+        ctx.quadraticCurveTo(p.sx - 3 + i * 4 + grainSway, p.sy - 6, p.sx - 2 + i * 4 + grainSway, p.sy - 12)
+        ctx.stroke()
+      }
+    }
+    if (quality > 1 && n.type === "timber") {
+      const needle = (now / 80 + n.id * 3) % 16
+      ctx.strokeStyle = `rgba(40,70,30,${0.28 - needle * 0.012})`
+      ctx.lineWidth = 1.1
+      ctx.beginPath()
+      ctx.moveTo(p.sx + 6, p.sy - s * 0.4)
+      ctx.lineTo(p.sx + 8, p.sy - s * 0.4 + needle)
+      ctx.stroke()
+      if (worked) {
+        const chip = (now / 50 + n.id) % 12
+        ctx.fillStyle = `rgba(90,60,30,${0.22 - chip * 0.012})`
+        ctx.beginPath()
+        ctx.arc(p.sx - 3, p.sy + 2 + chip * 0.3, 1.5, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+    if (quality > 1 && n.type === "ore") {
+      const spark = 0.2 + 0.25 * Math.sin(now / 160 + n.id)
+      ctx.fillStyle = `rgba(200,210,220,${spark})`
+      ctx.beginPath()
+      ctx.arc(p.sx + 4, p.sy - s * 0.22, 1.6, 0, Math.PI * 2)
+      ctx.fill()
+      if (worked) {
+        const flake = (now / 45 + n.id * 2) % 14
+        ctx.fillStyle = `rgba(180,190,200,${0.26 - flake * 0.012})`
+        ctx.beginPath()
+        ctx.arc(p.sx + 2, p.sy - 4 - flake * 0.35, 1.4, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
   }
   if (quality > 1 && n.type === "relics") {
     const gleam = 0.18 + 0.22 * Math.sin(now / 240 + n.id)
@@ -336,6 +681,48 @@ function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: Dra
     ctx.beginPath()
     ctx.arc(p.sx + wander, p.sy - s * 0.2 + bob, s * 0.28, 0, Math.PI * 2)
     ctx.stroke()
+    ctx.strokeStyle = `rgba(255,246,212,${gleam * 0.55})`
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.arc(p.sx + wander, p.sy - s * 0.2 + bob, s * 0.18, 0, Math.PI * 2)
+    ctx.stroke()
+    for (let i = 0; i < 4; i++) {
+      const a = now / 480 + n.id + i * 1.3
+      const lift = (now / 14 + i * 6) % 16
+      ctx.fillStyle = `rgba(255,230,160,${0.24 - lift * 0.01})`
+      ctx.beginPath()
+      ctx.arc(p.sx + wander + Math.cos(a) * 8, p.sy - s * 0.15 - lift, 1.5, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    if (contested) {
+      ctx.strokeStyle = `rgba(212,92,58,${0.4 + 0.28 * Math.sin(now / 140)})`
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.arc(p.sx + wander, p.sy - s * 0.2 + bob, s * 0.38, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+  }
+  if (quality > 1 && n.fauna && hunted) {
+    ctx.strokeStyle = `rgba(212,92,58,${0.35 + 0.2 * Math.sin(now / 160)})`
+    ctx.lineWidth = 1.8
+    ctx.beginPath()
+    ctx.arc(p.sx + wander, p.sy - s * 0.2 + bob, s * 0.32, 0, Math.PI * 2)
+    ctx.stroke()
+  }
+  if (quality > 1 && n.fauna) {
+    ctx.fillStyle = "rgba(40,28,16,0.22)"
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath()
+      ctx.ellipse(p.sx - wander * 0.4 - 6 - i * 5, p.sy + 4 + (i % 2), 2.2, 1.1, 0.2, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    const eye = 0.35 + 0.35 * Math.sin(now / 180 + n.id)
+    ctx.fillStyle =
+      n.fauna === "wolf" || n.fauna === "bear" ? `rgba(255,210,90,${eye})` : `rgba(255,246,212,${eye * 0.7})`
+    ctx.beginPath()
+    ctx.arc(p.sx + wander - 3, p.sy - s * 0.28 + bob, 1.5, 0, Math.PI * 2)
+    ctx.arc(p.sx + wander + 3, p.sy - s * 0.28 + bob, 1.5, 0, Math.PI * 2)
+    ctx.fill()
   }
   if (quality > 0) {
     ctx.fillStyle = "rgba(20,12,8,0.82)"
@@ -373,6 +760,7 @@ function drawBuilding(
   now: number,
   w: number,
   h: number,
+  pressed: boolean,
 ) {
   const p = worldToScreen(cam, b.x, b.y)
   const r = BUILDING_STATS[b.type].radius * cam.z
@@ -401,6 +789,18 @@ function drawBuilding(
     ctx.moveTo(p.sx, p.sy - r * 0.9)
     ctx.lineTo(p.sx, p.sy + r * 0.2)
     ctx.stroke()
+    if (quality > 1) {
+      const dust = (now / 16 + b.id * 11) % 20
+      ctx.fillStyle = `rgba(196,154,90,${0.22 - dust * 0.008})`
+      ctx.beginPath()
+      ctx.ellipse(p.sx + 6, p.sy - r * 0.4 - dust * 0.4, 3 + dust * 0.08, 1.6, 0, 0, Math.PI * 2)
+      ctx.fill()
+      const chip = (now / 22 + b.id * 7) % 16
+      ctx.fillStyle = `rgba(160,120,60,${0.2 - chip * 0.01})`
+      ctx.beginPath()
+      ctx.arc(p.sx - 5, p.sy - r * 0.2 - chip * 0.35, 1.6, 0, Math.PI * 2)
+      ctx.fill()
+    }
   }
   if (quality > 0 && b.done && (b.type === "hearth" || b.type === "camp" || b.type === "pit")) {
     const rise = (now / 18 + b.id * 13) % 28
@@ -422,6 +822,16 @@ function drawBuilding(
     ctx.beginPath()
     ctx.arc(p.sx + s * 0.18, p.sy - s * 0.42, 4, 0, Math.PI * 2)
     ctx.fill()
+    const smoke = (now / 20 + b.id * 9) % 24
+    ctx.fillStyle = `rgba(200,190,180,${0.16 - smoke * 0.005})`
+    ctx.beginPath()
+    ctx.ellipse(p.sx + s * 0.12, p.sy - s * 0.7 - smoke * 0.45, 3.4 + smoke * 0.06, 2.2, 0, 0, Math.PI * 2)
+    ctx.fill()
+    const smoke2 = (now / 20 + b.id * 9 + 12) % 24
+    ctx.fillStyle = `rgba(200,190,180,${0.12 - smoke2 * 0.004})`
+    ctx.beginPath()
+    ctx.ellipse(p.sx + s * 0.2, p.sy - s * 0.62 - smoke2 * 0.4, 2.8 + smoke2 * 0.05, 1.8, 0, 0, Math.PI * 2)
+    ctx.fill()
     const flap = Math.sin(now / 260 + b.id) * 3
     ctx.fillStyle = "#8a4e2a"
     ctx.beginPath()
@@ -430,6 +840,13 @@ function drawBuilding(
     ctx.lineTo(p.sx - s * 0.22, p.sy + s * 0.02)
     ctx.closePath()
     ctx.fill()
+    for (let i = 0; i < 3; i++) {
+      const bead = Math.sin(now / 180 + b.id + i) * 2
+      ctx.fillStyle = i === 1 ? trim : "#d4b85a"
+      ctx.beginPath()
+      ctx.arc(p.sx - s * 0.12 + i * 4, p.sy - s * 0.08 + bead, 1.8, 0, Math.PI * 2)
+      ctx.fill()
+    }
   }
   if (quality > 1 && b.done && b.type === "granary") {
     const bob = Math.sin(now / 280 + b.id) * 2
@@ -448,6 +865,22 @@ function drawBuilding(
       ctx.quadraticCurveTo(bx, by - 3, bx + 4, by)
       ctx.stroke()
     }
+    const chaff = (now / 60 + b.id * 4) % 14
+    ctx.fillStyle = `rgba(212,184,90,${0.22 - chaff * 0.012})`
+    ctx.beginPath()
+    ctx.ellipse(p.sx + 6, p.sy - s * 0.2 - chaff * 0.5, 2.4, 1.2, 0.3, 0, Math.PI * 2)
+    ctx.fill()
+    const mothA = now / 520 + b.id
+    ctx.fillStyle = `rgba(255,236,180,${0.18 + 0.12 * Math.sin(now / 180 + b.id)})`
+    ctx.beginPath()
+    ctx.arc(
+      p.sx + Math.cos(mothA) * s * 0.38,
+      p.sy - s * 0.28 + Math.sin(mothA * 1.4) * 5,
+      1.5,
+      0,
+      Math.PI * 2,
+    )
+    ctx.fill()
   }
   if (quality > 1 && b.done && b.type === "camp") {
     const flicker = 0.28 + 0.22 * Math.sin(now / 90 + b.id)
@@ -464,12 +897,45 @@ function drawBuilding(
       ctx.lineTo(p.sx + Math.cos(a) * s * 0.3, p.sy + Math.sin(a) * s * 0.14 - 6)
       ctx.stroke()
     }
+    const spark = (now / 70 + b.id) % 14
+    ctx.fillStyle = `rgba(255,180,70,${0.28 - spark * 0.015})`
+    ctx.beginPath()
+    ctx.arc(p.sx + 3, p.sy - s * 0.2 - spark * 0.7, 1.6, 0, Math.PI * 2)
+    ctx.fill()
+    const mothA = now / 480 + b.id
+    ctx.fillStyle = `rgba(255,220,140,${0.16 + 0.12 * Math.sin(now / 160 + b.id)})`
+    ctx.beginPath()
+    ctx.arc(
+      p.sx + Math.cos(mothA) * s * 0.32,
+      p.sy - s * 0.22 + Math.sin(mothA * 1.3) * 4,
+      1.4,
+      0,
+      Math.PI * 2,
+    )
+    ctx.fill()
+    ctx.strokeStyle = "rgba(90,70,40,0.28)"
+    ctx.lineWidth = 1.1
+    ctx.setLineDash([3, 4])
+    ctx.beginPath()
+    ctx.ellipse(p.sx, p.sy + s * 0.02, s * 0.34, s * 0.16, 0, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.setLineDash([])
   }
   if (quality > 1 && b.done && b.type === "pit") {
     const ember = 0.2 + 0.2 * Math.sin(now / 110 + b.id)
     ctx.fillStyle = `rgba(255,90,40,${ember})`
     ctx.beginPath()
     ctx.ellipse(p.sx, p.sy - s * 0.08, 5, 3.2, 0, 0, Math.PI * 2)
+    ctx.fill()
+    const slag = (now / 90 + b.id * 5) % 16
+    ctx.fillStyle = `rgba(80,70,60,${0.2 - slag * 0.008})`
+    ctx.beginPath()
+    ctx.arc(p.sx - 4, p.sy - s * 0.16 - slag * 0.5, 2, 0, Math.PI * 2)
+    ctx.fill()
+    const spark = (now / 35 + b.id * 3) % 14
+    ctx.fillStyle = `rgba(255,160,60,${0.22 - spark * 0.012})`
+    ctx.beginPath()
+    ctx.arc(p.sx + 3, p.sy - s * 0.12 - spark * 0.4, 1.4, 0, Math.PI * 2)
     ctx.fill()
   }
   if (quality > 1 && b.done && b.type === "yard") {
@@ -480,6 +946,24 @@ function drawBuilding(
     ctx.lineTo(p.sx + s * 0.42 + flap, p.sy - s * 0.5)
     ctx.lineTo(p.sx + s * 0.28, p.sy - s * 0.42)
     ctx.closePath()
+    ctx.fill()
+    if (b.queue.length) {
+      const spark = 0.25 + 0.25 * Math.sin(now / 90 + b.id)
+      ctx.fillStyle = `rgba(255,200,90,${spark})`
+      ctx.beginPath()
+      ctx.arc(p.sx - s * 0.1, p.sy - s * 0.18, 3.2, 0, Math.PI * 2)
+      ctx.fill()
+      const clang = (now / 40 + b.id) % 12
+      ctx.strokeStyle = `rgba(255,220,140,${0.28 - clang * 0.02})`
+      ctx.lineWidth = 1.2
+      ctx.beginPath()
+      ctx.arc(p.sx - s * 0.1, p.sy - s * 0.18, 4 + clang * 0.35, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+    const dust = (now / 55 + b.id * 5) % 16
+    ctx.fillStyle = `rgba(180,150,90,${0.16 - dust * 0.008})`
+    ctx.beginPath()
+    ctx.ellipse(p.sx + 6, p.sy - s * 0.08 - dust * 0.3, 2.6, 1.3, 0.2, 0, Math.PI * 2)
     ctx.fill()
   }
   ctx.fillStyle = color
@@ -499,6 +983,16 @@ function drawBuilding(
     ctx.beginPath()
     ctx.arc(p.sx, p.sy, r * (b.aging > 0 ? 1.05 : wounded ? 1.0 : 0.92), 0, Math.PI * 2)
     ctx.stroke()
+    if (b.aging > 0 && quality > 1) {
+      for (let i = 0; i < 5; i++) {
+        const a = now / 400 + b.id + i * 1.2
+        const lift = ((now / 12 + i * 7) % 22)
+        ctx.fillStyle = `rgba(255,220,140,${0.28 - lift * 0.01})`
+        ctx.beginPath()
+        ctx.arc(p.sx + Math.cos(a) * r * 0.55, p.sy - lift, 2, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
     if (age >= 1) {
       ctx.strokeStyle = "rgba(180,150,90,0.45)"
       ctx.lineWidth = 2
@@ -532,6 +1026,21 @@ function drawBuilding(
     ctx.textAlign = "center"
     const label = b.type === "hearth" ? AGE_NAMES[age as 0 | 1 | 2] : BUILDING_LABEL[b.type]
     ctx.fillText(label, p.sx, p.sy + r + 14)
+  }
+  if (quality > 1 && b.done && b.queue.length) {
+    for (let i = 0; i < Math.min(4, b.queue.length); i++) {
+      ctx.fillStyle = trim
+      ctx.beginPath()
+      ctx.arc(p.sx - 6 + i * 5, p.sy + r * 0.72, 2.1, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  }
+  if (pressed && quality > 0) {
+    ctx.strokeStyle = `rgba(212,92,58,${0.35 + 0.3 * Math.sin(now / 140)})`
+    ctx.lineWidth = 2.2
+    ctx.beginPath()
+    ctx.arc(p.sx, p.sy, r * 1.08, 0, Math.PI * 2)
+    ctx.stroke()
   }
   if (selected) {
     ctx.strokeStyle = `rgba(243,212,138,${0.55 + 0.35 * Math.sin(now / 160)})`
@@ -617,23 +1126,87 @@ function drawUnit(
   ctx.restore()
   if (quality > 1 && (u.order.t === "attack" || u.order.t === "attackMove") && u.atkCd > 0.65) {
     const dir = faceLeft ? -1 : 1
-    ctx.strokeStyle = u.type === "warden" ? "rgba(160,210,255,0.75)" : "rgba(255,214,120,0.7)"
-    ctx.lineWidth = 2
+    const reach = u.type === "ashrider" ? 22 : u.type === "guard" ? 12 : 16
+    ctx.strokeStyle =
+      u.type === "warden" ? "rgba(160,210,255,0.75)" : u.type === "ashrider" ? "rgba(255,170,90,0.8)" : "rgba(255,214,120,0.7)"
+    ctx.lineWidth = u.type === "ashrider" ? 2.4 : 2
     ctx.beginPath()
     ctx.moveTo(p.sx + sway * dir + 4 * dir, y - size * 0.2)
-    ctx.lineTo(p.sx + sway * dir + 14 * dir, y - size * 0.48)
+    ctx.lineTo(p.sx + sway * dir + reach * dir, y - size * (u.type === "ashrider" ? 0.36 : 0.48))
     ctx.stroke()
-    ctx.fillStyle = u.type === "warden" ? "rgba(190,230,255,0.55)" : "rgba(255,230,160,0.55)"
+    ctx.fillStyle =
+      u.type === "warden" ? "rgba(190,230,255,0.55)" : u.type === "guard" ? "rgba(210,190,140,0.5)" : "rgba(255,230,160,0.55)"
     ctx.beginPath()
-    ctx.arc(p.sx + sway * dir + 12 * dir, y - size * 0.46, 2.4, 0, Math.PI * 2)
+    ctx.arc(p.sx + sway * dir + (reach - 2) * dir, y - size * (u.type === "ashrider" ? 0.34 : 0.46), u.type === "guard" ? 3.4 : 2.4, 0, Math.PI * 2)
     ctx.fill()
   }
   ctx.fillStyle = color
   ctx.beginPath()
   ctx.ellipse(p.sx, y + size * 0.14, 5, 2.2, 0, 0, Math.PI * 2)
   ctx.fill()
+  if (quality > 1 && u.order.t === "build") {
+    const spark = 0.22 + 0.32 * Math.sin(t / 70 + u.id)
+    ctx.fillStyle = `rgba(255,200,90,${spark})`
+    ctx.beginPath()
+    ctx.arc(p.sx + 7, y - size * 0.3, 2.1, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  if (quality > 1 && u.carry) {
+    ctx.fillStyle = u.carry.res === "relics" ? "rgba(255,230,140,0.7)" : u.carry.res === "ore" ? "rgba(180,190,200,0.55)" : "rgba(212,184,90,0.5)"
+    ctx.beginPath()
+    ctx.arc(p.sx + 8, y - size * 0.12, 2.2, 0, Math.PI * 2)
+    ctx.fill()
+    if (u.carry.res === "timber" || u.carry.res === "ore" || u.carry.res === "grain" || u.carry.res === "relics") {
+      const drop = (t / 40 + u.id * 3) % 10
+      ctx.fillStyle =
+        u.carry.res === "ore"
+          ? `rgba(180,190,200,${0.22 - drop * 0.016})`
+          : u.carry.res === "timber"
+            ? `rgba(90,60,30,${0.2 - drop * 0.014})`
+            : u.carry.res === "relics"
+              ? `rgba(255,230,140,${0.24 - drop * 0.016})`
+              : world.nodes.some((n) => n.fauna && Math.hypot(n.x - u.x, n.y - u.y) < 14)
+                ? `rgba(160,70,40,${0.22 - drop * 0.014})`
+                : `rgba(212,184,90,${0.2 - drop * 0.014})`
+      ctx.beginPath()
+      ctx.arc(p.sx - (faceLeft ? -4 : 4), y + 3 + drop * 0.35, 1.3, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  }
+  if (quality > 1 && u.type === "warden" && u.order.t !== "attack") {
+    const glint = 0.18 + 0.22 * Math.sin(t / 200 + u.id)
+    ctx.strokeStyle = `rgba(190,230,255,${glint})`
+    ctx.lineWidth = 1.3
+    ctx.beginPath()
+    ctx.moveTo(p.sx + (faceLeft ? -6 : 6), y - size * 0.28)
+    ctx.lineTo(p.sx + (faceLeft ? -11 : 11), y - size * 0.42)
+    ctx.stroke()
+  }
+  if (quality > 1 && u.type === "guard" && (u.order.t === "defend" || u.order.t === "idle")) {
+    const glint = 0.2 + 0.2 * Math.sin(t / 180 + u.id)
+    ctx.fillStyle = `rgba(210,190,140,${glint})`
+    ctx.beginPath()
+    ctx.ellipse(p.sx + (faceLeft ? -5 : 5), y - size * 0.16, 3.2, 4.2, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  if (quality > 1 && limp) {
+    ctx.strokeStyle = "rgba(212,92,58,0.7)"
+    ctx.lineWidth = 1.6
+    ctx.beginPath()
+    ctx.moveTo(p.sx - 4, y - size * 0.18)
+    ctx.lineTo(p.sx + 5, y - size * 0.08)
+    ctx.stroke()
+  }
   if (selected) {
-    ctx.strokeStyle = `rgba(255,246,212,${0.55 + 0.35 * Math.sin(t / 160)})`
+    const ring =
+      u.type === "ashrider"
+        ? "255,170,90"
+        : u.type === "warden"
+          ? "160,210,255"
+          : u.type === "guard"
+            ? "210,190,140"
+            : "255,246,212"
+    ctx.strokeStyle = `rgba(${ring},${0.55 + 0.35 * Math.sin(t / 160)})`
     ctx.lineWidth = 1.8
     ctx.beginPath()
     ctx.arc(p.sx, y, size * 0.5, 0, Math.PI * 2)
@@ -657,6 +1230,16 @@ function drawMinimap(ctx: CanvasRenderingContext2D, world: World, cam: Cam, w: n
   ctx.globalAlpha = 1
   ctx.strokeStyle = "rgba(243,212,138,0.5)"
   ctx.strokeRect(x, y, mw, mh)
+  if (world.mapId === "nightgrove") {
+    ctx.fillStyle = "rgba(80,120,140,0.12)"
+    ctx.fillRect(x + 1, y + 1, mw - 2, mh - 2)
+  } else if (world.mapId === "emberglass") {
+    ctx.fillStyle = "rgba(180,70,30,0.1)"
+    ctx.fillRect(x + 1, y + 1, mw - 2, mh - 2)
+  } else if (world.mapId === "sunvault") {
+    ctx.fillStyle = "rgba(255,210,90,0.08)"
+    ctx.fillRect(x + 1, y + 1, mw - 2, mh - 2)
+  }
   const size = Math.max(1, world.size)
   const sx = mw / size
   const sy = mh / size
@@ -679,8 +1262,22 @@ function drawMinimap(ctx: CanvasRenderingContext2D, world: World, cam: Cam, w: n
     ctx.fillRect(x + n.x * sx - dot / 2, y + n.y * sy - dot / 2, dot, dot)
   }
   for (const b of world.buildings) {
-    ctx.fillStyle = team(world, b.owner)
-    ctx.fillRect(x + b.x * sx - 2, y + b.y * sy - 2, 4, 4)
+    const px = x + b.x * sx
+    const py = y + b.y * sy
+    ctx.fillStyle = b.hp < b.hpMax * 0.82 ? "#d45c3a" : team(world, b.owner)
+    if (b.type === "hearth") {
+      ctx.fillRect(px - 3, py - 3, 6, 6)
+    } else if (b.type === "camp" || b.type === "pit") {
+      ctx.beginPath()
+      ctx.moveTo(px, py - 3)
+      ctx.lineTo(px + 3, py)
+      ctx.lineTo(px, py + 3)
+      ctx.lineTo(px - 3, py)
+      ctx.closePath()
+      ctx.fill()
+    } else {
+      ctx.fillRect(px - 2, py - 2, 4, 4)
+    }
   }
   for (const u of world.units) {
     ctx.fillStyle = team(world, u.owner)
@@ -711,7 +1308,14 @@ export function drawWorld(
   }
   drawTerrain(ctx, cam, w, h, quality, world)
   for (const n of world.nodes) {
-    if (n.amount > 0) drawNode(ctx, n, cam, quality, w, h)
+    if (n.amount > 0) {
+      const owners = new Set(
+        world.units
+          .filter((u) => u.order.t === "gather" && u.order.node === n.id)
+          .map((u) => u.owner),
+      )
+      drawNode(ctx, n, cam, quality, w, h, owners.size > 1, owners.size > 0 && !!n.fauna, owners.size > 0)
+    }
   }
   for (const b of world.buildings) {
     drawBuilding(
@@ -726,7 +1330,36 @@ export function drawWorld(
       now,
       w,
       h,
+      world.units.some((u) => u.owner !== b.owner && Math.hypot(u.x - b.x, u.y - b.y) < 10),
     )
+  }
+  if (quality > 1) {
+    ctx.strokeStyle = "rgba(90,70,40,0.16)"
+    ctx.lineWidth = Math.max(2, cam.z * 0.2)
+    ctx.setLineDash([5, 6])
+    for (const hearth of world.buildings) {
+      if (hearth.type !== "hearth" || !hearth.done) continue
+      for (const camp of world.buildings) {
+        if (
+          camp.owner !== hearth.owner ||
+          !camp.done ||
+          (camp.type !== "camp" &&
+            camp.type !== "pit" &&
+            camp.type !== "granary" &&
+            camp.type !== "lodge" &&
+            camp.type !== "yard")
+        )
+          continue
+        if (Math.hypot(camp.x - hearth.x, camp.y - hearth.y) <= 16) continue
+        const a = worldToScreen(cam, hearth.x, hearth.y)
+        const b = worldToScreen(cam, camp.x, camp.y)
+        ctx.beginPath()
+        ctx.moveTo(a.sx, a.sy)
+        ctx.lineTo(b.sx, b.sy)
+        ctx.stroke()
+      }
+    }
+    ctx.setLineDash([])
   }
   for (const u of world.units) {
     drawUnit(ctx, u, cam, team(world, u.owner), selected.has(u.id), quality, now, w, h, world)
@@ -841,6 +1474,27 @@ export function drawWorld(
           ctx.beginPath()
           ctx.ellipse(w * (0.2 + i * 0.2), h * 0.72 + Math.sin(now / 1400 + i) * 8, 90, 16, 0, 0, Math.PI * 2)
           ctx.fill()
+        }
+        ctx.strokeStyle = "rgba(40,70,50,0.28)"
+        ctx.lineWidth = 1
+        for (let i = 0; i < 7; i++) {
+          const x = w * (0.12 + i * 0.12)
+          ctx.beginPath()
+          ctx.moveTo(x, h * 0.08)
+          ctx.quadraticCurveTo(x + Math.sin(now / 900 + i) * 8, h * 0.22, x + 4, h * 0.32)
+          ctx.stroke()
+        }
+      } else {
+        for (let i = 0; i < 5; i++) {
+          const a = now / 1100 + i * 1.3
+          ctx.strokeStyle = `rgba(30,50,40,${0.22 + 0.1 * Math.sin(a)})`
+          ctx.lineWidth = 1.1
+          const dx = w * (0.2 + ((i * 17) % 60) / 100) + Math.sin(a) * 16
+          const dy = h * (0.28 + ((i * 9) % 40) / 100)
+          ctx.beginPath()
+          ctx.moveTo(dx - 4, dy)
+          ctx.quadraticCurveTo(dx, dy - 3, dx + 4, dy)
+          ctx.stroke()
         }
       }
       for (let i = 0; i < 3; i++) {

@@ -99,6 +99,7 @@ export function MatchView({
   const ageRef = useRef<HTMLSpanElement>(null)
   const popRef = useRef<HTMLSpanElement>(null)
   const pressRef = useRef<HTMLSpanElement>(null)
+  const orderChipRef = useRef<HTMLSpanElement>(null)
   const camEventAt = useRef(0)
 
   const [tuned] = useState<Tuned>(() => {
@@ -172,6 +173,40 @@ export function MatchView({
         : 0
       pressRef.current.hidden = press === 0
       pressRef.current.textContent = press ? `Hearth pressed ×${press}` : ""
+    }
+    if (orderChipRef.current) {
+      const id = [...selectedDrawRef.current][0]
+      const u = world.units.find((x) => x.id === id)
+      const b = world.buildings.find((x) => x.id === id)
+      if (u) {
+        orderChipRef.current.hidden = false
+        orderChipRef.current.textContent =
+          u.order.t === "gather"
+            ? gatherLine(world, u)
+            : u.order.t === "return"
+              ? u.carry?.res === "relics"
+                ? "Hauling a relic home"
+                : "Hauling home"
+              : u.order.t === "attack"
+                ? "In the fray"
+                : u.order.t === "attackMove"
+                  ? u.type === "ashrider"
+                    ? "Riders hooking"
+                    : "Marching"
+                  : u.order.t === "defend"
+                    ? "Holding"
+                    : u.order.t === "build"
+                      ? "Raising"
+                      : u.order.t === "move"
+                        ? "On the path"
+                        : "Idle"
+      } else if (b) {
+        orderChipRef.current.hidden = false
+        orderChipRef.current.textContent = BUILDING_LABEL[b.type]
+      } else {
+        orderChipRef.current.hidden = true
+        orderChipRef.current.textContent = ""
+      }
     }
     setHudPulse((n) => n + 1)
   }, [world, mapId])
@@ -316,7 +351,7 @@ export function MatchView({
         } catch (err) {
           console.error(err)
         }
-        if (now - lastObsPost > 2500) {
+        if (now - lastObsPost > 2500 && fps >= 24) {
           lastObsPost = now
           const body = JSON.stringify({
             fps,
@@ -481,6 +516,11 @@ export function MatchView({
           {selected.length ? `${selected.length} selected` : "none selected"}
         </Badge>
         <span
+          ref={orderChipRef}
+          hidden
+          className="hidden max-w-[10rem] truncate text-[11px] text-primary sm:inline"
+        />
+        <span
           ref={pressRef}
           hidden
           className="font-heading text-[11px] tracking-wide text-destructive uppercase"
@@ -611,6 +651,17 @@ export function MatchView({
               </Button>
               <Button
                 size="sm"
+                variant="outline"
+                onClick={() => {
+                  const h = world.buildings.find((b) => b.owner === 0 && b.type === "hearth" && b.done)
+                  const ids = selected.length ? selected : [...selectedDrawRef.current]
+                  if (h && ids.length) issueMove(world, ids, h.x + 2, h.y)
+                }}
+              >
+                Recall
+              </Button>
+              <Button
+                size="sm"
                 variant="secondary"
                 disabled={
                   p.age >= 1 ||
@@ -725,9 +776,17 @@ function Selection({
           {building.done
             ? building.aging > 0
               ? `Age rite ${Math.max(0, Math.min(100, (1 - building.aging / COSTS.age1.time) * 100)).toFixed(0)}%`
-              : building.tier >= 1
-                ? "Shored"
-                : "Standing"
+              : world.units.some((u) => u.owner !== building.owner && Math.hypot(u.x - building.x, u.y - building.y) < 10)
+                ? "Pressed — a sentry should hold this yard"
+                : building.tier >= 1
+                  ? "Shored"
+                  : building.type === "camp" || building.type === "pit" || building.type === "granary"
+                    ? (() => {
+                        const hearth = world.buildings.find((b) => b.owner === building.owner && b.type === "hearth")
+                        const far = hearth && Math.hypot(building.x - hearth.x, building.y - hearth.y) > 16
+                        return far ? "Far outpost — a levy should walk this trail" : "Standing"
+                      })()
+                    : "Standing"
             : `Raising ${((building.construct / building.constructMax) * 100).toFixed(0)}%`}
         </p>
         <Progress value={(building.hp / building.hpMax) * 100} className="mt-2" />
@@ -737,9 +796,19 @@ function Selection({
   if (!selectedUnits.length) {
     return (
       <div className="rounded-sm border border-dashed border-primary/25 px-3 py-5 text-center text-sm text-muted-foreground">
-        Select a levy or hall. Right-click grain, timber, ore, hunt, or relics to gather. Forge Age
+        Select a levy or hall. Right-click grain, timber, ore, hunt, or relics to gather. A starving
+        hearth pulls levies onto grain. Bare timber pulls them onto pine. Bare ore pulls them
+        onto stone. A wolf, bear, or boar hunt
+        draws a banner; a deer hunt draws a fifth. A hunt haul draws a banner on the walk home. A fourth warden overwatches a hunt. Forge Age
         levies hop to the next nearest of that job; a right-click lock holds the node you picked.
-        Ashriders ride first. Pressed camps draw a sentry. The age rite waits if the hearth is struck.
+        Ashriders ride first. A lone rider scouts an empty hearth. Three riders hook an empty
+        hearth. Idle levies walk a relic if no
+        scout is free. A spare levy crews a far camp, pit, granary, yard, or lodge. A third warden overwatches
+        the camp. A fourth ashrider patrols a far lodge, pit, granary, or yard; a fifth patrols a relic; a sixth patrols a hunt. A third warden overwatches those same posts. A far timber, ore, or grain haul draws a banner. A relic levy does not steal that crew; a spare banner walks with them. A third warden overwatches a relic levy and walks the haul home. Pressed
+        camps, pits, granaries, yards, and lodges draw a sentry.
+        Recall walks banners home. Wounded ashriders and wardens peel to the lodge; wounded banners peel to the yard. Wounded levies run to a granary if one stands, else a camp, else the hearth. The age rite waits if the
+        hearth is struck; extra banners hold
+        the hearth while it burns.
       </div>
     )
   }
@@ -752,15 +821,47 @@ function Selection({
       </div>
       <p className="text-xs text-muted-foreground">
         {u.hp < u.hpMax * 0.38
-          ? "Wounded — falling back if the student holds the kite"
+          ? u.type === "ashrider"
+            ? "Wounded — peeling to the lodge"
+            : u.type === "levy"
+              ? "Wounded — running to shelter"
+              : "Wounded — falling back if the student holds the kite"
           : u.order.t === "gather"
             ? gatherLine(world, u)
             : u.order.t === "return"
-              ? "Hauling home"
+              ? u.carry?.res === "relics"
+                ? "Hauling a relic home"
+                : "Hauling home"
               : u.order.t === "build"
                 ? "Raising"
                 : u.order.t === "defend"
-                  ? "Holding the hearth"
+                  ? (() => {
+                      const hearth = world.buildings.find((b) => b.owner === 0 && b.type === "hearth")
+                      const outpost = world.buildings.find(
+                        (b) =>
+                          b.owner === 0 &&
+                          b.done &&
+                          (b.type === "camp" || b.type === "pit" || b.type === "granary") &&
+                          hearth &&
+                          Math.hypot(b.x - hearth.x, b.y - hearth.y) > 16 &&
+                          Math.hypot(u.x - b.x, u.y - b.y) < 12,
+                      )
+                      if (outpost) {
+                        const crew = world.units.some(
+                          (q) =>
+                            q.owner === 0 &&
+                            q.type === "levy" &&
+                            Math.hypot(q.x - u.x, q.y - u.y) < 10,
+                        )
+                        return crew ? "Escorting the camp crew" : "Sentry on an outpost"
+                      }
+                      if (hearth && hearth.aging > 0 && Math.hypot(u.x - hearth.x, u.y - hearth.y) <= 12) {
+                        return "Holding the age rite"
+                      }
+                      return hearth && Math.hypot(u.x - hearth.x, u.y - hearth.y) > 12
+                        ? "Sentry on an outpost"
+                        : "Holding the hearth"
+                    })()
                   : u.order.t === "attackMove"
                     ? u.type === "ashrider"
                       ? "Ashriders on the march"
@@ -768,7 +869,21 @@ function Selection({
                     : u.order.t === "attack"
                       ? "In the fray"
                       : u.order.t === "move"
-                        ? "On the path"
+                        ? (() => {
+                            const order = u.order
+                            if (order.t !== "move") return "On the path"
+                            const hearth = world.buildings.find((b) => b.owner === u.owner && b.type === "hearth")
+                            const camp = world.buildings.find(
+                              (b) =>
+                                b.owner === u.owner &&
+                                b.done &&
+                                b.type === "camp" &&
+                                Math.hypot(order.x - b.x, order.y - b.y) < 4 &&
+                                hearth &&
+                                Math.hypot(b.x - hearth.x, b.y - hearth.y) > 16,
+                            )
+                            return camp ? "Crewing a far camp" : "On the path"
+                          })()
                         : "Idle"}
       </p>
       <Progress value={(u.hp / u.hpMax) * 100} className="mt-2" />

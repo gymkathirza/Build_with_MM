@@ -285,6 +285,13 @@ function caveHuman(
     ctx.fillStyle = HAIR
     ctx.fillRect(cx - 16, feet - 14 + kick * 0.4, 6, 8)
     ctx.fillRect(cx + 10, feet - 8 - kick, 5, 8)
+    ctx.fillStyle = HAIR_B
+    ctx.beginPath()
+    ctx.moveTo(cx - 18, feet - 20 - kick * 0.3)
+    ctx.lineTo(cx - 10, feet - 16)
+    ctx.lineTo(cx - 16, feet - 12)
+    ctx.closePath()
+    ctx.fill()
     ctx.fillStyle = "#3a2414"
     ctx.fillRect(cx - 6, feet - 16, 14, 5)
     ctx.fillStyle = "#c49a5a"
@@ -549,6 +556,10 @@ function drawWolf(ctx: CanvasRenderingContext2D, ox: number, oy: number) {
   ctx.lineTo(cx + 20, feet - 34)
   ctx.lineTo(cx + 20, feet - 24)
   ctx.fill()
+  ctx.fillStyle = WHITE
+  ctx.beginPath()
+  ctx.arc(cx + 15.2, feet - 22.6, 1.5, 0, Math.PI * 2)
+  ctx.fill()
   ctx.fillStyle = PUPIL
   ctx.beginPath()
   ctx.arc(cx + 16, feet - 22, 1.1, 0, Math.PI * 2)
@@ -702,6 +713,15 @@ function caveHall(ctx: CanvasRenderingContext2D, ox: number, oy: number, variant
     ctx.fillStyle = "#f0c36a"
     ctx.beginPath()
     ctx.ellipse(cx + 14, base - 20, 1.2, 1.8, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = "#8a2c18"
+    ctx.fillRect(cx + 20, oy + 16, 2, 10)
+    ctx.fillStyle = "#c45c2a"
+    ctx.beginPath()
+    ctx.moveTo(cx + 22, oy + 16)
+    ctx.lineTo(cx + 30, oy + 20)
+    ctx.lineTo(cx + 22, oy + 24)
+    ctx.closePath()
     ctx.fill()
   }
 }

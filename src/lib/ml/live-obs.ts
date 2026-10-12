@@ -11,12 +11,17 @@ export function writeLiveObs(sample: LiveObs) {
   writeFileSync(livePath, JSON.stringify({ ...sample, at: Date.now() }, null, 2))
 }
 
+export function trustedLive(raw: LiveObs | null): LiveObs | null {
+  if (!raw || typeof raw.fps !== "number") return null
+  if (raw.at && Date.now() - raw.at > 15 * 60_000) return null
+  if (raw.fps < 24) return null
+  return raw
+}
+
 export function readLiveObs(): LiveObs | null {
   try {
     const raw = JSON.parse(readFileSync(livePath, "utf8")) as LiveObs
-    if (!raw || typeof raw.fps !== "number") return null
-    if (raw.at && Date.now() - raw.at > 15 * 60_000) return null
-    return raw
+    return trustedLive(raw)
   } catch {
     return null
   }

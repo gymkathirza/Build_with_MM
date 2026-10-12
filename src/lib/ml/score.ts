@@ -130,6 +130,9 @@ export function improveFromScore(
   } else if (fps > 58 && prev.quality < 2 && score.simMs < 3) {
     next.quality = Math.min(2, prev.quality + 1) as DrawQuality
   }
+  if (fps > 58 && score.simMs < 3) {
+    next.lodDistance = Math.min(28, next.lodDistance + 2)
+  }
   if (inputMs > 45) {
     next.lodDistance = Math.max(14, next.lodDistance - 4)
   }
@@ -142,10 +145,13 @@ export function improveFromScore(
   const southWins = southKnown.filter((g) => g.southWon).length
   const mapBiased = southKnown.length >= 4 && Math.abs(southWins / southKnown.length - 0.5) > 0.18
 
-  if (unfinished > games.length / 2) {
+  if (unfinished >= games.length - 1) {
     next.ai.attackAtArmy = Math.max(3, prev.ai.attackAtArmy - 1)
     next.ai.militaryRatio = Math.min(0.8, prev.ai.militaryRatio + 0.05)
     next.ai.agePriority = Math.min(0.9, prev.ai.agePriority + 0.04)
+  } else if (unfinished > games.length / 2) {
+    next.ai.attackAtArmy = Math.max(6, prev.ai.attackAtArmy - 1)
+    next.ai.militaryRatio = Math.min(0.8, prev.ai.militaryRatio + 0.04)
   } else if (aged < games.length / 3) {
     next.ai.agePriority = Math.min(0.9, prev.ai.agePriority + 0.05)
     next.ai.gatherBias = Math.min(0.8, prev.ai.gatherBias + 0.02)

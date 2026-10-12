@@ -18,9 +18,40 @@ import {
 import { COSTS } from "./catalog"
 import { personaById, type Persona } from "./personas"
 
+function ownerFarOutposts(w: World, owner: Owner) {
+  const h = hall(w, owner)
+  if (!h) return []
+  return w.buildings.filter(
+    (b) =>
+      b.owner === owner &&
+      b.done &&
+      (b.type === "camp" ||
+        b.type === "pit" ||
+        b.type === "granary" ||
+        b.type === "yard" ||
+        b.type === "lodge") &&
+      Math.hypot(b.x - h.x, b.y - h.y) > 16,
+  )
+}
+
+function isFarCampCrew(w: World, u: World["units"][number], owner: Owner) {
+  if (u.owner !== owner || u.type !== "levy") return false
+  const sites = ownerFarOutposts(w, owner)
+  if (!sites.length) return false
+  const order = u.order
+  if (order.t === "move") {
+    return sites.some((c) => Math.hypot(order.x - c.x, order.y - c.y) < 4)
+  }
+  return sites.some((c) => Math.hypot(u.x - c.x, u.y - c.y) < 8)
+}
+
 function idleLevies(w: World, owner: Owner) {
   return w.units.filter(
-    (u) => u.owner === owner && u.type === "levy" && (u.order.t === "idle" || u.order.t === "move"),
+    (u) =>
+      u.owner === owner &&
+      u.type === "levy" &&
+      (u.order.t === "idle" || u.order.t === "move") &&
+      !isFarCampCrew(w, u, owner),
   )
 }
 
@@ -118,6 +149,9 @@ function noiseRoll(noise: number, salt: number) {
 
 function gatherNeed(w: World, owner: Owner, persona: Persona): Res | undefined {
   const p = w.players[owner]
+  if (p.grain < 40 && persona.gather !== "skewed") return "grain"
+  if (p.timber < 25 && persona.gather !== "skewed") return "timber"
+  if (p.ore < 20 && persona.gather !== "skewed") return "ore"
   if (persona.gather === "skewed") return persona.skewRes
   const counts: Record<Res, number> = { grain: 0, timber: 0, ore: 0, relics: 0 }
   for (const u of w.units) {
@@ -141,6 +175,9 @@ function gatherNeed(w: World, owner: Owner, persona: Persona): Res | undefined {
   if (p.timber < 80) return "timber"
   if (p.grain < 140) return "grain"
   if (p.ore < 90) return "ore"
+  if (p.age >= 1 && p.relics < 1 && p.grain >= 180 && p.timber >= 100 && p.ore >= 80) {
+    return "relics"
+  }
   const order: Res[] = ["grain", "timber", "ore", "relics"]
   order.sort((a, b) => counts[a] - counts[b])
   return order[0]
@@ -279,7 +316,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
   }
   const attackAt = p.age >= 1 ? Math.max(2, tuned.attackAtArmy - 1) : tuned.attackAtArmy
   const keepRaid = !hallPressed && military.length >= attackAt ? 1 : 0
-  const wantHold = Math.max(1, Math.floor(guards.length * (hallPressed ? 0.7 : 0.35)))
+  const wantHold = Math.max(1, Math.floor(guards.length * (hallPressed || h.aging > 0 ? 0.7 : 0.35)))
   const garrisonN = Math.max(0, Math.min(guards.length - keepRaid, wantHold))
   const garrison = guards.slice(0, garrisonN)
   if (garrison.length && w.tick % 20 === owner) {
@@ -353,15 +390,29 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     }
   }
 
-  if (tuned.kite > 0.5 && w.tick % 20 === owner) {
+  if (tuned.kite >= 0.5 && w.tick % 20 === owner) {
     const wounded = military.filter((u) => u.hp < u.hpMax * 0.38 && !garrison.some((g) => g.id === u.id))
     if (wounded.length) {
-      issueMove(
-        w,
-        wounded.map((u) => u.id),
-        h.x + (owner === 0 ? 3 : -3),
-        h.y,
-      )
+      const riders = wounded.filter((u) => u.type === "ashrider" || u.type === "warden")
+      const rest = wounded.filter((u) => u.type !== "ashrider" && u.type !== "warden")
+      if (riders.length && lodge) issueMove(w, riders.map((u) => u.id), lodge.x, lodge.y)
+      else if (riders.length) {
+        issueMove(w, riders.map((u) => u.id), h.x + (owner === 0 ? 3 : -3), h.y)
+      }
+      if (rest.length && yard) issueMove(w, rest.map((u) => u.id), yard.x, yard.y)
+      else if (rest.length) issueMove(w, rest.map((u) => u.id), h.x + (owner === 0 ? 3 : -3), h.y)
+    }
+    const scared = levies.filter(
+      (u) =>
+        u.hp < u.hpMax * 0.38 &&
+        !isFarCampCrew(w, u, owner) &&
+        foesNear(w, u.x, u.y, 8, owner).length > 0,
+    )
+    if (scared.length) {
+      const grainHouse = w.buildings.find((b) => b.owner === owner && b.type === "granary" && b.done)
+      const camp = w.buildings.find((b) => b.owner === owner && b.type === "camp" && b.done)
+      const shelter = grainHouse ?? camp ?? h
+      issueMove(w, scared.map((u) => u.id), shelter.x, shelter.y)
     }
   }
 
@@ -433,6 +484,14 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
             )
           }
         }
+        if (foeMilitaryHome === 0 && riders.length >= 3 && w.tick % 40 === owner) {
+          issueAttackMove(
+            w,
+            riders.slice(-2).map((u) => u.id),
+            enemyHall.x + (owner === 0 ? 8 : -8),
+            enemyHall.y + (owner === 0 ? 10 : -10),
+          )
+        }
       }
     }
   } else if (
@@ -447,10 +506,17 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
   ) {
     const scout = military.find(
       (u) =>
+        u.type === "ashrider" &&
         (u.order.t === "idle" || u.order.t === "defend") &&
         !garrison.some((g) => g.id === u.id) &&
         u.hp >= u.hpMax * 0.6,
-    )
+    ) ??
+      military.find(
+        (u) =>
+          (u.order.t === "idle" || u.order.t === "defend") &&
+          !garrison.some((g) => g.id === u.id) &&
+          u.hp >= u.hpMax * 0.6,
+      )
     if (scout) issueAttackMove(w, [scout.id], enemyHall.x, enemyHall.y)
   }
 
@@ -472,6 +538,17 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         !garrison.some((g) => g.id === u.id),
     )
     if (relic && scout) issueMove(w, [scout.id], relic.x, relic.y)
+    else if (relic && !scout && !hallPressed) {
+      const already = levies.some((u) => u.order.t === "gather" && u.order.node === relic.id)
+      const levyScout = already
+        ? null
+        : levies.find(
+            (u) =>
+              !isFarCampCrew(w, u, owner) &&
+              (u.order.t === "idle" || u.order.t === "move" || u.order.t === "gather"),
+          )
+      if (levyScout) issueGather(w, [levyScout.id], relic.id)
+    }
     const contested = w.nodes.find(
       (n) =>
         n.type === "relics" &&
@@ -493,6 +570,52 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         contested.x,
         contested.y,
       )
+    } else if (!hallPressed && !contested) {
+      const relicLevy = levies.find((u) => {
+        const order = u.order
+        if (order.t !== "gather") return false
+        const n = w.nodes.find((q) => q.id === order.node)
+        return n?.type === "relics"
+      })
+      const escort = military.find(
+        (u) =>
+          u.type === "guard" &&
+          !garrison.some((g) => g.id === u.id) &&
+          (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+      )
+      if (relicLevy && escort) issueDefend(w, [escort.id], relicLevy.x, relicLevy.y)
+      const relicWardenCount = military.filter((u) => u.type === "warden").length
+      const relicWatch =
+        relicLevy && relicWardenCount >= 3
+          ? military.find(
+              (u) =>
+                u.type === "warden" &&
+                !garrison.some((g) => g.id === u.id) &&
+                (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+            )
+          : undefined
+      if (relicLevy && relicWatch) issueDefend(w, [relicWatch.id], relicLevy.x, relicLevy.y)
+      const hauler = levies.find((u) => u.order.t === "return" && u.carry?.res === "relics")
+      const haulEscort =
+        hauler && guards.length >= 5
+          ? military.find(
+              (u) =>
+                u.type === "guard" &&
+                !garrison.some((g) => g.id === u.id) &&
+                (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+            )
+          : undefined
+      if (hauler && haulEscort) issueDefend(w, [haulEscort.id], hauler.x, hauler.y)
+      const haulWatch =
+        hauler && relicWardenCount >= 3
+          ? military.find(
+              (u) =>
+                u.type === "warden" &&
+                !garrison.some((g) => g.id === u.id) &&
+                (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+            )
+          : undefined
+      if (hauler && haulWatch) issueDefend(w, [haulWatch.id], hauler.x, hauler.y)
     }
   }
 
@@ -501,7 +624,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
       (b) =>
         b.owner === owner &&
         b.done &&
-        (b.type === "camp" || b.type === "pit" || b.type === "granary") &&
+        (b.type === "camp" || b.type === "pit" || b.type === "granary" || b.type === "lodge" || b.type === "yard") &&
         foesNear(w, b.x, b.y, 10, owner).length > 0,
     )
     const sentry = military.find(
@@ -511,6 +634,160 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
         (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
     )
     if (outpost && sentry) issueDefend(w, [sentry.id], outpost.x, outpost.y)
+    const farSites = ownerFarOutposts(w, owner)
+    const farCamp = farSites.find((b) => b.type === "camp")
+    for (const site of farSites) {
+      const crewed = levies.some((u) => {
+        const order = u.order
+        return (
+          Math.hypot(u.x - site.x, u.y - site.y) < 8 ||
+          (order.t === "move" && Math.hypot(order.x - site.x, order.y - site.y) < 4)
+        )
+      })
+      const extra =
+        !crewed
+          ? idleLevies(w, owner)[0] ??
+            (levies.length > wantsGather + 1
+              ? levies.find((u) => !isFarCampCrew(w, u, owner) && (u.order.t === "gather" || u.order.t === "move"))
+              : undefined)
+          : undefined
+      if (extra) {
+        issueMove(w, [extra.id], site.x, site.y)
+        break
+      }
+    }
+    const riderCount = military.filter((u) => u.type === "ashrider").length
+    const spareRiders = military.filter(
+      (u) =>
+        u.type === "ashrider" &&
+        !garrison.some((g) => g.id === u.id) &&
+        (u.order.t === "idle" || u.order.t === "defend" || u.order.t === "move"),
+    )
+    const spareRider = riderCount >= 4 ? spareRiders[0] : undefined
+    const relicRider = riderCount >= 5 ? spareRiders[1] ?? spareRiders[0] : undefined
+    const huntRider = riderCount >= 6 ? spareRiders[2] ?? spareRiders[1] ?? spareRiders[0] : undefined
+    const farLodge = w.buildings.find(
+      (b) =>
+        b.owner === owner &&
+        b.done &&
+        b.type === "lodge" &&
+        Math.hypot(b.x - h.x, b.y - h.y) > 16,
+    )
+    const farPit = farSites.find((b) => b.type === "pit")
+    const farGranary = farSites.find((b) => b.type === "granary")
+    const farYard = farSites.find((b) => b.type === "yard")
+    if (farLodge && spareRider) {
+      issueDefend(w, [spareRider.id], farLodge.x, farLodge.y)
+    } else if (farPit && spareRider) {
+      issueDefend(w, [spareRider.id], farPit.x, farPit.y)
+    } else if (farGranary && spareRider) {
+      issueDefend(w, [spareRider.id], farGranary.x, farGranary.y)
+    } else if (farYard && spareRider) {
+      issueDefend(w, [spareRider.id], farYard.x, farYard.y)
+    } else if (farCamp && spareRider) {
+      issueDefend(w, [spareRider.id], farCamp.x, farCamp.y)
+    }
+    const relicNode = w.nodes.find((n) => n.type === "relics" && n.amount > 0)
+    if (relicNode && relicRider) issueDefend(w, [relicRider.id], relicNode.x, relicNode.y)
+    const huntNode = w.nodes.find((n) => n.fauna && n.amount > 0)
+    if (huntNode && huntRider) issueDefend(w, [huntRider.id], huntNode.x, huntNode.y)
+    const wardenCount = military.filter((u) => u.type === "warden").length
+    const spareWardens = military.filter(
+      (u) =>
+        u.type === "warden" &&
+        !garrison.some((g) => g.id === u.id) &&
+        (u.order.t === "idle" || u.order.t === "defend" || u.order.t === "move"),
+    )
+    const spareWarden = wardenCount >= 3 ? spareWardens[0] : undefined
+    const huntWarden = wardenCount >= 4 ? spareWardens[1] ?? spareWardens[0] : undefined
+    if (farLodge && spareWarden) {
+      issueDefend(w, [spareWarden.id], farLodge.x, farLodge.y)
+    } else if (farPit && spareWarden) {
+      issueDefend(w, [spareWarden.id], farPit.x, farPit.y)
+    } else if (farGranary && spareWarden) {
+      issueDefend(w, [spareWarden.id], farGranary.x, farGranary.y)
+    } else if (farYard && spareWarden) {
+      issueDefend(w, [spareWarden.id], farYard.x, farYard.y)
+    } else if (farCamp && spareWarden) {
+      issueDefend(w, [spareWarden.id], farCamp.x, farCamp.y)
+    }
+    const crewLevy = levies.find((u) => isFarCampCrew(w, u, owner))
+    const escortGuard =
+      guards.length >= 4 && crewLevy
+        ? military.find(
+            (u) =>
+              u.type === "guard" &&
+              !garrison.some((g) => g.id === u.id) &&
+              (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+          )
+        : undefined
+    if (crewLevy && escortGuard) {
+      issueDefend(w, [escortGuard.id], crewLevy.x, crewLevy.y)
+    }
+    const hunter = levies.find((u) => {
+      const order = u.order
+      if (order.t !== "gather") return false
+      const n = w.nodes.find((q) => q.id === order.node)
+      return n?.fauna === "wolf" || n?.fauna === "bear" || n?.fauna === "boar"
+    })
+    const huntGuard =
+      hunter && guards.length >= 3
+        ? military.find(
+            (u) =>
+              u.type === "guard" &&
+              !garrison.some((g) => g.id === u.id) &&
+              (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+          )
+        : undefined
+    if (hunter && huntGuard) issueDefend(w, [huntGuard.id], hunter.x, hunter.y)
+    const deerHunter = levies.find((u) => {
+      const order = u.order
+      if (order.t !== "gather") return false
+      const n = w.nodes.find((q) => q.id === order.node)
+      return n?.fauna === "deer"
+    })
+    const deerGuard =
+      deerHunter && guards.length >= 5
+        ? military.find(
+            (u) =>
+              u.type === "guard" &&
+              !garrison.some((g) => g.id === u.id) &&
+              (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+          )
+        : undefined
+    if (deerHunter && deerGuard) issueDefend(w, [deerGuard.id], deerHunter.x, deerHunter.y)
+    const huntMark = hunter ?? deerHunter
+    if (huntMark && huntWarden) issueDefend(w, [huntWarden.id], huntMark.x, huntMark.y)
+    const huntHauler = levies.find((u) => {
+      if (u.order.t !== "return" || u.carry?.res !== "grain") return false
+      return w.nodes.some((n) => n.fauna && Math.hypot(n.x - u.x, n.y - u.y) < 14)
+    })
+    const huntHaulGuard =
+      huntHauler && guards.length >= 3
+        ? military.find(
+            (u) =>
+              u.type === "guard" &&
+              !garrison.some((g) => g.id === u.id) &&
+              (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+          )
+        : undefined
+    if (huntHauler && huntHaulGuard) issueDefend(w, [huntHaulGuard.id], huntHauler.x, huntHauler.y)
+    const storeHauler = levies.find(
+      (u) =>
+        u.order.t === "return" &&
+        (u.carry?.res === "timber" || u.carry?.res === "ore" || u.carry?.res === "grain") &&
+        Math.hypot(u.x - h.x, u.y - h.y) > 16,
+    )
+    const storeEscort =
+      storeHauler && guards.length >= 4
+        ? military.find(
+            (u) =>
+              u.type === "guard" &&
+              !garrison.some((g) => g.id === u.id) &&
+              (u.order.t === "idle" || u.order.t === "move" || u.order.t === "defend"),
+          )
+        : undefined
+    if (storeHauler && storeEscort) issueDefend(w, [storeEscort.id], storeHauler.x, storeHauler.y)
   }
 }
 

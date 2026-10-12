@@ -6,7 +6,7 @@ export const runtime = "nodejs"
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as LiveObs
-    if (typeof body.fps !== "number") {
+    if (typeof body.fps !== "number" || body.fps < 24) {
       return NextResponse.json({ ok: false }, { status: 400 })
     }
     writeLiveObs(body)
