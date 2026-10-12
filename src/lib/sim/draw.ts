@@ -179,6 +179,17 @@ function drawTerrain(
       ctx.moveTo(birdX + 2, birdY - 1)
       ctx.quadraticCurveTo(birdX + 4, birdY - 6, birdX + 9, birdY - 2)
       ctx.stroke()
+      const bird2X = lake.sx - lrx * 0.32
+      const bird2Y = lake.sy + lry * 0.42 + Math.sin(t / 820) * 1.8
+      ctx.strokeStyle = "rgba(30,70,90,0.42)"
+      ctx.beginPath()
+      ctx.moveTo(bird2X, bird2Y)
+      ctx.lineTo(bird2X - 5, bird2Y - 2)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(bird2X - 2, bird2Y - 1)
+      ctx.quadraticCurveTo(bird2X - 4, bird2Y - 5, bird2X - 8, bird2Y - 2)
+      ctx.stroke()
     }
     if (world.mapId === "vast-mere" && quality > 1) {
       for (let i = 0; i < 8; i++) {
