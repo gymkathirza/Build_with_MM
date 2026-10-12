@@ -46,6 +46,15 @@ import { DEFAULT_TUNED, type DrawQuality, type Tuned } from "@/lib/ml/score"
 import { factionById, mapById } from "@/lib/game-data"
 import { hallPositions, specFor } from "@/lib/sim/maps"
 import { personaById } from "@/lib/sim/personas"
+import { missionById } from "@/lib/campaign/missions"
+import { loadFile, markVictory, writeFile } from "@/lib/campaign/save"
+import {
+  beginMission,
+  campaignBuildTypes,
+  createCampaignWorld,
+  fundGuild,
+} from "@/lib/sim/campaign"
+import { EmptyState } from "@/components/game/screen-states"
 import tunedJson from "@/lib/ml/tuned.json"
 
 type Pending = { kind: "build"; type: BuildingType } | { kind: "attackMove" } | null
@@ -72,6 +81,8 @@ export function MatchView({
   difficulty = "marshal",
   mapId = "vast-mere",
   personaId = "balanced",
+  missionId = "",
+  slotId = "slot-1",
 }: {
   factionId: string
   enemyFaction?: string
@@ -79,6 +90,8 @@ export function MatchView({
   difficulty?: string
   mapId?: string
   personaId?: string
+  missionId?: string
+  slotId?: string
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const spec = specFor(mapId)
@@ -107,21 +120,36 @@ export function MatchView({
       ai: difficultyAi(difficulty, { ...LOADED_TUNED.ai, ...persona.params }),
     }
   })
-  const [world] = useState<World>(() =>
-    createWorld(factionId, enemyFaction, tuned.ai, { mapId, persona: personaId }),
-  )
+  const mission = missionId ? missionById(missionId) : undefined
+  const campaignUnknown = Boolean(missionId) && !mission
+  const [world] = useState<World>(() => {
+    if (mission) {
+      const saved = loadFile()
+      const slot = saved.file.slots.find((s) => s.id === slotId)
+      const pirateScale = slot?.relicSecured ? 1.45 : 1
+      return createCampaignWorld(mission.id, tuned.ai, { pirateScale })
+    }
+    return createWorld(factionId, enemyFaction, tuned.ai, { mapId, persona: personaId })
+  })
   const [selected, setSelected] = useState<number[]>([])
   const [paused, setPaused] = useState(false)
   const [pending, setPending] = useState<Pending>(null)
   const [winner, setWinner] = useState<0 | 1 | null>(null)
   const [endPearl, setEndPearl] = useState(false)
   const [hudPulse, setHudPulse] = useState(0)
-  const [startPearl, setStartPearl] = useState(true)
+  const [startPearl, setStartPearl] = useState(!mission)
+  const [briefing, setBriefing] = useState(Boolean(mission))
 
   useEffect(() => {
     const t = window.setTimeout(() => setStartPearl(false), 1900)
     return () => window.clearTimeout(t)
   }, [])
+
+  useEffect(() => {
+    if (winner !== 0 || !mission) return
+    const cur = loadFile()
+    writeFile(markVictory(cur.file, slotId, mission.id))
+  }, [winner, mission, slotId])
 
   useEffect(() => {
     pausedRef.current = paused
@@ -238,7 +266,7 @@ export function MatchView({
       cam.y = Math.max(8, Math.min(world.size - 8, cam.y))
 
       let simMs = 0
-      if (!pausedRef.current && world.winner === null) {
+      if (!pausedRef.current && world.winner === null && world.campaign?.phase !== "briefing") {
         acc += dt
         const step = 1 / TICK_HZ
         let safety = 0
@@ -376,7 +404,24 @@ export function MatchView({
   const selUnits = world.units.filter((u) => selected.includes(u.id))
   const selBuild = world.buildings.find((b) => selected.includes(b.id))
   const p = world.players[0]
-  const faction = factionById(factionId)
+  const faction = factionById(mission?.faction ?? factionId)
+  const campaignBuild = mission ? campaignBuildTypes(mission.id) : []
+
+  if (campaignUnknown) {
+    return (
+      <div className="flex h-dvh flex-col items-center justify-center bg-[#140e0a] px-4">
+        <EmptyState
+          title="This plate would not open"
+          detail="No Twin-Fish mission matches that seal. Return to Campaign and pick Kayal, Palk, Tamraparani, or the Fracture."
+          action={
+            <Link href="/campaign" className={buttonVariants()}>
+              Campaign
+            </Link>
+          }
+        />
+      </div>
+    )
+  }
 
   function orderAt(sx: number, sy: number, ids: number[]) {
     const t0 = performance.now()
@@ -423,10 +468,12 @@ export function MatchView({
       <header className="relative z-20 flex shrink-0 flex-wrap items-center gap-2 border-b border-primary/25 bg-black/55 px-2 py-1.5">
         <PearlLogo size={28} className="hidden shrink-0 sm:block" />
         <p className="font-heading hidden text-[11px] tracking-[0.28em] text-primary uppercase sm:block">
-          {faction.name}
+          {mission ? mission.title : faction.name}
         </p>
         <p className="hidden max-w-[12rem] truncate text-[11px] text-muted-foreground sm:block">
-          {mapById(mapId).name} · {personaById(personaId).name}
+          {mission
+            ? `${mapById(mission.map).name} · ${mission.year}`
+            : `${mapById(mapId).name} · ${personaById(personaId).name}`}
         </p>
         <Chip icon={<Wheat className="size-3.5" />} label="Grain" valueRef={grainRef} initial={240} />
         <Chip icon={<Trees className="size-3.5" />} label="Timber" valueRef={timberRef} initial={220} />
@@ -502,6 +549,38 @@ export function MatchView({
             60 fps
           </p>
         </aside>
+        {world.campaign && !briefing ? (
+          <div className="absolute bottom-2 left-2 z-10 flex max-w-[min(22rem,92vw)] flex-col gap-1 rounded-sm border border-primary/30 bg-black/70 p-2 text-[11px] text-primary sm:top-2 sm:bottom-auto">
+            <p className="font-heading tracking-widest uppercase">Objective</p>
+            <p className="text-muted-foreground">{world.campaign.objective}</p>
+            {world.campaign.missionId === "kayal" ? (
+              <div className="mt-1 flex flex-wrap gap-1">
+                <span className="text-muted-foreground">
+                  Manigramam {world.campaign.manigramam} · Anjuvannam {world.campaign.anjuvannam}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => fundGuild(world, "manigramam")}
+                >
+                  Fund Manigramam
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => fundGuild(world, "anjuvannam")}
+                >
+                  Seat Anjuvannam
+                </Button>
+              </div>
+            ) : null}
+            {world.campaign.night ? (
+              <p className="text-destructive">Night — raise a lighthouse or the sand spawns corsairs.</p>
+            ) : null}
+          </div>
+        ) : null}
         {pending ? (
           <div className="pointer-events-none absolute top-2 left-2 z-10 max-w-[min(18rem,70vw)] rounded-sm border border-primary/40 bg-black/70 px-3 py-2 text-xs text-primary">
             <p className="font-heading tracking-widest uppercase">
@@ -516,18 +595,69 @@ export function MatchView({
         <PearlFlourish play={endPearl} variant="end" />
         {winner !== null ? (
           <Overlay
-            title={winner === 0 ? "The field is yours" : "The hearth is gone"}
+            wide={Boolean(mission)}
+            title={
+              mission
+                ? winner === 0
+                  ? world.campaign?.winWhy ?? "The plate is yours"
+                  : world.campaign?.failWhy ?? "The hearth is gone"
+                : winner === 0
+                  ? "The field is yours"
+                  : "The hearth is gone"
+            }
             description={
-              winner === 0
-                ? "The rival banner is broken. Build with Manon Mani records the skirmish as a win."
-                : "Your Hearth Hall fell. Resign, or return to the hall and raise another."
+              mission
+                ? winner === 0
+                  ? "Twin-Fish Reign records the victory. The next plate unseals on the campaign table."
+                  : "Retry this plate from the briefing, or return to the chronicle."
+                : winner === 0
+                  ? "The rival banner is broken. Build with Manon Mani records the skirmish as a win."
+                  : "Your Hearth Hall fell. Resign, or return to the hall and raise another."
             }
           >
-            <Link href="/skirmish" className={buttonVariants({ className: "w-full" })}>
-              Another skirmish
-            </Link>
+            {mission ? (
+              <>
+                <Link href="/campaign" className={buttonVariants({ className: "w-full" })}>
+                  Campaign table
+                </Link>
+                <Link
+                  href={`/match?source=campaign&mission=${mission.id}&slot=${slotId}`}
+                  className={buttonVariants({ variant: "outline", className: "w-full" })}
+                >
+                  Retry this plate
+                </Link>
+              </>
+            ) : (
+              <Link href="/skirmish" className={buttonVariants({ className: "w-full" })}>
+                Another skirmish
+              </Link>
+            )}
             <Link href="/" className={buttonVariants({ variant: "outline", className: "w-full" })}>
               Main menu
+            </Link>
+          </Overlay>
+        ) : null}
+        {briefing && mission && winner === null ? (
+          <Overlay wide title={mission.title} description={`${mission.arc} · ${mission.year}`}>
+            <p className="text-sm text-muted-foreground">{mission.briefing}</p>
+            <p className="text-sm">
+              <span className="text-primary">Win:</span> {mission.win}
+            </p>
+            <p className="text-sm">
+              <span className="text-destructive">Lose:</span> {mission.lose}
+            </p>
+            <Button
+              className="w-full"
+              onClick={() => {
+                beginMission(world)
+                setBriefing(false)
+                setStartPearl(true)
+              }}
+            >
+              March
+            </Button>
+            <Link href="/campaign" className={buttonVariants({ variant: "outline", className: "w-full" })}>
+              Back to campaign
             </Link>
           </Overlay>
         ) : null}
@@ -587,7 +717,10 @@ export function MatchView({
               >
                 Shore hall
               </Button>
-              {(["yard", "camp", "pit", "lodge", "granary"] as const).map((type) => (
+              {(mission
+                ? (["yard", "camp", "pit", "granary", ...campaignBuild] as const)
+                : (["yard", "camp", "pit", "lodge", "granary"] as const)
+              ).map((type) => (
                 <Button
                   key={type}
                   size="sm"
@@ -602,7 +735,12 @@ export function MatchView({
               ))}
             </div>
           </div>
-          <TrainPanel world={world} selected={selBuild} onTrain={() => paintHud(60, 16, 0)} />
+          <TrainPanel
+            world={world}
+            selected={selBuild}
+            onTrain={() => paintHud(60, 16, 0)}
+            campaign={Boolean(mission)}
+          />
         </div>
         <p className="px-3 pb-1.5 text-[11px] text-muted-foreground">
           WASD pan · wheel zoom · left select · right order · F strike-move · G defend hearth · H hold ·
@@ -621,8 +759,11 @@ export function MatchView({
           <Link href="/settings" className={buttonVariants({ variant: "outline", className: "w-full" })}>
             Settings
           </Link>
-          <Link href="/" className={buttonVariants({ variant: "destructive", className: "w-full" })}>
-            Resign to menu
+          <Link
+            href={mission ? "/campaign" : "/"}
+            className={buttonVariants({ variant: "destructive", className: "w-full" })}
+          >
+            Resign to {mission ? "campaign" : "menu"}
           </Link>
         </Overlay>
       ) : null}
@@ -728,10 +869,12 @@ function TrainPanel({
   world,
   selected,
   onTrain,
+  campaign = false,
 }: {
   world: World
   selected?: Building
   onTrain: () => void
+  campaign?: boolean
 }) {
   const owned = world.buildings.filter((x) => x.owner === 0 && x.done)
   const b =
@@ -744,7 +887,14 @@ function TrainPanel({
     if (hall.type === "yard") {
       options.push({ type: "guard", buildingId: hall.id }, { type: "warden", buildingId: hall.id })
     }
-    if (hall.type === "lodge") options.push({ type: "ashrider", buildingId: hall.id })
+    if (hall.type === "lodge") {
+      options.push({ type: "ashrider", buildingId: hall.id })
+      if (campaign) options.push({ type: "rowther", buildingId: hall.id })
+    }
+    if (hall.type === "quay") {
+      options.push({ type: "dhoni", buildingId: hall.id })
+      if (world.campaign?.escortsUnlocked) options.push({ type: "marzban", buildingId: hall.id })
+    }
   }
   return (
     <div className="rounded-sm border border-primary/20 bg-card/50 p-2">

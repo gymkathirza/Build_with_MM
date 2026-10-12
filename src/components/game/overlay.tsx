@@ -6,10 +6,12 @@ export function Overlay({
   title,
   description,
   children,
+  wide = false,
 }: {
   title: string
   description: string
   children: ReactNode
+  wide?: boolean
 }) {
   return (
     <div
@@ -18,7 +20,9 @@ export function Overlay({
       aria-modal="true"
       aria-labelledby="overlay-title"
     >
-      <div className="gold-trim w-full max-w-md rounded-sm bg-card/95 p-5 shadow-2xl ring-1 ring-primary/20">
+      <div
+        className={`gold-trim w-full rounded-sm bg-card/95 p-5 shadow-2xl ring-1 ring-primary/20 ${wide ? "max-w-lg max-h-[90dvh] overflow-y-auto" : "max-w-md"}`}
+      >
         <h2 id="overlay-title" className="font-heading text-xl tracking-wide text-primary">
           {title}
         </h2>

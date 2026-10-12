@@ -8,6 +8,7 @@ import {
   type BuildingType,
   type UnitType,
 } from "./catalog"
+import { campaignHitBonus, campaignSpeed, tickCampaign, type CampaignRuntime } from "./campaign"
 import {
   contestNodes,
   hallPositions,
@@ -41,7 +42,7 @@ export type GatherObs = {
   idleDeplete: number
 }
 
-export type Fauna = "deer" | "boar" | "bear" | "wolf"
+export type Fauna = "deer" | "boar" | "bear" | "wolf" | "shark"
 
 export type Unit = {
   id: number
@@ -130,6 +131,7 @@ export type World = {
   persona: string
   southOwner: Owner
   gather: GatherObs
+  campaign?: CampaignRuntime
 }
 
 export type SimEvent =
@@ -249,7 +251,7 @@ function dropFor(w: World, u: Unit, res: Res) {
   return best
 }
 
-function spawnUnit(w: World, owner: Owner, type: UnitType, x: number, y: number) {
+export function spawnUnit(w: World, owner: Owner, type: UnitType, x: number, y: number) {
   const s = UNIT_STATS[type]
   w.units.push({
     id: nid(w),
@@ -267,7 +269,7 @@ function spawnUnit(w: World, owner: Owner, type: UnitType, x: number, y: number)
   })
 }
 
-function addBuilding(
+export function seedBuilding(
   w: World,
   owner: Owner,
   type: BuildingType,
@@ -296,6 +298,8 @@ function addBuilding(
   w.buildings.push(b)
   return b
 }
+
+const addBuilding = seedBuilding
 
 function node(w: World, type: Res, x: number, y: number, amount: number, fauna: Fauna | null = null) {
   w.nodes.push({
@@ -468,9 +472,14 @@ export function queueTrain(w: World, buildingId: number, type: UnitType): boolea
   const allowed =
     (b.type === "hearth" && type === "levy") ||
     (b.type === "yard" && (type === "guard" || type === "warden")) ||
-    (b.type === "lodge" && type === "ashrider")
+    (b.type === "lodge" && (type === "ashrider" || type === "rowther")) ||
+    (b.type === "quay" && (type === "dhoni" || type === "marzban"))
   if (!allowed) {
     w.events.push({ k: "failed", owner: b.owner, why: "That yard cannot train this banner." })
+    return false
+  }
+  if (type === "marzban" && w.campaign && !w.campaign.escortsUnlocked) {
+    w.events.push({ k: "failed", owner: b.owner, why: "Seat both guilds before Marzban escorts sail." })
     return false
   }
   const p = w.players[b.owner]
@@ -612,7 +621,10 @@ function hit(w: World, u: Unit, target: Unit | Building) {
     target.kind === "building" ? stats.range + BUILDING_STATS[target.type].radius : stats.range
   if (dist(u.x, u.y, target.x, target.y) > range + 0.2) return
   const armor = target.kind === "unit" ? UNIT_STATS[target.type].armor : 2
-  const dmg = Math.max(1, stats.atk - armor) * (target.kind === "building" ? 1.4 : 1)
+  const dmg =
+    Math.max(1, stats.atk - armor) *
+    (target.kind === "building" ? 1.4 : 1) *
+    campaignHitBonus(w, u.type, u.x, u.y)
   target.hp -= dmg
   u.atkCd = stats.cd
   if (target.hp <= 0) {
@@ -628,7 +640,7 @@ function hit(w: World, u: Unit, target: Unit | Building) {
 
 function tickUnit(w: World, u: Unit) {
   u.atkCd = Math.max(0, u.atkCd - DT)
-  const speed = UNIT_STATS[u.type].speed
+  const speed = UNIT_STATS[u.type].speed * campaignSpeed(w, u.type, u.x, u.y)
   const o = u.order
 
   if (o.t === "move") {
@@ -821,10 +833,15 @@ function tickBuildings(w: World) {
 
 export function tick(w: World) {
   if (w.winner !== null) return
+  if (w.campaign?.phase === "briefing") return
   w.tick++
   if (w.events.length > 40) w.events.length = 0
   tickBuildings(w)
   for (const u of [...w.units]) tickUnit(w, u)
+  if (w.campaign) {
+    tickCampaign(w)
+    return
+  }
   for (const owner of [0, 1] as Owner[]) {
     if (!w.buildings.some((b) => b.owner === owner && b.type === "hearth")) {
       w.winner = owner === 0 ? 1 : 0

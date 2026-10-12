@@ -5,8 +5,8 @@ export default function Loading() {
   return (
     <CinematicShell>
       <LoadingState
-        title="Opening the chronicles"
-        detail="Wax seals and chapter plates are being sorted by act."
+        title="Opening Kayal’s chronicle"
+        detail="Twin-fish plates are being sorted: Marzban, Palk, Tamraparani, Fracture."
       />
     </CinematicShell>
   )

@@ -62,7 +62,7 @@ export function SkirmishView() {
           <div className="gold-trim space-y-5 rounded-sm bg-card/60 p-4 sm:p-5">
             <Fieldset legend="Map plate">
               <div className="grid gap-2 sm:grid-cols-2">
-                {MAPS.map((m) => (
+                {MAPS.filter((m) => m.status !== "campaign").map((m) => (
                   <Choice
                     key={m.id}
                     selected={mapId === m.id}
@@ -77,7 +77,7 @@ export function SkirmishView() {
 
             <Fieldset legend="Your banner">
               <div className="grid gap-2 sm:grid-cols-2">
-                {FACTIONS.map((f) => (
+                {FACTIONS.filter((f) => f.skirmish !== false).map((f) => (
                   <Choice
                     key={f.id}
                     selected={factionId === f.id}

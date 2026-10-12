@@ -52,9 +52,13 @@ function drawTerrain(
         ? "#5a6a3a"
         : world.mapId === "emberglass"
           ? "#4a3a28"
-          : world.mapId === "shattercoast"
+          : world.mapId === "shattercoast" || world.mapId === "kayal" || world.mapId === "tamraparani"
             ? "#3a4a42"
-            : "#3d5a32"
+            : world.mapId === "palk"
+              ? "#355248"
+              : world.mapId === "madurai-fracture"
+                ? "#3d4a32"
+                : "#3d5a32"
   ctx.fillRect(0, 0, w, h)
   const c0 = worldToScreen(cam, 0, 0)
   const c1 = worldToScreen(cam, size, size)
@@ -219,6 +223,49 @@ function drawTerrain(
       }
     }
   }
+  paintCampaignWater(ctx, cam, world, quality, w, h)
+}
+
+function paintCampaignWater(
+  ctx: CanvasRenderingContext2D,
+  cam: Cam,
+  world: World,
+  quality: DrawQuality,
+  vw: number,
+  vh: number,
+) {
+  const id = world.mapId
+  if (id !== "kayal" && id !== "palk" && id !== "tamraparani" && id !== "madurai-fracture") return
+  const size = world.size
+  const samples = 18
+  ctx.fillStyle = "rgba(30,90,110,0.55)"
+  ctx.beginPath()
+  let started = false
+  const push = (x: number, y: number) => {
+    const p = worldToScreen(cam, x, y)
+    if (!started) {
+      ctx.moveTo(p.sx, p.sy)
+      started = true
+    } else ctx.lineTo(p.sx, p.sy)
+  }
+  if (id === "palk") {
+    for (let i = 0; i <= samples; i++) push((i / samples) * size, size * 0.39)
+    for (let i = samples; i >= 0; i--) push((i / samples) * size, size * 0.61)
+  } else if (id === "madurai-fracture") {
+    for (let i = 0; i <= samples; i++) push(size * 0.7, (i / samples) * size)
+    for (let i = samples; i >= 0; i--) push(size, (i / samples) * size)
+  } else {
+    for (let i = 0; i <= samples; i++) push((i / samples) * size, size * 0.6)
+    for (let i = samples; i >= 0; i--) push((i / samples) * size, size)
+  }
+  ctx.closePath()
+  ctx.fill()
+  if (quality > 0) {
+    ctx.strokeStyle = "rgba(180,220,210,0.22)"
+    ctx.stroke()
+  }
+  void vw
+  void vh
 }
 
 function nodeSpr(n: Node) {
@@ -226,6 +273,7 @@ function nodeSpr(n: Node) {
   if (n.fauna === "boar") return SPR.boar
   if (n.fauna === "bear") return SPR.bear
   if (n.fauna === "wolf") return SPR.wolf
+  if (n.fauna === "shark") return SPR.reed
   if (n.type === "grain") return SPR.grain
   if (n.type === "timber") return n.id & 1 ? SPR.pine : SPR.timber
   if (n.type === "ore") return n.id & 1 ? SPR.oreGold : SPR.ore
@@ -237,6 +285,7 @@ export function nodeLabel(n: Node) {
   if (n.fauna === "boar") return "Boar"
   if (n.fauna === "bear") return "Bear"
   if (n.fauna === "wolf") return "Wolf"
+  if (n.fauna === "shark") return "Pearl / shark"
   if (n.type === "timber") return "Pine"
   if (n.type === "ore") return "Ore"
   if (n.type === "grain") return "Grain"
@@ -280,6 +329,9 @@ function buildingSpr(type: Building["type"]) {
   if (type === "lodge") return SPR.lodge
   if (type === "camp") return SPR.camp
   if (type === "pit") return SPR.pit
+  if (type === "quay") return SPR.camp
+  if (type === "lighthouse") return SPR.pit
+  if (type === "charm") return SPR.granary
   return SPR.granary
 }
 
@@ -306,6 +358,33 @@ function drawBuilding(
   ctx.ellipse(p.sx, p.sy + s * 0.08, s * 0.38, s * 0.12, 0, 0, Math.PI * 2)
   ctx.fill()
   blit(ctx, buildingSpr(b.type), p.sx - s / 2, p.sy - s * 0.78, s, s)
+  if (b.type === "lighthouse" && b.done) {
+    ctx.fillStyle = "#d4c48a"
+    ctx.fillRect(p.sx - s * 0.08, p.sy - s * 0.72, s * 0.16, s * 0.55)
+    ctx.fillStyle = "#f3e2a0"
+    ctx.beginPath()
+    ctx.arc(p.sx, p.sy - s * 0.76, s * 0.1, 0, Math.PI * 2)
+    ctx.fill()
+    const beam = 0.12 + 0.1 * Math.sin(now / 280 + b.id)
+    ctx.fillStyle = `rgba(255,230,140,${beam})`
+    ctx.beginPath()
+    ctx.moveTo(p.sx, p.sy - s * 0.76)
+    ctx.lineTo(p.sx + s * 0.9, p.sy - s * 0.2)
+    ctx.lineTo(p.sx + s * 1.1, p.sy + s * 0.05)
+    ctx.closePath()
+    ctx.fill()
+  }
+  if (b.type === "charm" && b.done) {
+    ctx.strokeStyle = "rgba(90,180,190,0.7)"
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.arc(p.sx, p.sy - s * 0.25, s * 0.18, 0, Math.PI * 2)
+    ctx.stroke()
+  }
+  if (b.type === "quay" && b.done) {
+    ctx.fillStyle = "rgba(90,70,40,0.55)"
+    ctx.fillRect(p.sx - s * 0.4, p.sy + s * 0.02, s * 0.8, s * 0.12)
+  }
   ctx.globalAlpha = 1
   if (!b.done && quality > 0) {
     ctx.strokeStyle = "rgba(196,154,90,0.55)"
@@ -421,9 +500,11 @@ function drawBuilding(
 
 function unitSpr(u: Unit, moving: boolean, t: number) {
   const stride = moving && Math.sin(t / 70 + u.id) > 0
-  if (u.type === "guard") return stride ? SPR.guardStride : SPR.guard
+  if (u.type === "guard" || u.type === "marzban") return stride ? SPR.guardStride : SPR.guard
   if (u.type === "warden") return stride ? SPR.wardenStride : SPR.warden
-  if (u.type === "ashrider") return SPR.ashrider
+  if (u.type === "ashrider" || u.type === "rowther") return SPR.ashrider
+  if (u.type === "corsair") return u.id & 1 ? SPR.levyAxe : SPR.levyClub
+  if (u.type === "dhoni") return SPR.reed
   if (u.carry) return SPR.levyCarry
   if (stride) return SPR.levyStride
   return u.id & 1 ? SPR.levyAxe : SPR.levyClub
@@ -491,7 +572,21 @@ function drawUnit(
   ctx.save()
   ctx.translate(p.sx, 0)
   ctx.scale(faceLeft ? -1 : 1, 1)
-  blit(ctx, unitSpr(u, moving, t), -size / 2 + sway, y - size * 0.82, size, size)
+  if (u.type === "dhoni") {
+    ctx.fillStyle = "#6b3d1c"
+    ctx.beginPath()
+    ctx.ellipse(sway, y - size * 0.12, size * 0.42, size * 0.14, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = "#f0e0c0"
+    ctx.beginPath()
+    ctx.moveTo(sway, y - size * 0.55)
+    ctx.lineTo(sway + 6, y - size * 0.18)
+    ctx.lineTo(sway - 2, y - size * 0.18)
+    ctx.closePath()
+    ctx.fill()
+  } else {
+    blit(ctx, unitSpr(u, moving, t), -size / 2 + sway, y - size * 0.82, size, size)
+  }
   ctx.restore()
   if (quality > 1 && (u.order.t === "attack" || u.order.t === "attackMove") && u.atkCd > 0.65) {
     const dir = faceLeft ? -1 : 1
@@ -643,6 +738,25 @@ export function drawWorld(
       ctx.stroke()
     }
     ctx.setLineDash([])
+  }
+  const campaign = world.campaign
+  if (campaign) {
+    for (const ship of campaign.convoys) {
+      if (ship.sunk || ship.arrived) continue
+      const p = worldToScreen(cam, ship.x, ship.y)
+      ctx.fillStyle = "#c4a35a"
+      ctx.beginPath()
+      ctx.ellipse(p.sx, p.sy, Math.max(8, cam.z * 0.7), Math.max(4, cam.z * 0.28), 0.1, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = "rgba(20,12,8,0.8)"
+      ctx.font = "11px sans-serif"
+      ctx.textAlign = "center"
+      ctx.fillText("Horse ship", p.sx, p.sy + 12)
+    }
+    if (campaign.night) {
+      ctx.fillStyle = "rgba(6,10,28,0.38)"
+      ctx.fillRect(0, 0, w, h)
+    }
   }
   if (quality > 0) {
     const dusk = ctx.createRadialGradient(w * 0.5, h * 0.42, Math.min(w, h) * 0.28, w * 0.5, h * 0.5, Math.max(w, h) * 0.72)
