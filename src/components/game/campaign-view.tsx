@@ -38,8 +38,8 @@ export function CampaignView() {
               The Unravelled Treaty
             </h1>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Choose a chronicle, then a chapter. Locked plates wait on the last victory — this mock
-              already holds Act I open on Chronicle I.
+              Choose a chronicle, then a chapter. Locked plates wait on the last victory. Act I
+              stands open on Chronicle I.
             </p>
           </div>
           <Button variant="outline" render={<Link href="/" />}>
@@ -84,7 +84,7 @@ export function CampaignView() {
         {selectedSlotIsEmpty ? (
           <EmptyState
             title="This plate is blank"
-            detail="No steward has taken the oath here. Begin The Last Hearth to inscribe Chronicle II — in this mock the first chronicle already holds your campaign."
+            detail="No steward has taken the oath here. Begin The Last Hearth to inscribe Chronicle II. Chronicle I already holds the open campaign."
             action={
               <Button render={<Link href="/match?source=campaign&chapter=hearth&faction=ashen&map=emberglass" />}>
                 Begin The Last Hearth
@@ -106,7 +106,7 @@ export function CampaignView() {
                 <li key={chapter.id}>
                   <Card
                     className={cn(
-                      "gold-trim h-full bg-card/70",
+                      "gold-trim h-full bg-card/70 transition hover:bg-card/90 hover:ring-1 hover:ring-primary/40",
                       !chapter.unlocked && "opacity-70",
                     )}
                   >

@@ -36,6 +36,24 @@ function hash(x: number, y: number) {
   return (Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263)) >>> 0
 }
 
+export function plateGround(mapId: string) {
+  if (mapId === "nightgrove") return "#243526"
+  if (mapId === "sunvault") return "#5a6a3a"
+  if (mapId === "emberglass") return "#4a3a28"
+  if (mapId === "shattercoast") return "#3a4a42"
+  if (mapId === "hollowmere") return "#2e4a3a"
+  return "#3d5a32"
+}
+
+function lakePalette(mapId: string) {
+  if (mapId === "nightgrove") return { a: "#3a6a72", b: "#1a3a42", c: "#102830", d: "#0c1c22" }
+  if (mapId === "emberglass") return { a: "#6a8a84", b: "#3a5a50", c: "#2a3a30", d: "#1c2820" }
+  if (mapId === "shattercoast") return { a: "#7ab8c4", b: "#2d7a88", c: "#1e5a64", d: "#16444c" }
+  if (mapId === "sunvault") return { a: "#8ac4b0", b: "#3a8a78", c: "#246454", d: "#184838" }
+  if (mapId === "hollowmere") return { a: "#5a9aa4", b: "#245860", c: "#163840", d: "#102830" }
+  return { a: "#6aa8b4", b: "#2d6a78", c: "#1e4a54", d: "#16343c" }
+}
+
 function drawTerrain(
   ctx: CanvasRenderingContext2D,
   cam: Cam,
@@ -45,16 +63,7 @@ function drawTerrain(
   world: World,
 ) {
   const size = world.size
-  ctx.fillStyle =
-    world.mapId === "nightgrove"
-      ? "#243526"
-      : world.mapId === "sunvault"
-        ? "#5a6a3a"
-        : world.mapId === "emberglass"
-          ? "#4a3a28"
-          : world.mapId === "shattercoast"
-            ? "#3a4a42"
-            : "#3d5a32"
+  ctx.fillStyle = plateGround(world.mapId)
   ctx.fillRect(0, 0, w, h)
   const c0 = worldToScreen(cam, 0, 0)
   const c1 = worldToScreen(cam, size, size)
@@ -93,10 +102,11 @@ function drawTerrain(
   ctx.ellipse(lake.sx + lrx * 0.08, lake.sy + lry * 0.12, lrx * 1.08, lry * 1.1, 0.18, 0, Math.PI * 2)
   ctx.fill()
   const water = ctx.createRadialGradient(lake.sx - lrx * 0.12, lake.sy - lry * 0.18, 2, lake.sx, lake.sy, lrx)
-  water.addColorStop(0, "#6aa8b4")
-  water.addColorStop(0.35, "#2d6a78")
-  water.addColorStop(0.72, "#1e4a54")
-  water.addColorStop(1, "#16343c")
+  const lakeTint = lakePalette(world.mapId)
+  water.addColorStop(0, lakeTint.a)
+  water.addColorStop(0.35, lakeTint.b)
+  water.addColorStop(0.72, lakeTint.c)
+  water.addColorStop(1, lakeTint.d)
   ctx.fillStyle = water
   ctx.beginPath()
   ctx.ellipse(lake.sx, lake.sy, lrx, lry, 0.2, 0, Math.PI * 2)
@@ -123,6 +133,33 @@ function drawTerrain(
     ctx.beginPath()
     ctx.ellipse(lake.sx - lrx * 0.22, lake.sy - lry * 0.28, lrx * 0.18, lry * 0.1, 0.4, 0, Math.PI * 2)
     ctx.fill()
+    if ((world.mapId === "hollowmere" || world.mapId === "vast-mere") && quality > 1) {
+      for (let i = 0; i < 5; i++) {
+        const a = t / 1600 + i * 1.1
+        ctx.fillStyle = "rgba(40,90,50,0.45)"
+        ctx.beginPath()
+        ctx.ellipse(
+          lake.sx + Math.cos(a) * lrx * 0.45,
+          lake.sy + Math.sin(a * 0.8) * lry * 0.4,
+          5,
+          2.4,
+          0.2,
+          0,
+          Math.PI * 2,
+        )
+        ctx.fill()
+      }
+    }
+    if (world.mapId === "shattercoast" && quality > 1) {
+      for (let i = 0; i < 5; i++) {
+        const foam = 0.1 + 0.08 * Math.sin(t / 380 + i)
+        ctx.strokeStyle = `rgba(230,245,245,${foam})`
+        ctx.lineWidth = 1.2
+        ctx.beginPath()
+        ctx.ellipse(lake.sx + (i - 2) * lrx * 0.18, lake.sy + lry * 0.35, lrx * 0.16, lry * 0.08, 0.15, 0, Math.PI * 2)
+        ctx.stroke()
+      }
+    }
     if (quality > 1) {
       for (let i = 0; i < 6; i++) {
         const a = (i / 6) * Math.PI * 2
@@ -170,6 +207,21 @@ function drawTerrain(
     }
   }
 
+  if (quality > 0 && world.mapId === "emberglass") {
+    for (let i = 0; i < 7; i++) {
+      const hx = ((hash(i * 41, 7) % 1000) / 1000) * size
+      const hy = ((hash(i * 23, 11) % 1000) / 1000) * size
+      if (Math.hypot(hx - size / 2, hy - size / 2) < lakeR * 2) continue
+      const a = worldToScreen(cam, hx, hy)
+      const b = worldToScreen(cam, hx + 8 + (i % 3) * 4, hy + 3)
+      ctx.strokeStyle = `rgba(180,70,30,${0.18 + 0.1 * Math.sin(performance.now() / 400 + i)})`
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(a.sx, a.sy)
+      ctx.lineTo(b.sx, b.sy)
+      ctx.stroke()
+    }
+  }
   if (quality > 0) {
     for (let i = 0; i < 16; i++) {
       const hx = ((hash(i * 19, 41) % 1000) / 1000) * size
@@ -214,7 +266,25 @@ function drawTerrain(
         if (hsh % 9 > 1) continue
         const p = worldToScreen(cam, gx + (hsh % 5), gy + ((hsh >> 3) % 5))
         if (culled(p.sx, p.sy, deco, w, h)) continue
-        const spr = hsh % 9 === 0 ? SPR.grass : hsh % 11 === 0 ? SPR.flower : hsh % 13 === 0 ? SPR.fern : SPR.rock
+        const plate = world.mapId
+        const spr =
+          plate === "nightgrove" && hsh % 7 === 0
+            ? SPR.fern
+            : plate === "sunvault" && hsh % 7 === 0
+              ? SPR.flower
+              : plate === "emberglass" && hsh % 7 === 0
+                ? SPR.rock
+                : plate === "shattercoast" && hsh % 7 === 0
+                  ? SPR.reed
+                  : plate === "hollowmere" && hsh % 7 === 0
+                    ? SPR.fern
+                    : hsh % 9 === 0
+                      ? SPR.grass
+                      : hsh % 11 === 0
+                        ? SPR.flower
+                        : hsh % 13 === 0
+                          ? SPR.fern
+                          : SPR.rock
         blit(ctx, spr, p.sx - deco / 2, p.sy - deco * 0.65, deco, deco)
       }
     }
@@ -250,7 +320,15 @@ function drawNode(ctx: CanvasRenderingContext2D, n: Node, cam: Cam, quality: Dra
   const now = performance.now()
   const bob = n.fauna && quality > 0 ? Math.sin(n.id + now / 320) * 2.1 : 0
   const wander = n.fauna && quality > 1 ? Math.sin(n.id * 1.7 + now / 900) * 2.4 : 0
-  blit(ctx, nodeSpr(n), p.sx - s / 2 + wander, p.sy - s * 0.72 + bob, s, s)
+  if (n.fauna && wander < -0.4) {
+    ctx.save()
+    ctx.translate(p.sx + wander, 0)
+    ctx.scale(-1, 1)
+    blit(ctx, nodeSpr(n), -s / 2, p.sy - s * 0.72 + bob, s, s)
+    ctx.restore()
+  } else {
+    blit(ctx, nodeSpr(n), p.sx - s / 2 + wander, p.sy - s * 0.72 + bob, s, s)
+  }
   if (quality > 1 && n.type === "relics") {
     const gleam = 0.18 + 0.22 * Math.sin(now / 240 + n.id)
     ctx.strokeStyle = `rgba(255,246,212,${gleam})`
@@ -316,6 +394,13 @@ function drawBuilding(
     ctx.lineTo(p.sx, p.sy - r * 1.25)
     ctx.lineTo(p.sx + r * 0.7, p.sy - r * 0.9)
     ctx.stroke()
+    ctx.strokeStyle = "rgba(196,154,90,0.35)"
+    ctx.beginPath()
+    ctx.moveTo(p.sx - r * 0.55, p.sy - r * 0.2)
+    ctx.lineTo(p.sx + r * 0.55, p.sy - r * 0.2)
+    ctx.moveTo(p.sx, p.sy - r * 0.9)
+    ctx.lineTo(p.sx, p.sy + r * 0.2)
+    ctx.stroke()
   }
   if (quality > 0 && b.done && (b.type === "hearth" || b.type === "camp" || b.type === "pit")) {
     const rise = (now / 18 + b.id * 13) % 28
@@ -337,6 +422,14 @@ function drawBuilding(
     ctx.beginPath()
     ctx.arc(p.sx + s * 0.18, p.sy - s * 0.42, 4, 0, Math.PI * 2)
     ctx.fill()
+    const flap = Math.sin(now / 260 + b.id) * 3
+    ctx.fillStyle = "#8a4e2a"
+    ctx.beginPath()
+    ctx.moveTo(p.sx - s * 0.22, p.sy - s * 0.18)
+    ctx.lineTo(p.sx - s * 0.08 + flap, p.sy - s * 0.06)
+    ctx.lineTo(p.sx - s * 0.22, p.sy + s * 0.02)
+    ctx.closePath()
+    ctx.fill()
   }
   if (quality > 1 && b.done && b.type === "granary") {
     const bob = Math.sin(now / 280 + b.id) * 2
@@ -344,12 +437,39 @@ function drawBuilding(
     ctx.beginPath()
     ctx.ellipse(p.sx - s * 0.16, p.sy - s * 0.08 + bob, 5, 4, 0, 0, Math.PI * 2)
     ctx.fill()
+    ctx.strokeStyle = "rgba(30,24,18,0.4)"
+    ctx.lineWidth = 1.1
+    for (let i = 0; i < 2; i++) {
+      const a = now / 900 + b.id + i * 2
+      const bx = p.sx + Math.cos(a) * s * 0.28
+      const by = p.sy - s * 0.42 + Math.sin(a * 0.7) * 6
+      ctx.beginPath()
+      ctx.moveTo(bx - 4, by)
+      ctx.quadraticCurveTo(bx, by - 3, bx + 4, by)
+      ctx.stroke()
+    }
   }
   if (quality > 1 && b.done && b.type === "camp") {
     const flicker = 0.28 + 0.22 * Math.sin(now / 90 + b.id)
     ctx.fillStyle = `rgba(255,140,50,${flicker})`
     ctx.beginPath()
     ctx.ellipse(p.sx - s * 0.06, p.sy - s * 0.12, 4, 5, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.strokeStyle = "rgba(90,60,30,0.45)"
+    ctx.lineWidth = 1.4
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2 + now / 4000
+      ctx.beginPath()
+      ctx.moveTo(p.sx + Math.cos(a) * s * 0.22, p.sy + Math.sin(a) * s * 0.1)
+      ctx.lineTo(p.sx + Math.cos(a) * s * 0.3, p.sy + Math.sin(a) * s * 0.14 - 6)
+      ctx.stroke()
+    }
+  }
+  if (quality > 1 && b.done && b.type === "pit") {
+    const ember = 0.2 + 0.2 * Math.sin(now / 110 + b.id)
+    ctx.fillStyle = `rgba(255,90,40,${ember})`
+    ctx.beginPath()
+    ctx.ellipse(p.sx, p.sy - s * 0.08, 5, 3.2, 0, 0, Math.PI * 2)
     ctx.fill()
   }
   if (quality > 1 && b.done && b.type === "yard") {
@@ -372,11 +492,12 @@ function drawBuilding(
   ctx.fillStyle = trim
   ctx.fillRect(p.sx + s * 0.16, p.sy - s * 0.62, 3, s * 0.26)
   if (b.type === "hearth" && quality > 0) {
-    const pulse = b.aging > 0 ? 0.4 + 0.4 * Math.sin(now / 180) : 0.16 + 0.08 * Math.sin(now / 420)
-    ctx.strokeStyle = `rgba(243,212,138,${pulse})`
-    ctx.lineWidth = b.aging > 0 ? 3 : 1.5
+    const wounded = b.hp < b.hpMax * 0.82
+    const pulse = b.aging > 0 ? 0.4 + 0.4 * Math.sin(now / 180) : wounded ? 0.28 + 0.22 * Math.sin(now / 160) : 0.16 + 0.08 * Math.sin(now / 420)
+    ctx.strokeStyle = wounded ? `rgba(212,92,58,${pulse})` : `rgba(243,212,138,${pulse})`
+    ctx.lineWidth = b.aging > 0 || wounded ? 3 : 1.5
     ctx.beginPath()
-    ctx.arc(p.sx, p.sy, r * (b.aging > 0 ? 1.05 : 0.92), 0, Math.PI * 2)
+    ctx.arc(p.sx, p.sy, r * (b.aging > 0 ? 1.05 : wounded ? 1.0 : 0.92), 0, Math.PI * 2)
     ctx.stroke()
     if (age >= 1) {
       ctx.strokeStyle = "rgba(180,150,90,0.45)"
@@ -413,7 +534,7 @@ function drawBuilding(
     ctx.fillText(label, p.sx, p.sy + r + 14)
   }
   if (selected) {
-    ctx.strokeStyle = "#f3d48a"
+    ctx.strokeStyle = `rgba(243,212,138,${0.55 + 0.35 * Math.sin(now / 160)})`
     ctx.lineWidth = 2
     ctx.strokeRect(p.sx - r - 3, p.sy - r - 3, r * 2 + 6, r * 2 + 6)
   }
@@ -423,7 +544,7 @@ function unitSpr(u: Unit, moving: boolean, t: number) {
   const stride = moving && Math.sin(t / 70 + u.id) > 0
   if (u.type === "guard") return stride ? SPR.guardStride : SPR.guard
   if (u.type === "warden") return stride ? SPR.wardenStride : SPR.warden
-  if (u.type === "ashrider") return SPR.ashrider
+  if (u.type === "ashrider") return stride ? SPR.ashriderStride : SPR.ashrider
   if (u.carry) return SPR.levyCarry
   if (stride) return SPR.levyStride
   return u.id & 1 ? SPR.levyAxe : SPR.levyClub
@@ -467,9 +588,10 @@ function drawUnit(
   const size = Math.max(30, cam.z * 2.7)
   if (culled(p.sx, p.sy, size, w, h)) return
   const moving = u.order.t === "move" || u.order.t === "gather" || u.order.t === "return" || u.order.t === "attackMove"
+  const limp = u.hp < u.hpMax * 0.38
   const faceLeft = orderDestX(world, u) < u.x - 0.15
-  const bob = quality > 0 ? Math.sin(t / (moving ? 90 : 180) + u.id) * (moving ? 2.2 : 1.2) : 0
-  const sway = quality > 0 && moving ? Math.sin(t / 70 + u.id) * 1.6 : 0
+  const bob = quality > 0 ? Math.sin(t / (moving ? (limp ? 140 : 90) : 180) + u.id) * (moving ? (limp ? 1.2 : 2.2) : u.carry ? 1.8 : 1.2) : 0
+  const sway = quality > 0 ? Math.sin(t / (moving ? (limp ? 110 : 70) : 220) + u.id) * (moving ? (limp ? 0.8 : 1.6) : 0.6) : 0
   const y = p.sy + bob
   ctx.fillStyle = "rgba(18,12,8,0.28)"
   ctx.beginPath()
@@ -495,12 +617,16 @@ function drawUnit(
   ctx.restore()
   if (quality > 1 && (u.order.t === "attack" || u.order.t === "attackMove") && u.atkCd > 0.65) {
     const dir = faceLeft ? -1 : 1
-    ctx.strokeStyle = "rgba(255,214,120,0.7)"
+    ctx.strokeStyle = u.type === "warden" ? "rgba(160,210,255,0.75)" : "rgba(255,214,120,0.7)"
     ctx.lineWidth = 2
     ctx.beginPath()
     ctx.moveTo(p.sx + sway * dir + 4 * dir, y - size * 0.2)
     ctx.lineTo(p.sx + sway * dir + 14 * dir, y - size * 0.48)
     ctx.stroke()
+    ctx.fillStyle = u.type === "warden" ? "rgba(190,230,255,0.55)" : "rgba(255,230,160,0.55)"
+    ctx.beginPath()
+    ctx.arc(p.sx + sway * dir + 12 * dir, y - size * 0.46, 2.4, 0, Math.PI * 2)
+    ctx.fill()
   }
   ctx.fillStyle = color
   ctx.beginPath()
@@ -525,6 +651,10 @@ function drawMinimap(ctx: CanvasRenderingContext2D, world: World, cam: Cam, w: n
   const y = h - mh - 12
   ctx.fillStyle = "rgba(8,6,4,0.78)"
   ctx.fillRect(x, y, mw, mh)
+  ctx.fillStyle = plateGround(world.mapId)
+  ctx.globalAlpha = 0.35
+  ctx.fillRect(x + 1, y + 1, mw - 2, mh - 2)
+  ctx.globalAlpha = 1
   ctx.strokeStyle = "rgba(243,212,138,0.5)"
   ctx.strokeRect(x, y, mw, mh)
   const size = Math.max(1, world.size)
@@ -651,6 +781,68 @@ export function drawWorld(
     ctx.fillStyle = dusk
     ctx.fillRect(0, 0, w, h)
     if (quality > 1) {
+      const plate = world.mapId
+      if (plate === "nightgrove") {
+        ctx.strokeStyle = "rgba(170,190,200,0.22)"
+        ctx.lineWidth = 1
+        for (let i = 0; i < 28; i++) {
+          const rx = ((i * 47 + (now / 8) % 80) % w)
+          const ry = ((i * 31 + (now / 6) % 90) % h)
+          ctx.beginPath()
+          ctx.moveTo(rx, ry)
+          ctx.lineTo(rx - 4, ry + 14)
+          ctx.stroke()
+        }
+        for (let i = 0; i < 8; i++) {
+          const a = now / 900 + i * 0.8
+          ctx.fillStyle = `rgba(180,255,160,${0.08 + 0.12 * (0.5 + 0.5 * Math.sin(now / 280 + i))})`
+          ctx.beginPath()
+          ctx.arc(w * (0.15 + ((i * 19) % 70) / 100), h * (0.25 + ((i * 11) % 50) / 100) + Math.sin(a) * 6, 1.5, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      } else if (plate === "emberglass") {
+        for (let i = 0; i < 12; i++) {
+          const a = now / 900 + i * 0.7
+          const ex = w * (0.2 + ((i * 13) % 70) / 100) + Math.sin(a) * 10
+          const ey = h * (0.55 + ((i * 9) % 30) / 100) - ((now / 20 + i * 7) % 40)
+          ctx.fillStyle = `rgba(255,140,60,${0.08 + 0.1 * (0.5 + 0.5 * Math.sin(now / 200 + i))})`
+          ctx.beginPath()
+          ctx.arc(ex, ey, 1.6, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      } else if (plate === "shattercoast") {
+        for (let i = 0; i < 8; i++) {
+          const a = now / 700 + i
+          ctx.fillStyle = `rgba(200,230,230,${0.06 + 0.06 * Math.sin(a)})`
+          ctx.beginPath()
+          ctx.ellipse(w * 0.5 + Math.sin(a) * 30, h * 0.62 + i * 6, 40 + i * 4, 6, 0.1, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      } else if (plate === "sunvault") {
+        ctx.fillStyle = "rgba(255,220,120,0.05)"
+        for (let i = 0; i < 4; i++) {
+          ctx.beginPath()
+          ctx.moveTo(w * (0.18 + i * 0.16), 0)
+          ctx.lineTo(w * (0.28 + i * 0.16), h)
+          ctx.lineTo(w * (0.34 + i * 0.16), h)
+          ctx.lineTo(w * (0.22 + i * 0.16), 0)
+          ctx.fill()
+        }
+        for (let i = 0; i < 8; i++) {
+          const a = now / 1400 + i
+          ctx.fillStyle = `rgba(255,230,140,${0.08 + 0.08 * Math.sin(a)})`
+          ctx.beginPath()
+          ctx.arc(w * (0.2 + ((i * 11) % 60) / 100), h * (0.3 + ((i * 7) % 40) / 100) + Math.sin(a) * 8, 1.4, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      } else if (plate === "hollowmere") {
+        for (let i = 0; i < 4; i++) {
+          ctx.fillStyle = `rgba(180,210,200,${0.05 + 0.03 * Math.sin(now / 1600 + i)})`
+          ctx.beginPath()
+          ctx.ellipse(w * (0.2 + i * 0.2), h * 0.72 + Math.sin(now / 1400 + i) * 8, 90, 16, 0, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      }
       for (let i = 0; i < 3; i++) {
         const a = now / 9000 + i * 2.1
         ctx.fillStyle = `rgba(12,10,8,${0.07 + 0.03 * Math.sin(now / 1400 + i)})`

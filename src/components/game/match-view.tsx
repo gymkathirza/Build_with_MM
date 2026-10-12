@@ -40,7 +40,7 @@ import {
   upgradeBuilding,
 } from "@/lib/sim/engine"
 import { tickAi } from "@/lib/sim/ai"
-import { type Cam, drawWorld, nodeLabel, screenToWorld } from "@/lib/sim/draw"
+import { type Cam, drawWorld, nodeLabel, plateGround, screenToWorld } from "@/lib/sim/draw"
 import { createTelemetry, pushEvent, pushFrame } from "@/lib/obs/telemetry"
 import { DEFAULT_TUNED, type DrawQuality, type Tuned } from "@/lib/ml/score"
 import { factionById, mapById } from "@/lib/game-data"
@@ -98,6 +98,7 @@ export function MatchView({
   const relicsRef = useRef<HTMLSpanElement>(null)
   const ageRef = useRef<HTMLSpanElement>(null)
   const popRef = useRef<HTMLSpanElement>(null)
+  const pressRef = useRef<HTMLSpanElement>(null)
   const camEventAt = useRef(0)
 
   const [tuned] = useState<Tuned>(() => {
@@ -161,18 +162,26 @@ export function MatchView({
               (u) => u.owner === 1 && Math.hypot(u.x - hall.x, u.y - hall.y) < 22,
             ).length
             return press ? `hearth pressed ×${press}` : "hearth clear"
-          })()}`
+          })()}\nplate ${mapId}`
         : "warming…"
     }
+    if (pressRef.current) {
+      const hall = world.buildings.find((b) => b.owner === 0 && b.type === "hearth" && b.done)
+      const press = hall
+        ? world.units.filter((u) => u.owner === 1 && Math.hypot(u.x - hall.x, u.y - hall.y) < 22).length
+        : 0
+      pressRef.current.hidden = press === 0
+      pressRef.current.textContent = press ? `Hearth pressed ×${press}` : ""
+    }
     setHudPulse((n) => n + 1)
-  }, [world])
+  }, [world, mapId])
 
   useLayoutEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
+    let canvas = canvasRef.current
+    let ctx = canvas?.getContext("2d") ?? null
     let raf = 0
+    let watchdog = 0
+    let retry = 0
     let last = performance.now()
     let acc = 0
     let frames = 0
@@ -182,10 +191,25 @@ export function MatchView({
     let postedWin = false
     let sampleN = 0
     let lastObsPost = 0
+    let stopped = false
     const p0Ai = bot
       ? { ...tuned.ai, gatherBias: 0.8, attackAtArmy: tuned.ai.attackAtArmy + 2 }
       : null
+
+    const attach = () => {
+      if (stopped) return false
+      canvas = canvasRef.current
+      ctx = canvas?.getContext("2d") ?? null
+      return Boolean(canvas && ctx)
+    }
+
     const loop = (now: number) => {
+      if (stopped) return
+      if (!canvas || !ctx) {
+        attach()
+        raf = requestAnimationFrame(loop)
+        return
+      }
       try {
       const dt = Math.min(0.033, (now - last) / 1000)
       last = now
@@ -260,7 +284,7 @@ export function MatchView({
         if (acc > step * 2) acc = 0
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      ctx.fillStyle = "#3d5a32"
+      ctx.fillStyle = plateGround(world.mapId)
       ctx.fillRect(0, 0, w, h)
       const t0 = performance.now()
       try {
@@ -270,6 +294,8 @@ export function MatchView({
       }
       const drag = dragRef.current
       if (drag) {
+        ctx.fillStyle = "rgba(243,212,138,0.12)"
+        ctx.fillRect(drag.sx, drag.sy, drag.x - drag.sx, drag.y - drag.sy)
         ctx.strokeStyle = "rgba(243,212,138,0.9)"
         ctx.strokeRect(drag.sx, drag.sy, drag.x - drag.sx, drag.y - drag.sy)
       }
@@ -285,7 +311,11 @@ export function MatchView({
       }
       if (now - hudAt > 400) {
         hudAt = now
-        paintHud(fps, frameMs, simMs)
+        try {
+          paintHud(fps, frameMs, simMs)
+        } catch (err) {
+          console.error(err)
+        }
         if (now - lastObsPost > 2500) {
           lastObsPost = now
           const body = JSON.stringify({
@@ -320,19 +350,28 @@ export function MatchView({
       }
       } catch (err) {
         console.error(err)
-        ctx.setTransform(1, 0, 0, 1, 0, 0)
-        ctx.fillStyle = "#3d5a32"
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
       }
       raf = requestAnimationFrame(loop)
     }
-    loop(performance.now())
-    const watchdog = window.setInterval(() => {
-      if (performance.now() - last > 250) loop(performance.now())
+    if (!attach()) {
+      retry = window.setInterval(() => {
+        if (attach()) {
+          window.clearInterval(retry)
+          retry = 0
+          loop(performance.now())
+        }
+      }, 50)
+    } else {
+      loop(performance.now())
+    }
+    watchdog = window.setInterval(() => {
+      if (!stopped && performance.now() - last > 250) loop(performance.now())
     }, 100)
     return () => {
+      stopped = true
       cancelAnimationFrame(raf)
       window.clearInterval(watchdog)
+      if (retry) window.clearInterval(retry)
     }
   }, [bot, paintHud, personaId, tuned, world])
 
@@ -441,15 +480,26 @@ export function MatchView({
         <Badge variant="outline" className="hidden tabular-nums sm:inline-flex">
           {selected.length ? `${selected.length} selected` : "none selected"}
         </Badge>
+        <span
+          ref={pressRef}
+          hidden
+          className="font-heading text-[11px] tracking-wide text-destructive uppercase"
+        />
         <Button size="icon-sm" variant="outline" aria-label="Pause" onClick={() => setPaused(true)}>
           <Pause />
         </Button>
       </header>
 
-      <div className="relative min-h-0 flex-1 overflow-hidden bg-[#3d5a32]">
+      <div
+        className="relative min-h-0 flex-1 overflow-hidden"
+        style={{ background: plateGround(mapId) }}
+      >
         <canvas
-          ref={canvasRef}
-          className="absolute inset-0 block h-full w-full cursor-crosshair bg-[#3d5a32]"
+          ref={(el) => {
+            canvasRef.current = el
+          }}
+          className="absolute inset-0 block h-full w-full cursor-crosshair"
+          style={{ background: plateGround(mapId) }}
           onContextMenu={(e) => e.preventDefault()}
           onPointerDown={(e) => {
             const r = e.currentTarget.getBoundingClientRect()
@@ -613,7 +663,7 @@ export function MatchView({
       {paused && winner === null ? (
         <Overlay
           title="The field is held"
-          description="Simulation is paused. Resume, change banners, or resign the match."
+          description="The plate is held. Resume the march, open the steward’s desk, or resign and furl the banners."
         >
           <Button className="w-full" onClick={() => setPaused(false)}>
             Resume
@@ -689,7 +739,7 @@ function Selection({
       <div className="rounded-sm border border-dashed border-primary/25 px-3 py-5 text-center text-sm text-muted-foreground">
         Select a levy or hall. Right-click grain, timber, ore, hunt, or relics to gather. Forge Age
         levies hop to the next nearest of that job; a right-click lock holds the node you picked.
-        Ashriders ride first. If banners press your hearth, the student recalls the wave.
+        Ashriders ride first. Pressed camps draw a sentry. The age rite waits if the hearth is struck.
       </div>
     )
   }
@@ -701,23 +751,25 @@ function Selection({
         <Badge variant="outline">{selectedUnits.length} selected</Badge>
       </div>
       <p className="text-xs text-muted-foreground">
-        {u.order.t === "gather"
-          ? gatherLine(world, u)
-          : u.order.t === "return"
-            ? "Hauling home"
-            : u.order.t === "build"
-              ? "Raising"
-              : u.order.t === "defend"
-                ? "Holding the hearth"
-                : u.order.t === "attackMove"
-                  ? u.type === "ashrider"
-                    ? "Ashriders on the march"
-                    : "Marching"
-                  : u.order.t === "attack"
-                    ? "In the fray"
-                    : u.order.t === "move"
-                      ? "On the path"
-                      : "Idle"}
+        {u.hp < u.hpMax * 0.38
+          ? "Wounded — falling back if the student holds the kite"
+          : u.order.t === "gather"
+            ? gatherLine(world, u)
+            : u.order.t === "return"
+              ? "Hauling home"
+              : u.order.t === "build"
+                ? "Raising"
+                : u.order.t === "defend"
+                  ? "Holding the hearth"
+                  : u.order.t === "attackMove"
+                    ? u.type === "ashrider"
+                      ? "Ashriders on the march"
+                      : "Marching"
+                    : u.order.t === "attack"
+                      ? "In the fray"
+                      : u.order.t === "move"
+                        ? "On the path"
+                        : "Idle"}
       </p>
       <Progress value={(u.hp / u.hpMax) * 100} className="mt-2" />
     </div>
@@ -771,7 +823,11 @@ function TrainPanel({
             <Progress value={(q.t / q.max) * 100} className="mt-1" />
           </li>
         ))}
-        {b && !b.queue.length ? <li className="text-xs text-muted-foreground">Yard idle.</li> : null}
+        {b && !b.queue.length ? (
+          <li className="text-xs text-muted-foreground">
+            {b.type === "yard" ? "Yard idle." : b.type === "lodge" ? "Lodge idle." : "Hall idle."}
+          </li>
+        ) : null}
       </ul>
     </div>
   )

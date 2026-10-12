@@ -114,6 +114,86 @@ test("age rite completes after a finished yard and stores", () => {
   assert.ok((h.tier ?? 0) >= 1)
 })
 
+test("age rite waits while banners press the hearth", () => {
+  const params = { ...personaById("balanced").params, agePriority: 0.9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 400
+  w.players[0].ore = 200
+  w.players[0].timber = 200
+  const yard = placeBuilding(
+    w,
+    0,
+    "yard",
+    h.x + 8,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  yard.done = true
+  yard.construct = yard.constructMax
+  pushBanner(w, "guard", 1, h.x + 2, h.y)
+  for (let i = 0; i < 12; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  assert.ok(h.aging <= 0 && w.players[0].age === 0, "rite should wait while the hearth is pressed")
+})
+
+test("pressed hearth skips ashrider queues", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  w.players[0].grain = 400
+  w.players[0].ore = 200
+  w.players[0].timber = 200
+  const lodge = placeBuilding(
+    w,
+    0,
+    "lodge",
+    h.x + 10,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  lodge.done = true
+  lodge.construct = lodge.constructMax
+  pushBanner(w, "guard", 1, h.x + 3, h.y)
+  for (let i = 0; i < 10; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  assert.ok(
+    !lodge.queue.some((q) => q.type === "ashrider"),
+    "pressed hearth should not raise riders",
+  )
+})
+
+test("shore waits while banners press the hearth", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  w.players[0].grain = 400
+  w.players[0].ore = 200
+  w.players[0].timber = 200
+  const yard = placeBuilding(
+    w,
+    0,
+    "yard",
+    h.x + 8,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  yard.done = true
+  yard.construct = yard.constructMax
+  pushBanner(w, "guard", 1, h.x + 3, h.y)
+  for (let i = 0; i < 10; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  assert.equal(yard.tier, 0, "should not shore while the hearth is pressed")
+})
+
 test("coach AI reaches Forge Age on a small plate", () => {
   const persona = personaById("coach")
   const w = createWorld("ashen", "gilded", persona.params, {
@@ -501,6 +581,34 @@ test("ashrider peels a gathering rival levy", () => {
   )
 })
 
+test("pressed hearth queues a banner guard", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 400
+  w.players[0].ore = 200
+  w.players[0].timber = 200
+  const yard = placeBuilding(
+    w,
+    0,
+    "yard",
+    h.x + 8,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  yard.done = true
+  yard.construct = yard.constructMax
+  pushBanner(w, "guard", 1, h.x + 4, h.y)
+  for (let i = 0; i < 8; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  assert.ok(
+    yard.queue.some((q) => q.type === "guard") || w.units.some((u) => u.owner === 0 && u.type === "guard"),
+    "pressed hearth should raise a guard",
+  )
+})
+
 test("wounded hearth keeps the banners home", () => {
   const params = { ...personaById("balanced").params, attackAtArmy: 2 }
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
@@ -536,6 +644,39 @@ test("warden steps off a melee that closes in", () => {
   assert.ok(
     away > 3.2 || warden.order.t === "move",
     `warden should kite, dist ${away} order ${warden.order.t}`,
+  )
+})
+
+test("a pressed camp draws a sentry", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].grain = 400
+  w.players[0].ore = 200
+  w.players[0].timber = 200
+  const camp = placeBuilding(
+    w,
+    0,
+    "camp",
+    h.x + 18,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  camp.done = true
+  camp.construct = camp.constructMax
+  pushBanner(w, "guard", 0, h.x + 2, h.y)
+  pushBanner(w, "guard", 0, h.x + 3, h.y)
+  pushBanner(w, "guard", 1, camp.x + 2, camp.y)
+  for (let i = 0; i < 16; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const sentry = w.units.find((u) => u.owner === 0 && u.type === "guard")
+  assert.ok(sentry, "need a home guard")
+  const near = Math.hypot(sentry.x - camp.x, sentry.y - camp.y)
+  assert.ok(
+    sentry.order.t === "defend" || sentry.order.t === "attack" || sentry.order.t === "attackMove" || near < 14,
+    `camp should pull a sentry, order ${sentry.order.t} dist ${near}`,
   )
 })
 

@@ -109,8 +109,8 @@ function WorldPlate() {
         />
         <ellipse cx="200" cy="250" rx="36" ry="18" fill="#2d6a78" opacity="0.55" />
         <path d="M70 220 C140 200 200 250 260 240" fill="none" stroke="#c4a35a" strokeWidth="1.2" opacity="0.55" />
-        <path d="M168 262 C176 248 184 266 190 250" fill="none" stroke="#3d6a32" strokeWidth="1.4" opacity="0.7" />
-        <path d="M204 264 C212 250 220 266 228 252" fill="none" stroke="#3d6a32" strokeWidth="1.4" opacity="0.7" />
+        <path className="reed-sway" d="M168 262 C176 248 184 266 190 250" fill="none" stroke="#3d6a32" strokeWidth="1.4" opacity="0.7" />
+        <path className="reed-sway reed-sway-delay" d="M204 264 C212 250 220 266 228 252" fill="none" stroke="#3d6a32" strokeWidth="1.4" opacity="0.7" />
         <circle cx="118" cy="168" r="5" fill="#c45c2a" />
         <circle cx="214" cy="248" r="5" fill="#2f6a45" />
         <circle cx="286" cy="176" r="5" fill="#b8862b" />
