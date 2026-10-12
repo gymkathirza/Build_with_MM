@@ -872,6 +872,11 @@ function drawBuilding(
       ctx.arc(p.sx - s * 0.1, p.sy - s * 0.18, 4 + clang * 0.35, 0, Math.PI * 2)
       ctx.stroke()
     }
+    const dust = (now / 55 + b.id * 5) % 16
+    ctx.fillStyle = `rgba(180,150,90,${0.16 - dust * 0.008})`
+    ctx.beginPath()
+    ctx.ellipse(p.sx + 6, p.sy - s * 0.08 - dust * 0.3, 2.6, 1.3, 0.2, 0, Math.PI * 2)
+    ctx.fill()
   }
   ctx.fillStyle = color
   ctx.beginPath()

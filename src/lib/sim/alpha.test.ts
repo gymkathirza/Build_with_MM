@@ -1416,6 +1416,38 @@ test("a third warden overwatches a far granary", () => {
   assert.ok(watch, "a spare warden should overwatch the far granary")
 })
 
+test("a third warden overwatches a far yard", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  w.players[0].grain = 400
+  w.players[0].timber = 200
+  const yard = placeBuilding(
+    w,
+    0,
+    "yard",
+    h.x + 22,
+    h.y,
+    w.units.filter((u) => u.owner === 0).map((u) => u.id),
+  )!
+  yard.done = true
+  yard.construct = yard.constructMax
+  for (let i = 0; i < 3; i++) pushBanner(w, "warden", 0, h.x + 2 + i, h.y)
+  for (let i = 0; i < 50; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const watch = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "warden" &&
+      ((u.order.t === "defend" && Math.hypot(u.order.x - yard.x, u.order.y - yard.y) < 4) ||
+        Math.hypot(u.x - yard.x, u.y - yard.y) < 10),
+  )
+  assert.ok(watch, "a spare warden should overwatch the far yard")
+})
+
 test("relic scout leaves the far-camp crew on the trail", () => {
   const params = personaById("balanced").params
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
