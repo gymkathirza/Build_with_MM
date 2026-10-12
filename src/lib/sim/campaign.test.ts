@@ -10,6 +10,9 @@ import {
   chooseRelic,
   confirmPatricide,
   createCampaignWorld,
+  dredgeMouth,
+  endCholaLine,
+  fundAcademy,
   fundBrother,
   fundCosmopolitan,
   fundGuild,
@@ -17,7 +20,9 @@ import {
   fundPatronage,
   fundYuvaraja,
   irrigate,
+  raisePalayam,
   repayLoan,
+  seatAltibi,
   sendCaravan,
   takeLoan,
 } from "./campaign"
@@ -63,6 +68,11 @@ test("Kayal: three horse ships at the quay win the Marzban plate", () => {
   const quay = w.buildings.find((b) => b.owner === 0 && b.type === "quay")
   assert.ok(quay)
   w.campaign!.nextConvoyAt = 0
+  w.players[0].timber = 200
+  w.players[0].ore = 120
+  assert.equal(seatAltibi(w), true)
+  assert.equal(dredgeMouth(w), true)
+  assert.equal(raisePalayam(w), true)
   for (let i = 0; i < 20 * 50 && w.winner === null; i++) {
     w.units = w.units.filter((u) => !(u.owner === 1 && u.type === "corsair"))
     for (const s of w.campaign!.convoys) {
@@ -77,6 +87,8 @@ test("Kayal: three horse ships at the quay win the Marzban plate", () => {
   assert.equal(w.winner, 0)
   assert.equal(w.campaign?.phase, "victory")
   assert.ok((w.campaign?.shipsEscorted ?? 0) >= 3)
+  assert.equal(w.campaign?.altibi, true)
+  assert.equal(w.campaign?.dredged, true)
 })
 
 test("Kayal: three sunk convoys lose the plate", () => {
@@ -117,31 +129,38 @@ test("Kayal: funding both guilds unlocks Marzban escorts", () => {
   assert.ok(w.units.some((u) => u.owner === 0 && u.type === "marzban"))
 })
 
-test("Palk: depositing the Tooth Relic opens Relic Diplomacy", () => {
+test("Palk: Chola line plus deposited relic wins without Relic Diplomacy", () => {
   const w = createCampaignWorld("palk")
   beginMission(w)
+  w.players[0].grain = 200
+  w.players[0].ore = 80
+  assert.equal(endCholaLine(w), true)
   const relic = w.nodes.find((n) => n.id === w.campaign!.relicNodeId)
   assert.ok(relic)
   relic!.amount = 0
   w.campaign!.relicHeld = true
   w.players[0].relics = 1
+  for (let i = 0; i < 8 && w.winner === null; i++) tick(w)
+  assert.equal(w.winner, 0)
+  assert.equal(w.campaign?.phase, "victory")
+  assert.equal(w.campaign?.relicChoice, null)
+})
+
+test("Brother kings: seating the Confederacy opens Relic Diplomacy when the relic is held", () => {
+  const w = createCampaignWorld("tamraparani", undefined, { relicSecured: true })
+  beginMission(w)
+  w.players[0].grain = 200
+  w.players[0].ore = 80
+  w.players[0].timber = 120
+  assert.equal(fundBrother(w, "vira-west"), true)
+  assert.equal(fundBrother(w, "vikkiraman"), true)
+  assert.equal(fundBrother(w, "sundara-interior"), true)
   for (let i = 0; i < 8 && w.campaign?.phase === "play"; i++) tick(w)
   assert.equal(w.winner, null)
   assert.equal(w.campaign?.phase, "diplomacy")
   const frozen = w.tick
   tick(w)
   assert.equal(w.tick, frozen)
-  assert.equal(chooseRelic(w, "keep"), true)
-  assert.equal(w.winner, 0)
-  assert.equal(w.campaign?.phase, "victory")
-  assert.equal(w.campaign?.relicChoice, "keep")
-})
-
-test("Palk: returning the Tooth Relic vassals Jaffna", () => {
-  const w = createCampaignWorld("palk")
-  beginMission(w)
-  w.campaign!.phase = "diplomacy"
-  w.campaign!.relicHeld = true
   assert.equal(chooseRelic(w, "return"), true)
   assert.equal(w.campaign?.tribute, true)
   assert.equal(w.campaign?.relicChoice, "return")
@@ -162,7 +181,7 @@ test("Divine Patronage and CSI spend customs gold", () => {
   assert.ok(w.campaign!.csi > csi)
 })
 
-test("Tamraparani: lighthouses and shrine plus three waves win", () => {
+test("Brother kings: lights and waves no longer win the Polo plate", () => {
   const w = createCampaignWorld("tamraparani")
   beginMission(w)
   const hall = w.buildings.find((b) => b.owner === 0 && b.type === "hearth")!
@@ -173,7 +192,7 @@ test("Tamraparani: lighthouses and shrine plus three waves win", () => {
   w.campaign!.wavesSpawned = 3
   w.units = w.units.filter((u) => u.owner !== 1)
   tick(w)
-  assert.equal(w.winner, 0)
+  assert.equal(w.winner, null)
 })
 
 test("Tamraparani: seating brothers raises Confederacy loyalty", () => {
@@ -232,12 +251,12 @@ test("plates unlock in order after victories", () => {
   assert.equal(CAMPAIGN_MISSIONS.length, 5)
 })
 
-test("legacy Kayal-first chronicles still unlock Palk", () => {
-  let file = emptyFile()
-  file = markVictory(file, file.slots[0]!.id, "kayal")
-  assert.equal(isUnlocked(file.slots[0]!, "kayal"), true)
-  assert.equal(isUnlocked(file.slots[0]!, "palk"), true)
-  assert.equal(isUnlocked(file.slots[0]!, "edicts"), true)
+test("a fresh chronicle starts on the Yuvaraja plate", () => {
+  const slot = emptyFile().slots[0]!
+  assert.equal(isUnlocked(slot, "edicts"), true)
+  assert.equal(isUnlocked(slot, "kayal"), false)
+  assert.equal(CAMPAIGN_MISSIONS[0]!.id, "edicts")
+  assert.equal(CAMPAIGN_MISSIONS[0]!.year, "c. 1251–1268")
 })
 
 test("briefing freezes edicts until March", () => {
@@ -266,6 +285,10 @@ test("Konerinmaikondan: prestige, Sonakarpalli, tanks, and a repaid book win the
   assert.equal(w.campaign!.portAllocated, true)
   assert.ok(w.buildings.some((b) => b.owner === 0 && b.type === "mosque"))
   assert.equal(irrigate(w), true)
+  w.players[0].grain = 80
+  w.players[0].timber = 80
+  assert.equal(fundAcademy(w, "chaturvedi"), true)
+  assert.ok(w.campaign!.chaturvedi >= 24)
   const mosque = w.buildings.find((b) => b.owner === 0 && b.type === "mosque")!
   mosque.done = true
   mosque.construct = mosque.constructMax
@@ -293,6 +316,8 @@ test("Konerinmaikondan: two grain caravans can replace irrigation tanks", () => 
   mosque.done = true
   mosque.construct = mosque.constructMax
   w.campaign!.portIntegrated = true
+  w.players[0].timber = 80
+  assert.equal(fundAcademy(w, "scriptorium"), true)
   assert.equal(sendCaravan(w), true)
   assert.equal(sendCaravan(w), true)
   const hall = w.buildings.find((b) => b.owner === 0 && b.type === "hearth")!

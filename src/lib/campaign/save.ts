@@ -1,6 +1,6 @@
 import { CAMPAIGN_MISSIONS, type MissionId } from "./missions"
 
-export const SAVE_KEY = "mm-mkp1-chronicle"
+export const SAVE_KEY = "mm-mkp1-chronicle-t2"
 
 export type RelicChoiceSave = "keep" | "return"
 
@@ -120,9 +120,6 @@ export function isUnlocked(slot: ChronicleSlot, missionId: MissionId) {
   const i = CAMPAIGN_MISSIONS.findIndex((m) => m.id === missionId)
   if (i <= 0) return true
   if (slot.completed.includes(missionId)) return true
-  if (missionId === "kayal") {
-    return slot.completed.includes("edicts") || slot.completed.includes("palk")
-  }
   return slot.completed.includes(CAMPAIGN_MISSIONS[i - 1]!.id)
 }
 

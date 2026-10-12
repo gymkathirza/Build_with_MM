@@ -63,9 +63,10 @@ export function CampaignView() {
               {CAMPAIGN_TITLE}
             </h1>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Five plates in order. {CAMPAIGN_STEWARD} — Yuvaraja edicts in his father’s shadow, then
-              five brother kings, then two queens and two sons. {GAME_PAIR} on every shore.
-              Aryachakravarti takes the Tooth Relic. 1308 is patricide, civil war, and Malik Kafur.
+              Five plates on the MKP I timeline. {CAMPAIGN_STEWARD} — Yuvaraja first (1251–1268), then
+              the Kayal emporium, then Aryachakravarti’s island war, then five brother kings, then
+              two queens and two sons. {GAME_PAIR} on every shore. 1308 is patricide, civil war, and
+              Malik Kafur.
             </p>
           </div>
           <Button variant="outline" render={<Link href="/" />}>

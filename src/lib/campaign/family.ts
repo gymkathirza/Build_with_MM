@@ -97,13 +97,13 @@ export const CONFEDERACY_BROTHERS: { id: BrotherId; short: string; cost: "grain"
 
 export const FAMILY_BEAT: Record<string, string> = {
   edicts:
-    "Seventeen years as Yuvaraja. Joint edicts with the father carry Konerinmaikondan. Work the Nadu and Sabha, back Sonakarpalli with the Sonagars, keep grain moving, and keep Aiyan Malavarayan’s temple books.",
+    "Yuvaraja 1251–1268. Konerinmaikondan, Chaturvedimangalams, Aiyan’s books, Sonakarpalli, then the drought drill at Kayal of Manon Mani and Masila Mani.",
   kayal:
-    "Yuvaraja years first: finish Jatavarman Sundara Pandyan I’s unfinished work. Co-sign orders in the father’s shadow, then hold Kayal of Manon Mani and Masila Mani.",
+    "From 1268 the throne is yours. Dredge the Tamraparani, light Manapad, raise Rowther Palayam, seat Al-Tibi, and run the horse road. The Chola line waits until 1279.",
   palk:
-    "The confederacy still holds while Aryachakravarti forces Palk Strait. Five brother kings; this landing is the house’s war.",
+    "Late 1270s: end the Chola line, then Aryachakravarti takes Palk Strait. The Tooth Relic comes home; keep or return waits for Parakramabahu III.",
   tamraparani:
-    "Marco Polo’s five brother kings. Fund the Confederacy — Vira I in the west, Vikkiraman in administration, Sundara II in the interior — or the regions stagnate.",
+    "Marco Polo names five brother kings. Seat the Confederacy, then keep or return Aryachakravarti’s prize when Parakramabahu III comes.",
   fracture:
-    "1308: Sundara III, son of the primary queen, murders the emperor. The army raises Vira II, son of the favored consort. Sundara flees to Delhi. Malik Kafur comes for Kayal.",
+    "1296 Vira as co-regent, 1303 Sundara second, 1308 patricide. The army raises Vira II. Malik Kafur comes for Kayal of Manon Mani and Masila Mani.",
 }

@@ -27,12 +27,12 @@ export const MISSION_ART: Record<string, MissionArt> = {
     card: CAMPAIGN_ART.kayalDockyard,
     briefing: CAMPAIGN_ART.tradeRoutes,
     caption:
-      "Kayal of Manon Mani and Masila Mani in the Yuvaraja years — Sonakarpalli, grain road, temple books.",
+      "Kayal of Manon Mani and Masila Mani in the Yuvaraja years — academies, Sonakarpalli, grain road, temple books.",
   },
   kayal: {
     card: CAMPAIGN_ART.kayalDockyard,
     briefing: CAMPAIGN_ART.tradeRoutes,
-    caption: "Kayal dockyard of Manon Mani and Masila Mani — Twin-Fish gate, horse quay.",
+    caption: "Kayal dockyard of Manon Mani and Masila Mani — dredged mouth, Palayam, Al-Tibi’s horse quay.",
   },
   palk: {
     card: CAMPAIGN_ART.palkChart,
@@ -42,7 +42,7 @@ export const MISSION_ART: Record<string, MissionArt> = {
   tamraparani: {
     card: CAMPAIGN_ART.lighthouse,
     briefing: CAMPAIGN_ART.sharkCharmer,
-    caption: "Kulasekharapatnam light and Kadalkatti over the Mannar pearls.",
+    caption: "Marco Polo’s estuary — five brother kings, then Parakramabahu at court.",
   },
   fracture: {
     card: CAMPAIGN_ART.tradeRoutes,

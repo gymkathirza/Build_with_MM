@@ -295,7 +295,7 @@ export const CAMPAIGN_CHAPTERS = [
     title: "Konerinmaikondan",
     act: "Yuvaraja Years",
     synopsis:
-      "Seventeen years as co-ruler. Bureaucracy Tree, Port Integration at Sonakarpalli, drought grain, Bank of Madurai.",
+      "Yuvaraja 1251–1268. Konerinmaikondan, academies, Bank of Madurai, Sonakarpalli, drought drill.",
     unlocked: true,
     duration: "short",
     faction: "pandya" as FactionId,
@@ -305,9 +305,9 @@ export const CAMPAIGN_CHAPTERS = [
     id: "kayal",
     number: 2,
     title: "Kayal Under Sail",
-    act: "The Marzban Coalition",
+    act: "Kayal Emporium",
     synopsis:
-      "Yuvaraja no longer. Appoint Takiuddin Abdur Rahman over Kayal. Escort Hormuz horse ships past Malabar corsairs.",
+      "From 1268: dredge the Tamraparani, light Manapad, raise Palayam, seat Al-Tibi, escort horse-ships.",
     unlocked: false,
     duration: "short",
     faction: "pandya" as FactionId,
@@ -317,9 +317,9 @@ export const CAMPAIGN_CHAPTERS = [
     id: "palk",
     number: 3,
     title: "Storm of Subhagiri",
-    act: "Preemptive Strike",
+    act: "Chola End and Island War",
     synopsis:
-      "Aryachakravarti lands across Palk Strait, storms Yapahuwa, and takes the Tooth Relic.",
+      "1279 ends the Chola line. Aryachakravarti storms Yapahuwa and takes the Tooth Relic.",
     unlocked: false,
     duration: "short",
     faction: "pandya" as FactionId,
@@ -328,10 +328,10 @@ export const CAMPAIGN_CHAPTERS = [
   {
     id: "tamraparani",
     number: 4,
-    title: "Lights on the Tamraparani",
-    act: "Port Defense",
+    title: "Five Brother Kings",
+    act: "Relic Diplomacy",
     synopsis:
-      "Marco Polo’s five brother kings. Confederacy loyalty, lighthouses, Kadalkatti, Rowther on the sand.",
+      "Marco Polo names five brother kings. Seat the Confederacy, then keep or return the Tooth Relic.",
     unlocked: false,
     duration: "short",
     faction: "pandya" as FactionId,
@@ -343,7 +343,7 @@ export const CAMPAIGN_CHAPTERS = [
     title: "Kayal Open to Kafur",
     act: "The Fracture",
     synopsis:
-      "1308 patricide: Sundara murders the emperor. Vira’s army. Then Malik Kafur.",
+      "1296–1323: Vira co-regent, Sundara second, 1308 patricide, then Malik Kafur.",
     unlocked: false,
     duration: "short",
     faction: "pandya" as FactionId,

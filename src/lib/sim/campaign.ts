@@ -65,6 +65,12 @@ export type CampaignRuntime = {
   grainCaravans: number
   templeDebt: number
   veteranArmy: boolean
+  chaturvedi: number
+  scriptorium: number
+  dredged: boolean
+  palayam: boolean
+  altibi: boolean
+  cholaEnded: boolean
   viraWest: number
   vikkiraman: number
   sundaraInterior: number
@@ -138,20 +144,21 @@ export function campaignSpeed(w: World, type: string, x: number, y: number) {
 export function campaignConstructBonus(w: World) {
   if (!w.campaign) return 1
   const k = w.campaign.konerin
+  const academy = 1 + (w.campaign.chaturvedi + w.campaign.scriptorium) / 280
   if (w.campaign.missionId === "edicts") {
-    if (k >= 50) return 1.55
-    if (k >= 25) return 1.12
-    return 0.72
+    if (k >= 50) return 1.55 * academy
+    if (k >= 25) return 1.12 * academy
+    return 0.72 * academy
   }
-  if (k >= 50) return 1.2
-  return 1
+  if (k >= 50) return 1.2 * academy
+  return academy
 }
 
 export function campaignHitBonus(w: World, type: string, x: number, y: number, owner?: 0 | 1) {
   if (!w.campaign) return 1
   const c = w.campaign
   let m = 1
-  if (type === "rowther" && (isBeach(w, x, y) || isWater(w, x, y))) m *= 1.45
+  if (type === "rowther" && (isBeach(w, x, y) || isWater(w, x, y))) m *= c.palayam ? 1.7 : 1.45
   if (c.relicHeld && owner === 1) m *= 0.82
   if (c.relicChoice === "keep" && owner === 0) m *= 1.12
   if (owner === 0 && c.yuvaraja >= 50) m *= 1.08
@@ -184,7 +191,7 @@ export function fundGuild(w: World, which: "manigramam" | "anjuvannam") {
     p.ore -= 35
     c.anjuvannam = clamp01(c.anjuvannam + 22)
   }
-  c.escortsUnlocked = c.manigramam >= 50 && c.anjuvannam >= 50
+  c.escortsUnlocked = c.altibi || (c.manigramam >= 50 && c.anjuvannam >= 50)
   if (c.escortsUnlocked) {
     const quay = w.buildings.find((b) => b.owner === 0 && b.type === "quay" && b.done)
     if (quay) spawnUnit(w, 0, "marzban", quay.x - 2, quay.y)
@@ -334,6 +341,123 @@ export function repayLoan(w: World) {
   c.templeDebt -= 1
   c.loyalty = clamp01(c.loyalty + 12)
   c.unrest = clamp01(c.unrest - 10)
+  return true
+}
+
+export function fundAcademy(w: World, which: "chaturvedi" | "scriptorium") {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  const p = w.players[0]
+  if (which === "chaturvedi") {
+    if (p.relics >= 1) p.relics -= 1
+    else if (p.grain >= 45) p.grain -= 45
+    else {
+      w.events.push({ k: "failed", owner: 0, why: "Chaturvedimangalams want Relics or Grain." })
+      return false
+    }
+    c.chaturvedi = clamp01(c.chaturvedi + 28)
+    c.konerin = clamp01(c.konerin + 14)
+  } else {
+    if (p.timber < 40) {
+      w.events.push({ k: "failed", owner: 0, why: "Temple scriptoriums want Timber." })
+      return false
+    }
+    p.timber -= 40
+    c.scriptorium = clamp01(c.scriptorium + 28)
+    c.konerin = clamp01(c.konerin + 10)
+  }
+  if (c.portAllocated) c.csi = clamp01(c.csi + 10)
+  c.loyalty = clamp01(c.loyalty + 6)
+  return true
+}
+
+export function seatAltibi(w: World) {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  if (c.altibi) {
+    w.events.push({ k: "failed", owner: 0, why: "Al-Tibi already holds Kayal’s books." })
+    return false
+  }
+  const p = w.players[0]
+  if (p.ore < 35) {
+    w.events.push({ k: "failed", owner: 0, why: "Al-Tibi’s autonomy wants Ore." })
+    return false
+  }
+  p.ore -= 35
+  c.altibi = true
+  c.escortsUnlocked = true
+  c.csi = clamp01(c.csi + 14)
+  c.anjuvannam = clamp01(c.anjuvannam + 18)
+  const quay = w.buildings.find((b) => b.owner === 0 && b.type === "quay" && b.done)
+  if (quay) spawnUnit(w, 0, "marzban", quay.x - 2, quay.y)
+  return true
+}
+
+export function dredgeMouth(w: World) {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  if (c.dredged) {
+    w.events.push({ k: "failed", owner: 0, why: "The Tamraparani mouth is already clear." })
+    return false
+  }
+  const p = w.players[0]
+  if (p.timber < 55 || p.ore < 20) {
+    w.events.push({ k: "failed", owner: 0, why: "Dredging wants Timber and Ore." })
+    return false
+  }
+  p.timber -= 55
+  p.ore -= 20
+  c.dredged = true
+  c.csi = clamp01(c.csi + 8)
+  return true
+}
+
+export function raisePalayam(w: World) {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  if (c.palayam) {
+    w.events.push({ k: "failed", owner: 0, why: "Rowther Palayam already stands." })
+    return false
+  }
+  const p = w.players[0]
+  if (p.timber < 45 || p.ore < 25) {
+    w.events.push({ k: "failed", owner: 0, why: "The canton wants Timber and Ore." })
+    return false
+  }
+  p.timber -= 45
+  p.ore -= 25
+  c.palayam = true
+  const hall = p0Hall(w)
+  const quay = w.buildings.find((b) => b.owner === 0 && b.type === "quay")
+  const x = (quay?.x ?? hall?.x ?? 20) + 3
+  const y = (quay?.y ?? hall?.y ?? 24) - 2
+  if (!w.buildings.some((b) => b.owner === 0 && b.type === "lodge")) {
+    seedBuilding(w, 0, "lodge", x, y, true)
+  }
+  spawnUnit(w, 0, "rowther", x + 1, y)
+  spawnUnit(w, 0, "rowther", x + 2, y - 1)
+  return true
+}
+
+export function endCholaLine(w: World) {
+  const c = w.campaign
+  if (!c || c.phase !== "play") return false
+  if (c.cholaEnded) {
+    w.events.push({ k: "failed", owner: 0, why: "The Chola line is already closed." })
+    return false
+  }
+  const p = w.players[0]
+  if (p.ore < 30 || p.grain < 40) {
+    w.events.push({ k: "failed", owner: 0, why: "Closing the Chola line wants Ore and Grain." })
+    return false
+  }
+  p.ore -= 30
+  p.grain -= 40
+  c.cholaEnded = true
+  c.loyalty = clamp01(c.loyalty + 12)
+  c.yuvaraja = clamp01(c.yuvaraja + 16)
+  const hall = p0Hall(w)
+  if (hall) spawnUnit(w, 0, "guard", hall.x + 2, hall.y)
   return true
 }
 
@@ -490,7 +614,7 @@ function tickEdicts(w: World, c: CampaignRuntime) {
   }
   const mosque = w.buildings.find((b) => b.owner === 0 && b.type === "mosque")
   if (mosque && !mosque.done && c.portAllocated) {
-    mosque.construct += DT * (0.4 + c.konerin / 80)
+    mosque.construct += DT * (0.4 + c.konerin / 80 + c.scriptorium / 120)
     if (mosque.construct >= mosque.constructMax) {
       mosque.done = true
       mosque.hp = mosque.hpMax
@@ -525,12 +649,13 @@ function tickEdicts(w: World, c: CampaignRuntime) {
     c.unrest = clamp01(c.unrest + 8)
   }
   const tanks = c.irrigated ? "tanks" : `${c.grainCaravans}/2 caravans`
-  c.objective = `Konerin ${c.konerin | 0}/50 · mosque ${c.portIntegrated ? 1 : 0}/1 · ${tanks} · debt ${c.templeDebt}`
-  if (c.konerin >= 50 && c.portIntegrated && (c.irrigated || c.grainCaravans >= 2)) {
+  const academy = c.chaturvedi >= 24 || c.scriptorium >= 24
+  c.objective = `Konerin ${c.konerin | 0}/50 · academy ${academy ? 1 : 0}/1 · mosque ${c.portIntegrated ? 1 : 0}/1 · ${tanks} · debt ${c.templeDebt}`
+  if (c.konerin >= 50 && c.portIntegrated && academy && (c.irrigated || c.grainCaravans >= 2)) {
     c.veteranArmy = true
     win(
       w,
-      "Konerinmaikondan stands on the decrees. Sonakarpalli is integrated, the breadbasket holds, and a veteran army waits on the next plate.",
+      "Konerinmaikondan stands on the decrees. Academies and Sonakarpalli hold, the breadbasket is drilled, and a veteran cadre waits on Kayal.",
     )
   } else if (c.unrest >= 100) lose(w, "The Nadu and Sabha rebel. The prince’s word is not law.")
   else if (p.grain <= 0 && !c.irrigated) lose(w, "The southern breadbasket ran dry.")
@@ -555,20 +680,25 @@ function tickKayal(w: World, c: CampaignRuntime) {
   const escorts = w.units.filter(
     (u) => u.owner === 0 && (u.type === "dhoni" || u.type === "marzban"),
   )
+  const lights = lighthouseCount(w)
   for (const ship of c.convoys) {
     if (ship.arrived || ship.sunk) continue
     const dx = hx - ship.x
     const dy = hy - ship.y
     const d = Math.hypot(dx, dy) || 1
-    const hull = c.csi < 22 ? 1.7 : 2.4
+    let hull = c.dredged ? 2.45 : 1.65
+    if (c.csi >= 22) hull += 0.25
+    if (lights >= 1) hull += 0.15
     ship.x += (dx / d) * hull * DT
     ship.y += (dy / d) * hull * DT
+    let dmg = lights >= 1 ? 8 : 14
+    if (c.palayam && d < 10) dmg *= 0.72
     for (const u of w.units) {
       if (u.owner !== 1) continue
-      if (dist(u.x, u.y, ship.x, ship.y) < 2.2) ship.hp -= 11 * DT
+      if (dist(u.x, u.y, ship.x, ship.y) < 2.2) ship.hp -= dmg * DT
     }
     const cover = escorts.some((u) => dist(u.x, u.y, ship.x, ship.y) < 4.5)
-    if (cover) ship.hp += 4 * DT
+    if (cover) ship.hp += 5 * DT
     if (ship.hp <= 0) {
       ship.sunk = true
       c.shipsLost++
@@ -578,10 +708,17 @@ function tickKayal(w: World, c: CampaignRuntime) {
       w.players[0].relics += 1
     }
   }
+  if (c.palayam) {
+    for (const u of w.units) {
+      if (u.owner !== 1 || u.type !== "corsair") continue
+      if (!isWater(w, u.x, u.y)) u.hp -= 14 * DT
+    }
+  }
   if (w.tick >= c.nextSpawnAt) {
-    const scale = c.pirateScale
-    spawnCorsair(w, w.size * (0.45 + (w.tick % 7) * 0.04), w.size * 0.86)
-    c.nextSpawnAt = w.tick + Math.floor(20 * 6 * scale)
+    const live = c.convoys.find((s) => !s.arrived && !s.sunk)
+    spawnCorsair(w, live ? live.x + 3 : w.size * 0.88, live ? live.y : w.size * 0.84)
+    const gap = lights >= 1 ? 20 * 8 : 20 * 4.8
+    c.nextSpawnAt = w.tick + Math.floor(gap * c.pirateScale)
   }
   for (const u of w.units) {
     if (u.owner !== 1 || u.type !== "corsair") continue
@@ -590,11 +727,14 @@ function tickKayal(w: World, c: CampaignRuntime) {
     if (live) issueAttackMove(w, [u.id], live.x, live.y)
     else issueAttackMove(w, [u.id], hx, hy)
   }
-  c.objective = `Horse ships ${c.shipsEscorted}/${c.shipsNeeded} · lost ${c.shipsLost}/3 · CSI ${c.csi | 0}`
-  if (c.shipsEscorted >= c.shipsNeeded) {
-    win(w, "The Hormuz hulls are under Kayal’s lamps — Manon Mani’s quay, Masila Mani’s Twin-Fish gate. The Yuvaraja’s shadow thins.")
-  }
-  else if (c.shipsLost >= 3) lose(w, "Malabar corsairs emptied the horse road.")
+  const works = c.dredged && (c.palayam || lights >= 1)
+  c.objective = `Horse ships ${c.shipsEscorted}/${c.shipsNeeded} · Al-Tibi ${c.altibi ? 1 : 0} · dredge ${c.dredged ? 1 : 0} · Palayam/light ${c.palayam || lights >= 1 ? 1 : 0} · lost ${c.shipsLost}/3`
+  if (c.shipsEscorted >= c.shipsNeeded && c.altibi && works) {
+    win(
+      w,
+      "Al-Tibi holds Kayal of Manon Mani and Masila Mani. The mouth is clear, Palayam and the lamps watch the gulf, and the horse road is open.",
+    )
+  } else if (c.shipsLost >= 3) lose(w, "Malabar galleys emptied the horse road before the gulf.")
 }
 
 function tickPalk(w: World, c: CampaignRuntime) {
@@ -606,19 +746,29 @@ function tickPalk(w: World, c: CampaignRuntime) {
       (u) => u.owner === 0 && u.carry?.res === "relics" && dist(u.x, u.y, hall.x, hall.y) < 4,
     )
     if (home || w.players[0].relics >= 1) {
-      c.phase = "diplomacy"
-      c.objective =
-        "Keep the Tooth Relic in Madurai, or return it when Parakramabahu III comes — Aryachakravarti’s prize."
-      return
+      if (c.cholaEnded) {
+        win(
+          w,
+          "The Chola line is closed. Aryachakravarti’s prize lies at the landing of Manon Mani and Masila Mani — Parakramabahu’s appeal waits on the next plate.",
+        )
+        return
+      }
+      c.objective = "The Tooth Relic is home. End the Chola line (1279) to seal the landing."
     }
   }
   if (w.tick >= c.nextSpawnAt) {
     spawnCorsair(w, w.size * 0.78, w.size * 0.42)
     c.nextSpawnAt = w.tick + Math.floor(20 * 8 * c.pirateScale)
   }
-  c.objective = c.relicHeld
-    ? "Carry the Tooth Relic to the landing hearth"
-    : "Storm Yapahuwa with Aryachakravarti and take the Tooth Relic"
+  if (c.phase !== "victory") {
+    c.objective = c.relicHeld
+      ? c.cholaEnded
+        ? "The relic is home and the Chola line is closed"
+        : "End the Chola line (1279) to seal Aryachakravarti’s landing"
+      : c.cholaEnded
+        ? "Storm Yapahuwa with Aryachakravarti and take the Tooth Relic"
+        : "Close the Chola line, then take the Tooth Relic with Aryachakravarti"
+  }
 }
 
 function tickTamra(w: World, c: CampaignRuntime) {
@@ -657,10 +807,23 @@ function tickTamra(w: World, c: CampaignRuntime) {
   } else if (lights > 0) {
     c.nextSpawnAt = w.tick + 20 * 14
   }
-  c.objective = `Lights ${lights}/2 · shrine ${shrine ? 1 : 0}/1 · waves ${c.wavesBroken}/${c.wavesNeeded}`
-  if (lights >= 2 && shrine && c.wavesBroken >= c.wavesNeeded) {
-    win(w, "Kulasekharapatnam and Manapad are lit. The gulf is charmed.")
-  } else if (c.sharkKills >= 6) lose(w, "Pearl divers were taken in the Gulf of Mannar.")
+  const seated = confederacyAvg(c) >= 50
+  c.objective = seated
+    ? "Parakramabahu III is at court — keep or return the Tooth Relic"
+    : `Confederacy ${confederacyAvg(c) | 0}/50 · lights ${lights} · shrine ${shrine ? 1 : 0}`
+  if (c.sharkKills >= 6) lose(w, "Pearl divers were taken in the Gulf of Mannar.")
+  else if (seated && c.relicChoice) {
+    win(w, c.winWhy)
+  } else if (seated && c.relicHeld) {
+    c.phase = "diplomacy"
+    c.objective =
+      "Keep the Tooth Relic in Madurai, or return it when Parakramabahu III comes — Aryachakravarti’s prize."
+  } else if (seated && !c.relicHeld) {
+    win(
+      w,
+      "The five brother kings hold. Without the relic, the estuary of Manon Mani and Masila Mani still stands.",
+    )
+  }
 }
 
 function tickFracture(w: World, c: CampaignRuntime) {
@@ -753,6 +916,7 @@ export function createCampaignWorld(
   opts?: {
     pirateScale?: number
     relicChoice?: RelicChoice | null
+    relicSecured?: boolean
     veteranArmy?: boolean
     templeDebt?: number
     konerin?: number
@@ -774,7 +938,7 @@ export function createCampaignWorld(
     shipsEscorted: 0,
     shipsLost: 0,
     shipsNeeded: 3,
-    relicHeld: false,
+    relicHeld: spec.id === "tamraparani" && opts?.relicSecured === true,
     relicNodeId: null,
     relicChoice: opts?.relicChoice ?? null,
     pirateScale,
@@ -805,6 +969,12 @@ export function createCampaignWorld(
     grainCaravans: 0,
     templeDebt: opts?.templeDebt ?? 0,
     veteranArmy: opts?.veteranArmy ?? false,
+    chaturvedi: spec.id === "edicts" ? 0 : 28,
+    scriptorium: spec.id === "edicts" ? 0 : 22,
+    dredged: false,
+    palayam: false,
+    altibi: false,
+    cholaEnded: spec.id === "palk" ? false : spec.id === "tamraparani" || spec.id === "fracture",
     viraWest: spec.id === "tamraparani" || spec.id === "fracture" ? 32 : 40,
     vikkiraman: spec.id === "tamraparani" || spec.id === "fracture" ? 30 : 40,
     sundaraInterior: spec.id === "tamraparani" || spec.id === "fracture" ? 34 : 40,
@@ -909,7 +1079,7 @@ export function createCampaignWorld(
     )
     convertP1ToCorsairs(w, 2)
     w.players[0].timber += 80
-    w.players[0].relics = 2
+    w.players[0].relics = opts?.relicSecured ? 3 : 2
   }
 
   if (spec.id === "fracture") {

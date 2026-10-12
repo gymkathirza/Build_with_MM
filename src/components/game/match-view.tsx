@@ -56,6 +56,9 @@ import {
   confederacyAvg,
   confirmPatricide,
   createCampaignWorld,
+  dredgeMouth,
+  endCholaLine,
+  fundAcademy,
   fundBrother,
   fundCosmopolitan,
   fundGuild,
@@ -63,7 +66,9 @@ import {
   fundPatronage,
   fundYuvaraja,
   irrigate,
+  raisePalayam,
   repayLoan,
+  seatAltibi,
   sendCaravan,
   takeLoan,
 } from "@/lib/sim/campaign"
@@ -145,6 +150,7 @@ export function MatchView({
       return createCampaignWorld(mission.id, tuned.ai, {
         pirateScale,
         relicChoice: slot?.relicChoice ?? null,
+        relicSecured: slot?.relicSecured,
         veteranArmy: slot?.veteranArmy,
         templeDebt: slot?.templeDebt,
         konerin: slot?.konerin,
@@ -683,13 +689,36 @@ export function MatchView({
                 >
                   Repay Aiyan
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    fundAcademy(world, "chaturvedi")
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Fund Chaturvedimangalam
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    fundAcademy(world, "scriptorium")
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Fund scriptorium
+                </Button>
               </div>
             ) : null}
             {world.campaign.missionId === "kayal" ? (
               <div className="mt-1 flex flex-wrap gap-1">
                 <span className="text-muted-foreground">
-                  Yuvaraja {world.campaign.yuvaraja | 0} · Manigramam {world.campaign.manigramam} ·
-                  Anjuvannam {world.campaign.anjuvannam}
+                  Yuvaraja {world.campaign.yuvaraja | 0} · Al-Tibi {world.campaign.altibi ? "seated" : "open"}{" "}
+                  · dredge {world.campaign.dredged ? "clear" : "silt"} · Palayam{" "}
+                  {world.campaign.palayam ? "stands" : "open"}
                 </span>
                 <Button
                   size="sm"
@@ -701,6 +730,39 @@ export function MatchView({
                   }}
                 >
                   Co-sign Yuvaraja
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    seatAltibi(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Seat Al-Tibi
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    dredgeMouth(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Dredge Tamraparani
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    raisePalayam(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  Raise Rowther Palayam
                 </Button>
                 <Button
                   size="sm"
@@ -723,6 +785,25 @@ export function MatchView({
                   }}
                 >
                   Seat Anjuvannam
+                </Button>
+              </div>
+            ) : null}
+            {world.campaign.missionId === "palk" ? (
+              <div className="mt-1 flex flex-wrap gap-1">
+                <span className="text-muted-foreground">
+                  Chola line {world.campaign.cholaEnded ? "closed" : "open"} · relic{" "}
+                  {world.campaign.relicHeld ? "held" : "at Yapahuwa"}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[11px]"
+                  onClick={() => {
+                    endCholaLine(world)
+                    paintHud(60, 16, 0)
+                  }}
+                >
+                  End Chola line (1279)
                 </Button>
               </div>
             ) : null}
