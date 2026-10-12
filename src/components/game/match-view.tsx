@@ -159,7 +159,7 @@ export function MatchView({
     writeFile(
       markVictory(cur.file, slotId, mission.id, { relicChoice: world.campaign?.relicChoice ?? null }),
     )
-  }, [winner, mission, slotId])
+  }, [winner, mission, slotId, world.campaign?.relicChoice])
 
   useEffect(() => {
     pausedRef.current = paused
