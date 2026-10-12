@@ -799,7 +799,7 @@ function Selection({
         Select a levy or hall. Right-click grain, timber, ore, hunt, or relics to gather. A starving
         hearth pulls levies onto grain. Bare timber pulls them onto pine. Bare ore pulls them
         onto stone. A wolf, bear, or boar hunt
-        draws a banner; a deer hunt draws a fifth. A hunt haul draws a banner on the walk home. Forge Age
+        draws a banner; a deer hunt draws a fifth. A hunt haul draws a banner on the walk home. A fourth warden overwatches a hunt. Forge Age
         levies hop to the next nearest of that job; a right-click lock holds the node you picked.
         Ashriders ride first. A lone rider scouts an empty hearth. Three riders hook an empty
         hearth. Idle levies walk a relic if no

@@ -688,15 +688,14 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     const relicNode = w.nodes.find((n) => n.type === "relics" && n.amount > 0)
     if (relicNode && relicRider) issueDefend(w, [relicRider.id], relicNode.x, relicNode.y)
     const wardenCount = military.filter((u) => u.type === "warden").length
-    const spareWarden =
-      wardenCount >= 3
-        ? military.find(
-            (u) =>
-              u.type === "warden" &&
-              !garrison.some((g) => g.id === u.id) &&
-              (u.order.t === "idle" || u.order.t === "defend" || u.order.t === "move"),
-          )
-        : undefined
+    const spareWardens = military.filter(
+      (u) =>
+        u.type === "warden" &&
+        !garrison.some((g) => g.id === u.id) &&
+        (u.order.t === "idle" || u.order.t === "defend" || u.order.t === "move"),
+    )
+    const spareWarden = wardenCount >= 3 ? spareWardens[0] : undefined
+    const huntWarden = wardenCount >= 4 ? spareWardens[1] ?? spareWardens[0] : undefined
     if (farLodge && spareWarden) {
       issueDefend(w, [spareWarden.id], farLodge.x, farLodge.y)
     } else if (farPit && spareWarden) {
@@ -753,6 +752,8 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
           )
         : undefined
     if (deerHunter && deerGuard) issueDefend(w, [deerGuard.id], deerHunter.x, deerHunter.y)
+    const huntMark = hunter ?? deerHunter
+    if (huntMark && huntWarden) issueDefend(w, [huntWarden.id], huntMark.x, huntMark.y)
     const huntHauler = levies.find((u) => {
       if (u.order.t !== "return" || u.carry?.res !== "grain") return false
       return w.nodes.some((n) => n.fauna && Math.hypot(n.x - u.x, n.y - u.y) < 14)

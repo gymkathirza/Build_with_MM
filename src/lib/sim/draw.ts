@@ -295,6 +295,14 @@ function drawTerrain(
       ctx.quadraticCurveTo(gullX - 2, gullY - 4, gullX, gullY)
       ctx.quadraticCurveTo(gullX + 2, gullY - 4, gullX + 7, gullY)
       ctx.stroke()
+      const gull2X = lake.sx + Math.cos(t / 1800) * lrx * 0.55
+      const gull2Y = lake.sy - lry * 0.4 + Math.sin(t / 500) * 5
+      ctx.strokeStyle = "rgba(240,246,248,0.42)"
+      ctx.beginPath()
+      ctx.moveTo(gull2X - 6, gull2Y)
+      ctx.quadraticCurveTo(gull2X - 2, gull2Y - 3, gull2X, gull2Y)
+      ctx.quadraticCurveTo(gull2X + 2, gull2Y - 3, gull2X + 6, gull2Y)
+      ctx.stroke()
     }
     if (quality > 1) {
       for (let i = 0; i < 6; i++) {
