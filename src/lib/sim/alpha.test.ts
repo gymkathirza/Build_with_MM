@@ -891,6 +891,33 @@ test("idle levy walks a relic when no scout is free", () => {
   )
 })
 
+test("a third warden overwatches a relic levy", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  w.players[0].age = 1
+  const h = hall(w, 0)
+  const relic = w.nodes.find((n) => n.type === "relics" && n.amount > 0)
+  const levy = w.units.find((u) => u.owner === 0 && u.type === "levy")
+  assert.ok(relic && levy)
+  levy.x = relic.x
+  levy.y = relic.y
+  assert.ok(issueGather(w, [levy.id], relic.id))
+  for (let i = 0; i < 3; i++) pushBanner(w, "warden", 0, h.x + 2 + i, h.y)
+  for (let i = 0; i < 70; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const live = w.units.find((u) => u.id === levy.id)!
+  const watch = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "warden" &&
+      ((u.order.t === "defend" && Math.hypot(u.order.x - live.x, u.order.y - live.y) < 10) ||
+        Math.hypot(u.x - live.x, u.y - live.y) < 12),
+  )
+  assert.ok(watch, "a spare warden should overwatch the relic levy")
+})
+
 test("a relic levy draws a banner escort", () => {
   const params = { ...personaById("balanced").params, attackAtArmy: 9 }
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })

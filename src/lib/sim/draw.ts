@@ -814,6 +814,17 @@ function drawBuilding(
     ctx.beginPath()
     ctx.ellipse(p.sx + 6, p.sy - s * 0.2 - chaff * 0.5, 2.4, 1.2, 0.3, 0, Math.PI * 2)
     ctx.fill()
+    const mothA = now / 520 + b.id
+    ctx.fillStyle = `rgba(255,236,180,${0.18 + 0.12 * Math.sin(now / 180 + b.id)})`
+    ctx.beginPath()
+    ctx.arc(
+      p.sx + Math.cos(mothA) * s * 0.38,
+      p.sy - s * 0.28 + Math.sin(mothA * 1.4) * 5,
+      1.5,
+      0,
+      Math.PI * 2,
+    )
+    ctx.fill()
   }
   if (quality > 1 && b.done && b.type === "camp") {
     const flicker = 0.28 + 0.22 * Math.sin(now / 90 + b.id)
