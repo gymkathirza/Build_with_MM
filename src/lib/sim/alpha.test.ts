@@ -1229,6 +1229,32 @@ test("a fifth ashrider patrols a relic", () => {
   assert.ok(patrol, "a spare ashrider should patrol a relic")
 })
 
+test("a sixth ashrider patrols a hunt", () => {
+  const params = { ...personaById("balanced").params, attackAtArmy: 9 }
+  const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })
+  const h = hall(w, 0)
+  w.players[0].age = 1
+  w.players[0].grain = 400
+  w.players[0].timber = 200
+  const hunt = w.nodes.find((n) => n.fauna && n.amount > 0) ?? w.nodes.find((n) => n.type === "grain")
+  assert.ok(hunt, "emberglass should seed a hunt")
+  hunt.fauna = hunt.fauna ?? "deer"
+  hunt.amount = 80
+  for (let i = 0; i < 6; i++) pushBanner(w, "ashrider", 0, h.x + 2 + i, h.y)
+  for (let i = 0; i < 50; i++) {
+    tickAi(w, 0, params, personaById("balanced"))
+    tick(w)
+  }
+  const patrol = w.units.find(
+    (u) =>
+      u.owner === 0 &&
+      u.type === "ashrider" &&
+      ((u.order.t === "defend" && Math.hypot(u.order.x - hunt.x, u.order.y - hunt.y) < 4) ||
+        Math.hypot(u.x - hunt.x, u.y - hunt.y) < 12),
+  )
+  assert.ok(patrol, "a spare ashrider should patrol a hunt")
+})
+
 test("extra levies walk a far pit", () => {
   const params = personaById("balanced").params
   const w = createWorld("ashen", "gilded", params, { mapId: "emberglass", persona: "balanced" })

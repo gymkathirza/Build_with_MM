@@ -665,6 +665,7 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     )
     const spareRider = riderCount >= 4 ? spareRiders[0] : undefined
     const relicRider = riderCount >= 5 ? spareRiders[1] ?? spareRiders[0] : undefined
+    const huntRider = riderCount >= 6 ? spareRiders[2] ?? spareRiders[1] ?? spareRiders[0] : undefined
     const farLodge = w.buildings.find(
       (b) =>
         b.owner === owner &&
@@ -688,6 +689,8 @@ export function tickAi(w: World, owner: Owner, params: AiParams, personaOverride
     }
     const relicNode = w.nodes.find((n) => n.type === "relics" && n.amount > 0)
     if (relicNode && relicRider) issueDefend(w, [relicRider.id], relicNode.x, relicNode.y)
+    const huntNode = w.nodes.find((n) => n.fauna && n.amount > 0)
+    if (huntNode && huntRider) issueDefend(w, [huntRider.id], huntNode.x, huntNode.y)
     const wardenCount = military.filter((u) => u.type === "warden").length
     const spareWardens = military.filter(
       (u) =>
